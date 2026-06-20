@@ -13,6 +13,6 @@ data class FoodItem(
     val proteinG: Double,
     val carbG: Double,
     val fatG: Double,
-    val baseServingAmount: Double,
-    val baseServingUnit: String
+    val baseServingAmount: Double = 100.0,
+    val baseServingUnit: String = "g"
 )

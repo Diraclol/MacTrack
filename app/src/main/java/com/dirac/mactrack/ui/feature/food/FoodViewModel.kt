@@ -23,19 +23,28 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
             initialValue = emptyList()
         )
 
-    fun addSampleFood() {
+    fun addFood(
+        name: String,
+        calories: Double,
+        proteinG: Double,
+        carbG: Double,
+        fatG: Double
+    ) {
         viewModelScope.launch {
             repository.addFood(
                 FoodItem(
-                    name = "Egg",
-                    calories = 78.0,
-                    proteinG = 6.0,
-                    carbG = 0.6,
-                    fatG = 5.0,
-                    baseServingAmount = 1.0,
-                    baseServingUnit = "egg"
+                    name = name,
+                    calories = calories,
+                    proteinG = proteinG,
+                    carbG = carbG,
+                    fatG = fatG
                 )
             )
+        }
+    }
+    fun deleteFood(foodItem: FoodItem) {
+        viewModelScope.launch {
+            repository.deleteFood(foodItem)
         }
     }
 
