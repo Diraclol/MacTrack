@@ -27,6 +27,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.FilterChip
 
 @Composable
 fun FoodLogScreen(modifier: Modifier = Modifier) {
@@ -35,6 +38,8 @@ fun FoodLogScreen(modifier: Modifier = Modifier) {
 
     var name by remember { mutableStateOf("") }
     var calories by remember { mutableStateOf("") }
+    var servingSize by remember { mutableStateOf("1") }
+    var servingUnit by remember { mutableStateOf("serving") }
     var protein by remember { mutableStateOf("") }
     var carb by remember { mutableStateOf("") }
     var fat by remember { mutableStateOf("") }
@@ -77,6 +82,27 @@ fun FoodLogScreen(modifier: Modifier = Modifier) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
+        OutlinedTextField(
+            value = servingSize,
+            onValueChange = { servingSize = it },
+            label = { Text("Serving size") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Text("Unit")
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf("serving", "g", "ml", "piece", "cup", "tbsp", "tsp", "oz", "scoop", "tablet", "capsule").forEach { u ->
+                FilterChip(
+                    selected = servingUnit == u,
+                    onClick = { servingUnit = u },
+                    label = { Text(u) }
+                )
+            }
+        }
+        Text("Macros above are for one serving: ${servingSize.ifBlank { "1" }} $servingUnit")
         Button(
             onClick = {
                 if (name.isNotBlank()) {
@@ -85,13 +111,17 @@ fun FoodLogScreen(modifier: Modifier = Modifier) {
                         calories = calories.toDoubleOrNull() ?: 0.0,
                         proteinG = protein.toDoubleOrNull() ?: 0.0,
                         carbG = carb.toDoubleOrNull() ?: 0.0,
-                        fatG = fat.toDoubleOrNull() ?: 0.0
+                        fatG = fat.toDoubleOrNull() ?: 0.0,
+                        servingSize = servingSize.toDoubleOrNull() ?: 1.0,
+                        servingUnit = servingUnit
                     )
                     name = ""
                     calories = ""
                     protein = ""
                     carb = ""
                     fat = ""
+                    servingSize = "1"
+                    servingUnit = "serving"
                 }
             },
             modifier = Modifier.fillMaxWidth()

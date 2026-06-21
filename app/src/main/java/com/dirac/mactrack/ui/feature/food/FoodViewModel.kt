@@ -28,7 +28,9 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
         calories: Double,
         proteinG: Double,
         carbG: Double,
-        fatG: Double
+        fatG: Double,
+        servingSize: Double,
+        servingUnit: String
     ) {
         viewModelScope.launch {
             repository.addFood(
@@ -37,7 +39,9 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
                     calories = calories,
                     proteinG = proteinG,
                     carbG = carbG,
-                    fatG = fatG
+                    fatG = fatG,
+                    servingSize = servingSize,
+                    servingUnit = servingUnit
                 )
             )
         }
