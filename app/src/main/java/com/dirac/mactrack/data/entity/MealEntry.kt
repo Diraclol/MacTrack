@@ -11,6 +11,8 @@ data class MealEntry(
     val mealLabel: String,        // "M1", "M2", "M3", "Supplements"
     val foodName: String,
     val amount: Double,           // number of servings
+    val quantity: Double = 0.0,
+    val unit: String = "serving",
     val calories: Double,         // already scaled by amount
     val proteinG: Double,
     val carbG: Double,

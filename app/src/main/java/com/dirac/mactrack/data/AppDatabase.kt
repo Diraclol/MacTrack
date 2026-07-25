@@ -10,7 +10,7 @@ import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.entity.MealEntry
 
 
-@Database(entities = [FoodItem::class, Goal::class, MealEntry::class], version = 5, exportSchema = false)
+@Database(entities = [FoodItem::class, Goal::class, MealEntry::class], version = 6, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun foodItemDao(): FoodItemDao
     abstract fun goalDao(): GoalDao
