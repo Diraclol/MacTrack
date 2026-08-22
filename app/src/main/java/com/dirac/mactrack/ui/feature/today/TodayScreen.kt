@@ -89,7 +89,7 @@ fun TodayScreen(modifier: Modifier = Modifier) {
             items(items = slotEntries, key = { it.id }) { entry ->
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "${entry.foodName} ×${servings(entry.amount)} — ${entry.calories.roundToInt()} cal",
+                        text = "${entry.foodName}  ${servings(entry.quantity)} ${entry.unit} — ${entry.calories.roundToInt()} cal",
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { viewModel.deleteEntry(entry) }) {

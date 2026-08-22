@@ -44,10 +44,18 @@ class MealLogViewModel(
                     mealLabel = mealLabel,
                     foodName = food.name,
                     amount = amount,
+                    quantity = amount * food.servingSize,
+                    unit = food.servingUnit,
                     calories = food.calories * amount,
                     proteinG = food.proteinG * amount,
                     carbG = food.carbG * amount,
-                    fatG = food.fatG * amount
+                    fatG = food.fatG * amount,
+                    fiberG = food.fiberG * amount,
+                    sugarG = food.sugarG * amount,
+                    satFatG = food.satFatG * amount,
+                    sodiumMg = food.sodiumMg * amount,
+                    potassiumMg = food.potassiumMg * amount,
+                    cholesterolMg = food.cholesterolMg * amount
                 )
             )
         }

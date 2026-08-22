@@ -27,10 +27,21 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE meal_entries ADD COLUMN fiberG REAL NOT NULL DEFAULT 0.0")
+        db.execSQL("ALTER TABLE meal_entries ADD COLUMN sugarG REAL NOT NULL DEFAULT 0.0")
+        db.execSQL("ALTER TABLE meal_entries ADD COLUMN satFatG REAL NOT NULL DEFAULT 0.0")
+        db.execSQL("ALTER TABLE meal_entries ADD COLUMN sodiumMg REAL NOT NULL DEFAULT 0.0")
+        db.execSQL("ALTER TABLE meal_entries ADD COLUMN potassiumMg REAL NOT NULL DEFAULT 0.0")
+        db.execSQL("ALTER TABLE meal_entries ADD COLUMN cholesterolMg REAL NOT NULL DEFAULT 0.0")
+    }
+}
+
 class MacTrackApplication : Application() {
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, "mactrack.db")
-            .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
+            .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
             .build()
     }
     val foodRepository: FoodRepository by lazy {
