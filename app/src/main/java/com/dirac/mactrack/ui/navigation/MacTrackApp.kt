@@ -32,10 +32,11 @@ import com.dirac.mactrack.ui.feature.more.MoreScreen
 import com.dirac.mactrack.ui.feature.today.TodayScreen
 import com.dirac.mactrack.ui.feature.meals.MealsScreen
 import com.dirac.mactrack.ui.feature.recipes.RecipesScreen
-import com.dirac.mactrack.ui.feature.foodsearch.CnfSearchScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import com.dirac.mactrack.ui.feature.foodsearch.CnfFoodDetailScreen
+import com.dirac.mactrack.ui.feature.foodsearch.QuickAddScreen
+import com.dirac.mactrack.ui.feature.foodsearch.UnifiedSearchScreen
+import com.dirac.mactrack.ui.feature.foodsearch.FoodDetailScreen
 
 @Composable
 fun MacTrackApp() {
@@ -107,23 +108,43 @@ fun MacTrackApp() {
                     onOpenMeals = { navController.navigate("meals") },
                     onOpenRecipes = { navController.navigate("recipes") },
                     onOpenGoals = { navController.navigate("goals") },
-                    onOpenCnfSearch = { navController.navigate("cnf_search") }
+                    onOpenQuickAdd = { navController.navigate("quick_add") },
+                    onOpenFoodSearch = { navController.navigate("food_search") },
                 )
             }
+            composable("quick_add") { QuickAddScreen(onDone = { navController.popBackStack() }) }
             composable("saved_foods") { FoodLogScreen() }
             composable("meals") { MealsScreen() }
             composable("recipes") { RecipesScreen() }
             composable("goals") { GoalsScreen() }
-            composable("cnf_search") {
-                CnfSearchScreen(onOpenFood = { code -> navController.navigate("cnf_food/$code") })
+            composable("food_search") {
+                UnifiedSearchScreen(
+                    onOpenFood = { source, id -> navController.navigate("food_detail/$source/$id") },
+                    onLoggedCart = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable(
-                "cnf_food/{code}",
-                arguments = listOf(navArgument("code") { type = NavType.IntType })
+                "food_detail/{source}/{id}",
+                arguments = listOf(
+                    navArgument("source") { type = NavType.StringType },
+                    navArgument("id") { type = NavType.StringType }
+                )
             ) { backStackEntry ->
-                val code = backStackEntry.arguments?.getInt("code") ?: 0
-                CnfFoodDetailScreen(code = code, onLogged = { navController.popBackStack() })
+                val source = backStackEntry.arguments?.getString("source") ?: ""
+                val id = backStackEntry.arguments?.getString("id") ?: ""
+                FoodDetailScreen(
+                    source = source,
+                    id = id,
+                    onLogged = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() }
+                )
             }
+            composable("saved_foods") { FoodLogScreen() }
+            composable("meals") { MealsScreen(onBack = { navController.popBackStack() }) }
+            composable("recipes") { RecipesScreen() }
+            composable("goals") { GoalsScreen() }
+            composable("quick_add") { QuickAddScreen(onDone = { navController.popBackStack() }) }
         }
     }
 }

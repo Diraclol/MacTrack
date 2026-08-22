@@ -11,10 +11,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.ui.common.BackBar
 import kotlin.math.roundToInt
 
 @Composable
-fun GoalsScreen(modifier: Modifier = Modifier) {
+fun GoalsScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}) {
     val viewModel: GoalViewModel = viewModel(factory = GoalViewModel.Factory)
     val goal by viewModel.latestGoal.collectAsState()
 
@@ -22,6 +23,7 @@ fun GoalsScreen(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        BackBar("Goals", onBack)
         Text("Your goal")
         val g = goal
         if (g == null) {

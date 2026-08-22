@@ -46,7 +46,8 @@ fun MoreScreen(
     onOpenMeals: () -> Unit = {},
     onOpenRecipes: () -> Unit = {},
     onOpenGoals: () -> Unit = {} ,
-    onOpenCnfSearch: () -> Unit = {}
+    onOpenQuickAdd: () -> Unit = {},
+    onOpenFoodSearch: () -> Unit = {},
 ) {
     val weightViewModel: WeightViewModel = viewModel(factory = WeightViewModel.Factory)
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
@@ -66,8 +67,8 @@ fun MoreScreen(
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                OutlinedButton(onClick = onOpenCnfSearch, modifier = Modifier.fillMaxWidth()) {
-                    Text("Search foods (CNF)")
+                OutlinedButton(onClick = onOpenQuickAdd, modifier = Modifier.fillMaxWidth()) {
+                    Text("Quick add")
                 }
                 OutlinedButton(onClick = onOpenSavedFoods, modifier = Modifier.fillMaxWidth()) {
                     Text("Saved foods")
@@ -80,6 +81,9 @@ fun MoreScreen(
                 }
                 OutlinedButton(onClick = onOpenGoals, modifier = Modifier.fillMaxWidth()) {
                     Text("Goals")
+                }
+                OutlinedButton(onClick = onOpenFoodSearch, modifier = Modifier.fillMaxWidth()) {
+                    Text("Search foods")
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 Text("Theme", style = MaterialTheme.typography.titleMedium)

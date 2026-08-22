@@ -26,22 +26,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.ui.common.BackBar
 
 @Composable
-fun RecipesScreen(modifier: Modifier = Modifier) {
+fun RecipesScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}) {
     val viewModel: RecipesViewModel = viewModel(factory = RecipesViewModel.Factory)
     val foods by viewModel.foods.collectAsState()
 
     var name by remember { mutableStateOf("") }
     var makes by remember { mutableStateOf("1") }
-    // foodId -> amount typed (servings used in the whole recipe)
     val amounts = remember { mutableStateMapOf<String, String>() }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item { Text("Create a recipe", style = MaterialTheme.typography.headlineSmall) }
+        item { BackBar("Recipes", onBack) }
 
         item {
             Card(modifier = Modifier.fillMaxWidth()) {

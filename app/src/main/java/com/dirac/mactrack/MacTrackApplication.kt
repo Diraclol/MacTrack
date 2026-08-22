@@ -11,6 +11,7 @@ import com.dirac.mactrack.data.repository.UserProfileRepository
 import com.dirac.mactrack.data.repository.MealTemplateRepository
 import com.dirac.mactrack.data.repository.ThemeRepository
 import com.dirac.mactrack.data.cnf.CnfRepository
+import com.dirac.mactrack.data.cart.CartRepository
 
 class MacTrackApplication : Application() {
     val database: AppDatabase by lazy {
@@ -41,4 +42,9 @@ class MacTrackApplication : Application() {
     val cnfRepository: CnfRepository by lazy {
         CnfRepository(this)
     }
+
+    val cartRepository: CartRepository by lazy {
+        CartRepository()
+    }
+
 }
