@@ -32,6 +32,10 @@ import com.dirac.mactrack.ui.feature.more.MoreScreen
 import com.dirac.mactrack.ui.feature.today.TodayScreen
 import com.dirac.mactrack.ui.feature.meals.MealsScreen
 import com.dirac.mactrack.ui.feature.recipes.RecipesScreen
+import com.dirac.mactrack.ui.feature.foodsearch.CnfSearchScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.dirac.mactrack.ui.feature.foodsearch.CnfFoodDetailScreen
 
 @Composable
 fun MacTrackApp() {
@@ -102,13 +106,24 @@ fun MacTrackApp() {
                     onOpenSavedFoods = { navController.navigate("saved_foods") },
                     onOpenMeals = { navController.navigate("meals") },
                     onOpenRecipes = { navController.navigate("recipes") },
-                    onOpenGoals = { navController.navigate("goals") }
+                    onOpenGoals = { navController.navigate("goals") },
+                    onOpenCnfSearch = { navController.navigate("cnf_search") }
                 )
             }
             composable("saved_foods") { FoodLogScreen() }
             composable("meals") { MealsScreen() }
             composable("recipes") { RecipesScreen() }
             composable("goals") { GoalsScreen() }
+            composable("cnf_search") {
+                CnfSearchScreen(onOpenFood = { code -> navController.navigate("cnf_food/$code") })
+            }
+            composable(
+                "cnf_food/{code}",
+                arguments = listOf(navArgument("code") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val code = backStackEntry.arguments?.getInt("code") ?: 0
+                CnfFoodDetailScreen(code = code, onLogged = { navController.popBackStack() })
+            }
         }
     }
 }

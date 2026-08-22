@@ -45,7 +45,8 @@ fun MoreScreen(
     onOpenSavedFoods: () -> Unit = {},
     onOpenMeals: () -> Unit = {},
     onOpenRecipes: () -> Unit = {},
-    onOpenGoals: () -> Unit = {}
+    onOpenGoals: () -> Unit = {} ,
+    onOpenCnfSearch: () -> Unit = {}
 ) {
     val weightViewModel: WeightViewModel = viewModel(factory = WeightViewModel.Factory)
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
@@ -65,6 +66,9 @@ fun MoreScreen(
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                OutlinedButton(onClick = onOpenCnfSearch, modifier = Modifier.fillMaxWidth()) {
+                    Text("Search foods (CNF)")
+                }
                 OutlinedButton(onClick = onOpenSavedFoods, modifier = Modifier.fillMaxWidth()) {
                     Text("Saved foods")
                 }

@@ -10,6 +10,7 @@ import com.dirac.mactrack.data.repository.WeightRepository
 import com.dirac.mactrack.data.repository.UserProfileRepository
 import com.dirac.mactrack.data.repository.MealTemplateRepository
 import com.dirac.mactrack.data.repository.ThemeRepository
+import com.dirac.mactrack.data.cnf.CnfRepository
 
 class MacTrackApplication : Application() {
     val database: AppDatabase by lazy {
@@ -36,5 +37,8 @@ class MacTrackApplication : Application() {
     }
     val themeRepository: ThemeRepository by lazy {
         ThemeRepository(this)
+    }
+    val cnfRepository: CnfRepository by lazy {
+        CnfRepository(this)
     }
 }
