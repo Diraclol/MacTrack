@@ -9,7 +9,8 @@ import com.dirac.mactrack.data.repository.FoodRepository
 import com.dirac.mactrack.data.repository.GoalRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
 import com.dirac.mactrack.data.repository.WeightRepository
-
+import com.dirac.mactrack.data.repository.UserProfileRepository
+import com.dirac.mactrack.data.repository.MealTemplateRepository
 val MIGRATION_5_6 = object : Migration(5, 6) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE meal_entries ADD COLUMN quantity REAL NOT NULL DEFAULT 0.0")
@@ -45,10 +46,22 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
     }
 }
 
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `user_profile` (`id` INTEGER NOT NULL, `sex` TEXT NOT NULL, `age` INTEGER NOT NULL, `weightKg` REAL NOT NULL, `heightCm` REAL NOT NULL, `activityLevel` TEXT NOT NULL, `goalType` TEXT NOT NULL, `proteinLevel` TEXT NOT NULL, `fatLevel` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+    }
+}
+
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `meal_templates` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `meal_template_items` (`id` TEXT NOT NULL, `templateId` TEXT NOT NULL, `foodId` TEXT NOT NULL, `amount` REAL NOT NULL, PRIMARY KEY(`id`))")
+    }
+}
 class MacTrackApplication : Application() {
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, "mactrack.db")
-            .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+            .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
             .build()
     }
     val foodRepository: FoodRepository by lazy {
@@ -67,4 +80,11 @@ class MacTrackApplication : Application() {
         WeightRepository(database.weightEntryDao())
     }
 
+    val userProfileRepository: UserProfileRepository by lazy {
+        UserProfileRepository(database.userProfileDao())
+    }
+
+    val mealTemplateRepository: MealTemplateRepository by lazy {
+        MealTemplateRepository(database.mealTemplateDao())
+    }
 }

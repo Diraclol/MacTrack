@@ -12,9 +12,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,11 +30,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.ui.feature.profile.ProfileViewModel
+
+private fun pretty(name: String) = name.lowercase().replaceFirstChar { it.uppercase() }
 
 @Composable
-fun MoreScreen(modifier: Modifier = Modifier) {
-    val viewModel: WeightViewModel = viewModel(factory = WeightViewModel.Factory)
-    val weights by viewModel.weights.collectAsState()
+fun MoreScreen(
+    modifier: Modifier = Modifier,
+    onOpenSavedFoods: () -> Unit = {},
+    onOpenMeals: () -> Unit = {},
+    onOpenRecipes: () -> Unit = {}
+) {
+    val weightViewModel: WeightViewModel = viewModel(factory = WeightViewModel.Factory)
+    val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
+    val weights by weightViewModel.weights.collectAsState()
+    val profile by profileViewModel.profile.collectAsState()
 
     var weight by remember { mutableStateOf("") }
 
@@ -41,7 +53,29 @@ fun MoreScreen(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                OutlinedButton(onClick = onOpenSavedFoods, modifier = Modifier.fillMaxWidth()) {
+                    Text("Saved foods")
+                }
+                OutlinedButton(onClick = onOpenMeals, modifier = Modifier.fillMaxWidth()) {
+                    Text("Meals")
+                }
+                OutlinedButton(onClick = onOpenRecipes, modifier = Modifier.fillMaxWidth()) {
+                    Text("Recipes")
+                }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Text("Your profile", style = MaterialTheme.typography.titleMedium)
+                val p = profile
+                if (p == null) {
+                    Text("Not set yet. It's saved when you complete onboarding.")
+                } else {
+                    Text("Sex: ${pretty(p.sex)}   Age: ${p.age}")
+                    Text("Weight: ${p.weightKg} kg   Height: ${p.heightCm} cm")
+                    Text("Activity: ${pretty(p.activityLevel)}")
+                    Text("Goal: ${pretty(p.goalType)}")
+                    Text("Protein: ${pretty(p.proteinLevel)}   Fat: ${pretty(p.fatLevel)}")
+                }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 Text("Log weight", style = MaterialTheme.typography.titleMedium)
                 OutlinedTextField(
                     value = weight,
@@ -54,7 +88,7 @@ fun MoreScreen(modifier: Modifier = Modifier) {
                     onClick = {
                         val w = weight.toDoubleOrNull()
                         if (w != null && w > 0) {
-                            viewModel.logWeight(w)
+                            weightViewModel.logWeight(w)
                             weight = ""
                         }
                     },
@@ -74,7 +108,7 @@ fun MoreScreen(modifier: Modifier = Modifier) {
                     text = "${entry.date} — ${entry.weightKg} kg",
                     modifier = Modifier.weight(1f)
                 )
-                IconButton(onClick = { viewModel.deleteWeight(entry) }) {
+                IconButton(onClick = { weightViewModel.deleteWeight(entry) }) {
                     Icon(Icons.Filled.Delete, contentDescription = "Delete weight from ${entry.date}")
                 }
             }

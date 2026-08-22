@@ -33,6 +33,7 @@ import com.dirac.mactrack.domain.calc.tdee
 import java.util.Locale
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.ui.feature.goals.GoalViewModel
+import com.dirac.mactrack.ui.feature.profile.ProfileViewModel
 
 private fun pretty(name: String) = name.lowercase().replaceFirstChar { it.uppercase() }
 private fun Double.clean(): String = String.format(Locale.US, "%.0f", this)
@@ -50,6 +51,7 @@ fun OnboardingScreen(modifier: Modifier = Modifier) {
     var tdeeValue by remember { mutableStateOf<Double?>(null) }
     var result by remember { mutableStateOf<MacroTargets?>(null) }
     val goalViewModel: GoalViewModel = viewModel(factory = GoalViewModel.Factory)
+    val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
 
     Column(
         modifier = modifier
@@ -139,7 +141,19 @@ fun OnboardingScreen(modifier: Modifier = Modifier) {
             Text("Carbs: ${r.carbG.clean()} g")
             Text("Fat: ${r.fatG.clean()} g")
             Button(
-                onClick = { goalViewModel.saveGoal(r.calories, r.proteinG, r.carbG, r.fatG) },
+                onClick = {
+                    profileViewModel.saveProfile(
+                        sex = sex.name,
+                        age = age.toIntOrNull() ?: 0,
+                        weightKg = weight.toDoubleOrNull() ?: 0.0,
+                        heightCm = height.toDoubleOrNull() ?: 0.0,
+                        activityLevel = activity.name,
+                        goalType = goal.name,
+                        proteinLevel = protein.name,
+                        fatLevel = fat.name
+                    )
+                    goalViewModel.saveGoal(r.calories, r.proteinG, r.carbG, r.fatG)
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Save & continue")
