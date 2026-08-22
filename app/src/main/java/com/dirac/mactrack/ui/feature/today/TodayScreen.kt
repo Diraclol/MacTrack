@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,12 +31,25 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.FoodItem
+import java.time.LocalTime
 import kotlin.math.roundToInt
-
-val MEAL_SLOTS = listOf("M1", "M2", "M3", "Supplements")
 
 private fun servings(amount: Double): String =
     if (amount % 1.0 == 0.0) amount.toInt().toString() else amount.toString()
+
+private fun hourLabel(hour: Int): String {
+    val h12 = if (hour % 12 == 0) 12 else hour % 12
+    val ampm = if (hour < 12) "AM" else "PM"
+    return "$h12 $ampm"
+}
+
+private fun timeLabel(timeMinutes: Int): String {
+    val h = timeMinutes / 60
+    val m = timeMinutes % 60
+    val h12 = if (h % 12 == 0) 12 else h % 12
+    val ampm = if (h < 12) "AM" else "PM"
+    return "%d:%02d %s".format(h12, m, ampm)
+}
 
 @Composable
 fun TodayScreen(modifier: Modifier = Modifier) {
@@ -51,6 +63,8 @@ fun TodayScreen(modifier: Modifier = Modifier) {
     val totalCarb = entries.sumOf { it.carbG }
     val totalFat = entries.sumOf { it.fatG }
 
+    val byHour = entries.groupBy { it.timeMinutes / 60 }.toSortedMap()
+
     var foodToLog by remember { mutableStateOf<FoodItem?>(null) }
 
     LazyColumn(
@@ -58,7 +72,7 @@ fun TodayScreen(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
-            Text("Today")
+            Text("Today", style = MaterialTheme.typography.headlineSmall)
             val g = goal
             if (g == null) {
                 Text("Calories: ${totalCalories.roundToInt()}")
@@ -71,25 +85,22 @@ fun TodayScreen(modifier: Modifier = Modifier) {
             }
         }
 
-        MEAL_SLOTS.forEach { slot ->
-            val slotEntries = entries.filter { it.mealLabel == slot }
-            val slotCalories = slotEntries.sumOf { it.calories }
-            val slotProtein = slotEntries.sumOf { it.proteinG }
-            val slotCarb = slotEntries.sumOf { it.carbG }
-            val slotFat = slotEntries.sumOf { it.fatG }
+        if (byHour.isEmpty()) {
+            item { Text("No food logged yet today.", style = MaterialTheme.typography.bodySmall) }
+        }
+
+        byHour.forEach { (hour, hourEntries) ->
+            val hourCal = hourEntries.sumOf { it.calories }
             item {
-                Column {
-                    Text("$slot — ${slotCalories.roundToInt()} cal")
-                    Text(
-                        "P ${slotProtein.roundToInt()}g · C ${slotCarb.roundToInt()}g · F ${slotFat.roundToInt()}g",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
+                Text(
+                    "${hourLabel(hour)} — ${hourCal.roundToInt()} cal",
+                    style = MaterialTheme.typography.titleSmall
+                )
             }
-            items(items = slotEntries, key = { it.id }) { entry ->
+            items(items = hourEntries, key = { it.id }) { entry ->
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "${entry.foodName}  ${servings(entry.quantity)} ${entry.unit} — ${entry.calories.roundToInt()} cal",
+                        text = "${timeLabel(entry.timeMinutes)}  ${entry.foodName}  ${servings(entry.quantity)} ${entry.unit} — ${entry.calories.roundToInt()} cal",
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { viewModel.deleteEntry(entry) }) {
@@ -99,7 +110,7 @@ fun TodayScreen(modifier: Modifier = Modifier) {
             }
         }
 
-        item { Text("Add from your foods") }
+        item { Text("Add from your foods", style = MaterialTheme.typography.titleSmall) }
         items(items = foods, key = { it.id }) { food ->
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -113,11 +124,13 @@ fun TodayScreen(modifier: Modifier = Modifier) {
 
     val selected = foodToLog
     if (selected != null) {
+        val now = LocalTime.now()
         LogFoodDialog(
             food = selected,
+            defaultTimeMinutes = now.hour * 60 + now.minute,
             onDismiss = { foodToLog = null },
-            onConfirm = { meal, amount ->
-                viewModel.logFood(selected, meal, amount)
+            onConfirm = { amount, timeMinutes ->
+                viewModel.logFood(selected, amount, timeMinutes)
                 foodToLog = null
             }
         )
@@ -127,11 +140,13 @@ fun TodayScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun LogFoodDialog(
     food: FoodItem,
+    defaultTimeMinutes: Int,
     onDismiss: () -> Unit,
-    onConfirm: (mealLabel: String, amount: Double) -> Unit
+    onConfirm: (amount: Double, timeMinutes: Int) -> Unit
 ) {
     var amount by remember { mutableStateOf("1") }
-    var meal by remember { mutableStateOf(MEAL_SLOTS.first()) }
+    var hour by remember { mutableStateOf((defaultTimeMinutes / 60).toString()) }
+    var minute by remember { mutableStateOf((defaultTimeMinutes % 60).toString()) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -144,23 +159,32 @@ private fun LogFoodDialog(
                     label = { Text("Servings") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
-                Text("Meal")
-                MEAL_SLOTS.forEach { slot ->
-                    FilterChip(
-                        selected = meal == slot,
-                        onClick = { meal = slot },
-                        label = { Text(slot) }
+                Text("Time")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = hour,
+                        onValueChange = { hour = it },
+                        label = { Text("Hour 0-23") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = minute,
+                        onValueChange = { minute = it },
+                        label = { Text("Min") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(meal, amount.toDoubleOrNull() ?: 1.0) }) {
-                Text("Add")
-            }
+            TextButton(onClick = {
+                val h = (hour.toIntOrNull() ?: 0).coerceIn(0, 23)
+                val m = (minute.toIntOrNull() ?: 0).coerceIn(0, 59)
+                onConfirm(amount.toDoubleOrNull() ?: 1.0, h * 60 + m)
+            }) { Text("Add") }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }

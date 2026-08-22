@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalTime
 
 class MealsViewModel(
     private val foodRepository: FoodRepository,
@@ -42,9 +43,11 @@ class MealsViewModel(
         viewModelScope.launch { mealTemplateRepository.deleteTemplate(template) }
     }
 
-    // Log every food in the saved meal into the given slot for today.
-    fun logTemplate(template: MealTemplate, mealLabel: String) {
+    // Log every food in the saved meal at the current time.
+    fun logTemplate(template: MealTemplate) {
         viewModelScope.launch {
+            val now = LocalTime.now()
+            val timeMinutes = now.hour * 60 + now.minute
             val items = mealTemplateRepository.getItems(template.id)
             val foodsById = foods.value.associateBy { it.id }
             items.forEach { item ->
@@ -53,7 +56,7 @@ class MealsViewModel(
                 mealEntryRepository.logEntry(
                     MealEntry(
                         date = today,
-                        mealLabel = mealLabel,
+                        timeMinutes = timeMinutes,
                         foodName = food.name,
                         amount = a,
                         quantity = a * food.servingSize,

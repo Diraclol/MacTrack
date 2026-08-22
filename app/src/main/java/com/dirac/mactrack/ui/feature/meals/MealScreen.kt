@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.dirac.mactrack.ui.feature.today.MEAL_SLOTS
 
 @Composable
 fun MealsScreen(modifier: Modifier = Modifier) {
@@ -38,9 +37,7 @@ fun MealsScreen(modifier: Modifier = Modifier) {
     val templates by viewModel.templates.collectAsState()
 
     var mealName by remember { mutableStateOf("") }
-    // foodId -> selected (we log 1 serving of each selected food)
     val selected = remember { mutableStateMapOf<String, Boolean>() }
-    var logChoice by remember { mutableStateOf<com.dirac.mactrack.data.entity.MealTemplate?>(null) }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(16.dp),
@@ -57,24 +54,8 @@ fun MealsScreen(modifier: Modifier = Modifier) {
                             Icon(Icons.Filled.Delete, contentDescription = "Delete ${template.name}")
                         }
                     }
-                    if (logChoice?.id == template.id) {
-                        Text("Log to which meal?")
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MEAL_SLOTS.forEach { slot ->
-                                FilterChip(
-                                    selected = false,
-                                    onClick = {
-                                        viewModel.logTemplate(template, slot)
-                                        logChoice = null
-                                    },
-                                    label = { Text(slot) }
-                                )
-                            }
-                        }
-                    } else {
-                        Button(onClick = { logChoice = template }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Log this meal")
-                        }
+                    Button(onClick = { viewModel.logTemplate(template) }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Log this meal (now)")
                     }
                 }
             }

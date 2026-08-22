@@ -7,11 +7,11 @@ import java.util.UUID
 @Entity(tableName = "meal_entries")
 data class MealEntry(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
-    val date: String,
-    val mealLabel: String,        // "M1", "M2", "M3", "Supplements"
+    val date: String,             // ISO day, e.g. "2026-08-22"
+    val timeMinutes: Int,         // minutes since midnight (0..1439); hour = timeMinutes / 60
     val foodName: String,
-    val amount: Double,           // number of servings
-    val quantity: Double = 0.0,   // amount × serving size, in `unit`
+    val amount: Double,
+    val quantity: Double = 0.0,
     val unit: String = "serving",
     // All values below are already scaled by amount (a snapshot at log time).
     val calories: Double,

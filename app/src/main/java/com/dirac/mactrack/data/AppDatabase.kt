@@ -16,7 +16,7 @@ import com.dirac.mactrack.data.entity.MealTemplate
 import com.dirac.mactrack.data.entity.MealTemplateItem
 import com.dirac.mactrack.data.dao.MealTemplateDao
 
-@Database(entities = [FoodItem::class, Goal::class, MealEntry::class, WeightEntry::class, UserProfile::class, MealTemplate::class, MealTemplateItem::class], version = 11, exportSchema = true)
+@Database(entities = [FoodItem::class, Goal::class, MealEntry::class, WeightEntry::class, UserProfile::class, MealTemplate::class, MealTemplateItem::class], version = 1, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun foodItemDao(): FoodItemDao
     abstract fun goalDao(): GoalDao

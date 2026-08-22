@@ -36,12 +36,12 @@ class MealLogViewModel(
     val goal: StateFlow<Goal?> = goalRepository.getLatestGoal()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    fun logFood(food: FoodItem, mealLabel: String, amount: Double) {
+    fun logFood(food: FoodItem, amount: Double, timeMinutes: Int) {
         viewModelScope.launch {
             mealEntryRepository.logEntry(
                 MealEntry(
                     date = today,
-                    mealLabel = mealLabel,
+                    timeMinutes = timeMinutes,
                     foodName = food.name,
                     amount = amount,
                     quantity = amount * food.servingSize,
