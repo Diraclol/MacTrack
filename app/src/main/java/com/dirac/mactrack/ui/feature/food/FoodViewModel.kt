@@ -29,6 +29,12 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
         proteinG: Double,
         carbG: Double,
         fatG: Double,
+        fiberG: Double = 0.0,
+        sugarG: Double = 0.0,
+        satFatG: Double = 0.0,
+        sodiumMg: Double = 0.0,
+        potassiumMg: Double = 0.0,
+        cholesterolMg: Double = 0.0,
         servingSize: Double,
         servingUnit: String
     ) {
@@ -40,6 +46,12 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
                     proteinG = proteinG,
                     carbG = carbG,
                     fatG = fatG,
+                    fiberG = fiberG,
+                    sugarG = sugarG,
+                    satFatG = satFatG,
+                    sodiumMg = sodiumMg,
+                    potassiumMg = potassiumMg,
+                    cholesterolMg = cholesterolMg,
                     servingSize = servingSize,
                     servingUnit = servingUnit
                 )
