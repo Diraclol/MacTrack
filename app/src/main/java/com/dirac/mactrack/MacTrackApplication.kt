@@ -8,6 +8,7 @@ import com.dirac.mactrack.data.AppDatabase
 import com.dirac.mactrack.data.repository.FoodRepository
 import com.dirac.mactrack.data.repository.GoalRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
+import com.dirac.mactrack.data.repository.WeightRepository
 
 val MIGRATION_5_6 = object : Migration(5, 6) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -38,10 +39,16 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
     }
 }
 
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `weight_entries` (`id` TEXT NOT NULL, `date` TEXT NOT NULL, `weightKg` REAL NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+    }
+}
+
 class MacTrackApplication : Application() {
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, "mactrack.db")
-            .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+            .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
             .build()
     }
     val foodRepository: FoodRepository by lazy {
@@ -54,6 +61,10 @@ class MacTrackApplication : Application() {
 
     val mealEntryRepository: MealEntryRepository by lazy {
         MealEntryRepository(database.mealEntryDao())
+    }
+
+    val weightRepository: WeightRepository by lazy {
+        WeightRepository(database.weightEntryDao())
     }
 
 }
