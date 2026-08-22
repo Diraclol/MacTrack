@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -16,13 +17,22 @@ import com.dirac.mactrack.ui.feature.goals.GoalViewModel
 import com.dirac.mactrack.ui.feature.onboarding.OnboardingScreen
 import com.dirac.mactrack.ui.navigation.MacTrackApp
 import com.dirac.mactrack.ui.theme.MacTrackTheme
+import com.dirac.mactrack.ui.theme.ThemeMode
+import com.dirac.mactrack.ui.theme.ThemeViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MacTrackTheme {
+            val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
+            val themeMode by themeViewModel.mode.collectAsState()
+            val darkTheme = when (themeMode) {
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+            MacTrackTheme(darkTheme = darkTheme) {
                 val goalViewModel: GoalViewModel = viewModel(factory = GoalViewModel.Factory)
                 val hasGoal by goalViewModel.hasGoal.collectAsState()
                 when (hasGoal) {

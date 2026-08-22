@@ -11,6 +11,8 @@ import com.dirac.mactrack.data.repository.MealEntryRepository
 import com.dirac.mactrack.data.repository.WeightRepository
 import com.dirac.mactrack.data.repository.UserProfileRepository
 import com.dirac.mactrack.data.repository.MealTemplateRepository
+import com.dirac.mactrack.data.repository.ThemeRepository
+
 val MIGRATION_5_6 = object : Migration(5, 6) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE meal_entries ADD COLUMN quantity REAL NOT NULL DEFAULT 0.0")
@@ -86,5 +88,9 @@ class MacTrackApplication : Application() {
 
     val mealTemplateRepository: MealTemplateRepository by lazy {
         MealTemplateRepository(database.mealTemplateDao())
+    }
+
+    val themeRepository: ThemeRepository by lazy {
+        ThemeRepository(this)
     }
 }

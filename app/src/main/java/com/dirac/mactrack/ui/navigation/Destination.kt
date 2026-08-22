@@ -1,7 +1,6 @@
 package com.dirac.mactrack.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Restaurant
@@ -14,6 +13,5 @@ enum class Destination(
 ) {
     DASHBOARD("dashboard", "Dashboard", Icons.Filled.Home),
     FOOD_LOG("food_log", "Food Log", Icons.Filled.Restaurant),
-    GOALS("goals", "Goals", Icons.Filled.Flag),
     MORE("more", "More", Icons.Filled.Menu)
 }

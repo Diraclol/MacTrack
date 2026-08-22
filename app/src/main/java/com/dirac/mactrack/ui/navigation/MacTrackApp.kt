@@ -1,14 +1,26 @@
 package com.dirac.mactrack.ui.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -29,20 +41,51 @@ fun MacTrackApp() {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                Destination.entries.forEach { destination ->
-                    NavigationBarItem(
-                        selected = currentRoute == destination.route,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(destination.icon, contentDescription = destination.label) },
-                        label = { Text(destination.label) }
-                    )
+            Surface(
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shadowElevation = 8.dp,
+                tonalElevation = 3.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Destination.entries.forEach { destination ->
+                        val selected = currentRoute == destination.route
+                        val tint = if (selected) {
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .clickable {
+                                    navController.navigate(destination.route) {
+                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                                .background(
+                                    if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
+                                )
+                                .padding(horizontal = 20.dp, vertical = 8.dp)
+                        ) {
+                            Icon(destination.icon, contentDescription = destination.label, tint = tint)
+                            Text(destination.label, style = MaterialTheme.typography.labelSmall, color = tint)
+                        }
+                    }
                 }
             }
         }
@@ -54,17 +97,18 @@ fun MacTrackApp() {
         ) {
             composable(Destination.DASHBOARD.route) { DashboardScreen() }
             composable(Destination.FOOD_LOG.route) { TodayScreen() }
-            composable(Destination.GOALS.route) { GoalsScreen() }
             composable(Destination.MORE.route) {
                 MoreScreen(
                     onOpenSavedFoods = { navController.navigate("saved_foods") },
                     onOpenMeals = { navController.navigate("meals") },
-                    onOpenRecipes = { navController.navigate("recipes") }
+                    onOpenRecipes = { navController.navigate("recipes") },
+                    onOpenGoals = { navController.navigate("goals") }
                 )
             }
             composable("saved_foods") { FoodLogScreen() }
             composable("meals") { MealsScreen() }
             composable("recipes") { RecipesScreen() }
+            composable("goals") { GoalsScreen() }
         }
     }
 }

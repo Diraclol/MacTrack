@@ -31,6 +31,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.ui.feature.profile.ProfileViewModel
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilterChip
+import com.dirac.mactrack.ui.theme.ThemeMode
+import com.dirac.mactrack.ui.theme.ThemeViewModel
 
 private fun pretty(name: String) = name.lowercase().replaceFirstChar { it.uppercase() }
 
@@ -39,14 +44,20 @@ fun MoreScreen(
     modifier: Modifier = Modifier,
     onOpenSavedFoods: () -> Unit = {},
     onOpenMeals: () -> Unit = {},
-    onOpenRecipes: () -> Unit = {}
+    onOpenRecipes: () -> Unit = {},
+    onOpenGoals: () -> Unit = {}
 ) {
     val weightViewModel: WeightViewModel = viewModel(factory = WeightViewModel.Factory)
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
+    val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
+    val themeMode by themeViewModel.mode.collectAsState()
     val weights by weightViewModel.weights.collectAsState()
     val profile by profileViewModel.profile.collectAsState()
-
     var weight by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val versionName = remember {
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "?"
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(16.dp),
@@ -62,6 +73,20 @@ fun MoreScreen(
                 }
                 OutlinedButton(onClick = onOpenRecipes, modifier = Modifier.fillMaxWidth()) {
                     Text("Recipes")
+                }
+                OutlinedButton(onClick = onOpenGoals, modifier = Modifier.fillMaxWidth()) {
+                    Text("Goals")
+                }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Text("Theme", style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ThemeMode.entries.forEach { mode ->
+                        FilterChip(
+                            selected = themeMode == mode,
+                            onClick = { themeViewModel.setMode(mode) },
+                            label = { Text(pretty(mode.name)) }
+                        )
+                    }
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 Text("Your profile", style = MaterialTheme.typography.titleMedium)
@@ -112,6 +137,13 @@ fun MoreScreen(
                     Icon(Icons.Filled.Delete, contentDescription = "Delete weight from ${entry.date}")
                 }
             }
+        }
+        item {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(
+                "MacTrack v$versionName",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }

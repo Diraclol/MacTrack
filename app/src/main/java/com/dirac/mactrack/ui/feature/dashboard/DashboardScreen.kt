@@ -2,22 +2,28 @@ package com.dirac.mactrack.ui.feature.dashboard
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.WeightEntry
@@ -52,10 +58,15 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     val g = goal
-                    StatBar("Calories", totalCal, g?.calorieGoal ?: 0.0, CalorieColor)
-                    StatBar("Protein", totalP, g?.proteinGoalG ?: 0.0, ProteinColor)
-                    StatBar("Carbs", totalC, g?.carbGoalG ?: 0.0, CarbColor)
-                    StatBar("Fat", totalF, g?.fatGoalG ?: 0.0, FatColor)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        MacroRing("Protein", totalP, g?.proteinGoalG ?: 0.0, ProteinColor)
+                        MacroRing("Carbs", totalC, g?.carbGoalG ?: 0.0, CarbColor)
+                        MacroRing("Fat", totalF, g?.fatGoalG ?: 0.0, FatColor)
+                        MacroRing("kCal", totalCal, g?.calorieGoal ?: 0.0, CalorieColor)
+                    }
                     if (g == null) {
                         Text("No goal set yet.", style = MaterialTheme.typography.bodySmall)
                     }
@@ -84,15 +95,52 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun StatBar(label: String, current: Double, goal: Double, color: Color) {
+private fun MacroRing(
+    label: String,
+    current: Double,
+    goal: Double,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
     val fraction = if (goal > 0.0) (current / goal).coerceIn(0.0, 1.0).toFloat() else 0f
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        val goalText = if (goal > 0.0) " / ${goal.roundToInt()}" else ""
-        Text("$label: ${current.roundToInt()}$goalText")
-        LinearProgressIndicator(
-            progress = { fraction },
-            color = color,
-            modifier = Modifier.fillMaxWidth()
+    val track = MaterialTheme.colorScheme.surfaceVariant
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(68.dp)) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val stroke = 10f
+                val diameter = size.minDimension - stroke
+                val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+                val arcSize = Size(diameter, diameter)
+                drawArc(
+                    color = track,
+                    startAngle = 0f,
+                    sweepAngle = 360f,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = stroke)
+                )
+                drawArc(
+                    color = color,
+                    startAngle = -90f,
+                    sweepAngle = 360f * fraction,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = stroke, cap = StrokeCap.Round)
+                )
+            }
+            Text("${current.roundToInt()}", style = MaterialTheme.typography.titleSmall)
+        }
+        Text(label, style = MaterialTheme.typography.labelSmall)
+        Text(
+            if (goal > 0.0) "of ${goal.roundToInt()}" else "—",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
