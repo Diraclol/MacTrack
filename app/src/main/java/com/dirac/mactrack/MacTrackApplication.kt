@@ -12,10 +12,12 @@ import com.dirac.mactrack.data.repository.MealTemplateRepository
 import com.dirac.mactrack.data.repository.ThemeRepository
 import com.dirac.mactrack.data.cnf.CnfRepository
 import com.dirac.mactrack.data.cart.CartRepository
+import com.dirac.mactrack.data.MIGRATION_1_2
 
 class MacTrackApplication : Application() {
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, "mactrack.db")
+            .addMigrations(MIGRATION_1_2)
             .build()
     }
     val foodRepository: FoodRepository by lazy {

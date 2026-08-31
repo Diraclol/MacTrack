@@ -3,6 +3,7 @@ package com.dirac.mactrack.data.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.UUID
+import androidx.room.ColumnInfo
 
 @Entity(tableName = "meal_entries")
 data class MealEntry(
@@ -24,5 +25,12 @@ data class MealEntry(
     val sodiumMg: Double = 0.0,
     val potassiumMg: Double = 0.0,
     val cholesterolMg: Double = 0.0,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    // Where this logged food came from, so it can be reopened, re-logged, and analysed later.
+    @ColumnInfo(defaultValue = "unknown")
+    val sourceType: String = "unknown",   // cnf | custom | quick | recipe | branded | unknown
+    val sourceId: String? = null,         // CNF code, FoodItem id, or barcode
+    val unitLabel: String? = null,        // portion the user picked, e.g. "1 slice"
+    @ColumnInfo(defaultValue = "0")
+    val updatedAt: Long = 0L
 )
