@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.MealEntry
+import com.dirac.mactrack.data.food.foodEmoji
 import com.dirac.mactrack.ui.common.NumberPad
 import com.dirac.mactrack.ui.common.PadAction
 import java.time.LocalDate
@@ -200,6 +201,7 @@ private fun TotalStat(modifier: Modifier, label: String, consumed: Double, goal:
 private fun FoodCard(entry: MealEntry, onClick: () -> Unit, onDelete: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(foodEmoji(entry.foodName), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(entry.foodName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                 Text(
