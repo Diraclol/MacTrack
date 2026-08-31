@@ -197,6 +197,22 @@ workout integration; and a heat-map calendar (the dashboard streak grid is a sta
 also wanted (there is a `.github/` dir). None of these are scheduled yet -- the near-term
 focus is the UI/UX pass above.
 
+## Work session notes (2026-08-31)
+
+Working the queue one buildable + verified + committed step at a time; Dirac builds/tests on
+return. Verification is done with review.
+
+- **Gemini key**: Dirac has a Gemini API key (currently powering his homelab) that can be
+  shared for the app's AI features and exposes many models. Confirms the AI plan (admin runs
+  it / BYO key). Still much later.
+
+Decisions to confirm when back (I did NOT guess these):
+- **Search "Recipes" vs "Foods" tabs**: recipes currently become plain `FoodItem`s with no
+  flag, so search can't tell a recipe-derived food from a normal one. Splitting those tabs
+  needs a marker on `FoodItem` (a real `Migration`) or a different model. Parked.
+- **"Recent" re-log**: `quick`/`unknown` recent entries have no `sourceId`, so they can't
+  reopen their source food -- they'd need a snapshot re-log path. Design TBD.
+
 ## Known issues worth fixing when nearby
 
 - **Goals are read as "latest", not "as of that date."** `GoalRepository.getLatestGoal()`
