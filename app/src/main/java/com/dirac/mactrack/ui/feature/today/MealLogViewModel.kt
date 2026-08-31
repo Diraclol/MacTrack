@@ -9,6 +9,16 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dirac.mactrack.MacTrackApplication
 import com.dirac.mactrack.data.entity.Goal
 import com.dirac.mactrack.data.entity.MealEntry
+import com.dirac.mactrack.data.cnf.CnfRepository
+import com.dirac.mactrack.data.food.FoodDetail
+import com.dirac.mactrack.data.food.PortionUnit
+import com.dirac.mactrack.data.food.entryFoodDetail
+import com.dirac.mactrack.data.food.stagePortion
+import com.dirac.mactrack.data.repository.FoodRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 import com.dirac.mactrack.data.repository.GoalRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,7 +29,9 @@ import java.time.LocalDate
 
 class MealLogViewModel(
     private val mealEntryRepository: MealEntryRepository,
-    private val goalRepository: GoalRepository
+    private val goalRepository: GoalRepository,
+    private val cnfRepository: CnfRepository,
+    private val foodRepository: FoodRepository
 ) : ViewModel() {
 
     private val today: String = LocalDate.now().toString()
@@ -29,6 +41,44 @@ class MealLogViewModel(
 
     val goal: StateFlow<Goal?> = goalRepository.getLatestGoal()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    // The full portion list for the entry being edited in the bottom sheet, loaded lazily so
+    // the pad can offer every unit, not just the one that was logged. Null until it loads; the
+    // sheet uses a synchronous snapshot fallback meanwhile.
+    private val _editDetail = MutableStateFlow<FoodDetail?>(null)
+    val editDetail: StateFlow<FoodDetail?> = _editDetail.asStateFlow()
+
+    fun loadEditDetail(entry: MealEntry) {
+        _editDetail.value = null
+        viewModelScope.launch {
+            _editDetail.value = withContext(Dispatchers.IO) {
+                entryFoodDetail(entry, cnfRepository, foodRepository)
+            }
+        }
+    }
+
+    fun clearEditDetail() {
+        _editDetail.value = null
+    }
+
+    // Rewrite an entry to a new amount + unit using that unit's per-unit values (same row id).
+    fun updateEntry(entry: MealEntry, amount: Double, unit: PortionUnit) {
+        if (amount <= 0.0) return
+        val staged = stagePortion(amount, unit)
+        val s = staged.nutrients
+        viewModelScope.launch {
+            mealEntryRepository.logEntry(
+                entry.copy(
+                    amount = amount, quantity = staged.quantity, unit = staged.unit,
+                    calories = s.kcal, proteinG = s.protein, carbG = s.carb, fatG = s.fat,
+                    fiberG = s.fiber, sugarG = s.sugar, satFatG = s.satFat,
+                    sodiumMg = s.sodium, potassiumMg = s.potassium, cholesterolMg = s.cholesterol,
+                    unitLabel = unit.label,
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
+        }
+    }
 
     fun deleteEntry(entry: MealEntry) {
         viewModelScope.launch { mealEntryRepository.deleteEntry(entry) }
@@ -63,7 +113,7 @@ class MealLogViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                MealLogViewModel(app.mealEntryRepository, app.goalRepository)
+                MealLogViewModel(app.mealEntryRepository, app.goalRepository, app.cnfRepository, app.foodRepository)
             }
         }
     }

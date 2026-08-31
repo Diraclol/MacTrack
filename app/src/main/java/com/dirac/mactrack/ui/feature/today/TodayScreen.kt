@@ -25,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.MealEntry
 import com.dirac.mactrack.data.food.foodEmoji
+import com.dirac.mactrack.data.food.mealEntryDetail
 import com.dirac.mactrack.ui.common.NumberPad
 import com.dirac.mactrack.ui.common.PadAction
 import java.time.LocalDate
@@ -159,8 +161,17 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
     val e = editing
     if (e != null) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        var amount by remember(e) { mutableStateOf(servings(e.quantity)) }
-        ModalBottomSheet(onDismissRequest = { editing = null }, sheetState = sheetState) {
+        val editDetail by viewModel.editDetail.collectAsState()
+        // Synchronous snapshot (the single logged unit) shown until the full portion list loads.
+        val snapshotDetail = remember(e) { mealEntryDetail(e) }
+        val detail = editDetail ?: snapshotDetail
+        var amount by remember(e) { mutableStateOf(servings(e.amount)) }
+        var selectedUnit by remember(e) { mutableStateOf(e.unitLabel ?: e.unit) }
+        LaunchedEffect(e) { viewModel.loadEditDetail(e) }
+        ModalBottomSheet(
+            onDismissRequest = { editing = null; viewModel.clearEditDetail() },
+            sheetState = sheetState
+        ) {
             Text(
                 e.foodName,
                 style = MaterialTheme.typography.titleLarge,
@@ -169,17 +180,21 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
             NumberPad(
                 value = amount,
                 onValueChange = { amount = it },
-                units = listOf(e.unit),
-                selectedUnit = e.unit,
-                onUnitSelect = {},
+                units = detail.units.map { it.label },
+                selectedUnit = selectedUnit,
+                onUnitSelect = { selectedUnit = it },
                 actions = listOf(
                     PadAction("Details", onClick = {
                         editing = null
+                        viewModel.clearEditDetail()
                         onOpenEntry(e.id)
                     }),
                     PadAction("Done", primary = true, onClick = {
-                        amount.toDoubleOrNull()?.let { if (it > 0) viewModel.updateEntryQuantity(e, it) }
+                        val amt = amount.toDoubleOrNull() ?: 0.0
+                        val unit = detail.units.find { it.label == selectedUnit } ?: detail.units.firstOrNull()
+                        if (amt > 0.0 && unit != null) viewModel.updateEntry(e, amt, unit)
                         editing = null
+                        viewModel.clearEditDetail()
                     })
                 ),
                 modifier = Modifier.padding(bottom = 24.dp)

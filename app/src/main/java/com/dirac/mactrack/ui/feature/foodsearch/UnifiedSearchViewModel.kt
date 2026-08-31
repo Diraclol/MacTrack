@@ -75,7 +75,7 @@ class UnifiedSearchViewModel(
             val unit = detail.units.find { it.label == detail.defaultUnitLabel }
                 ?: detail.units.firstOrNull() ?: return@launch
             val staged = stagePortion(detail.defaultAmount, unit)
-            cartRepository.add(CartItem(name = detail.name, quantity = staged.quantity, unit = staged.unit, nutrients = staged.nutrients, sourceType = source, sourceId = id, unitLabel = unit.label))
+            cartRepository.add(CartItem(name = detail.name, quantity = staged.quantity, amount = detail.defaultAmount, unit = staged.unit, nutrients = staged.nutrients, sourceType = source, sourceId = id, unitLabel = unit.label))
         }
     }
 
@@ -90,7 +90,7 @@ class UnifiedSearchViewModel(
                 mealEntryRepository.logEntry(
                     MealEntry(
                         date = today, timeMinutes = tm, foodName = ci.name,
-                        amount = ci.quantity, quantity = ci.quantity, unit = ci.unit,
+                        amount = ci.amount, quantity = ci.quantity, unit = ci.unit,
                         calories = ci.nutrients.kcal, proteinG = ci.nutrients.protein, carbG = ci.nutrients.carb, fatG = ci.nutrients.fat,
                         fiberG = ci.nutrients.fiber, sugarG = ci.nutrients.sugar, satFatG = ci.nutrients.satFat,
                         sodiumMg = ci.nutrients.sodium, potassiumMg = ci.nutrients.potassium, cholesterolMg = ci.nutrients.cholesterol,

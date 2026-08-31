@@ -10,6 +10,7 @@ data class CartItem(
     val id: String = UUID.randomUUID().toString(),
     val name: String,
     val quantity: Double,
+    val amount: Double,
     val unit: String,
     val nutrients: Nutrients,
     val sourceType: String = "unknown",
