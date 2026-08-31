@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.data.food.foodEmoji
 import com.dirac.mactrack.ui.common.BackBar
 import com.dirac.mactrack.ui.common.NumberPad
 import com.dirac.mactrack.ui.common.PadAction
@@ -117,7 +118,7 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onAdded: 
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            BackBar(d.name, onBack, modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp))
+            BackBar("${foodEmoji(d.name)}  ${d.name}", onBack, modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp))
 
             // scrollable content
             Column(
