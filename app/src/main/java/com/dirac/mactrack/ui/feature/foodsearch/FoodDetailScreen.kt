@@ -58,7 +58,7 @@ private fun fmtAmount(a: Double): String =
     if (a % 1.0 == 0.0) a.toInt().toString() else a.toString()
 
 @Composable
-fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
+fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onAdded: () -> Unit = onLogged, onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
     val viewModel: FoodDetailViewModel = viewModel(factory = FoodDetailViewModel.Factory)
     val detail by viewModel.detail.collectAsState()
     val goal by viewModel.goal.collectAsState()
@@ -98,7 +98,7 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onBack: (
         val now = LocalTime.now()
         viewModel.log(amt, unit, now.hour * 60 + now.minute, onLogged)
     }
-    fun doAdd() { viewModel.addToCart(amt, unit); onLogged() }
+    fun doAdd() { viewModel.addToCart(amt, unit); onAdded() }
     fun doDone() { if (amt > 0.0) viewModel.updateEntry(amt, unit, onLogged) else onLogged() }
     val isEntry = source == "entry"
 

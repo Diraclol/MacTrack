@@ -151,7 +151,13 @@ fun MacTrackApp() {
                 FoodDetailScreen(
                     source = source,
                     id = id,
-                    onLogged = { navController.popBackStack() },
+                    onLogged = {
+                        navController.navigate(Destination.FOOD_LOG.route) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
+                    onAdded = { navController.popBackStack() },
                     onBack = { navController.popBackStack() }
                 )
             }
