@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -56,9 +58,11 @@ fun MoreScreen(
     val weightViewModel: WeightViewModel = viewModel(factory = WeightViewModel.Factory)
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
     val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
+    val statsViewModel: MoreStatsViewModel = viewModel(factory = MoreStatsViewModel.Factory)
     val themeMode by themeViewModel.mode.collectAsState()
     val weights by weightViewModel.weights.collectAsState()
     val profile by profileViewModel.profile.collectAsState()
+    val stats by statsViewModel.stats.collectAsState()
     var weight by remember { mutableStateOf("") }
     val context = LocalContext.current
     val versionName = remember {
@@ -93,6 +97,14 @@ fun MoreScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        StatItem("Active streak", "${stats.activeStreak} days")
+                        StatItem("Longest streak", "${stats.longestStreak} days")
+                        StatItem("Total tracked", "${stats.totalTracked} days")
                     }
                     val p = profile
                     if (p == null) {
@@ -210,5 +222,17 @@ private fun MoreCard(label: String, onClick: () -> Unit) {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun RowScope.StatItem(label: String, value: String) {
+    Column(modifier = Modifier.weight(1f)) {
+        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
