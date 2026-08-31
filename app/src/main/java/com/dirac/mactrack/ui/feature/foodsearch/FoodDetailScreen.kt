@@ -99,6 +99,8 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onBack: (
         viewModel.log(amt, unit, now.hour * 60 + now.minute, onLogged)
     }
     fun doAdd() { viewModel.addToCart(amt, unit); onLogged() }
+    fun doDone() { if (amt > 0.0) viewModel.updateEntry(amt, unit, onLogged) else onLogged() }
+    val isEntry = source == "entry"
 
     // First key press after the pad opens replaces the prefilled amount instead of appending.
     fun onPadValue(new: String) {
@@ -127,8 +129,12 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onBack: (
                 }
 
                 ContributionCard(
+                    title = if (isEntry) "Contribution to Daily Goal" else "Contribution to Remaining Daily Macros",
                     protein = s.protein, carb = s.carb, fat = s.fat, calories = s.kcal,
-                    remProtein = remP, remCarb = remC, remFat = remF, remCalories = remCal
+                    remProtein = if (isEntry) goal?.proteinGoalG else remP,
+                    remCarb = if (isEntry) goal?.carbGoalG else remC,
+                    remFat = if (isEntry) goal?.fatGoalG else remF,
+                    remCalories = if (isEntry) goal?.calorieGoal else remCal
                 )
 
                 HorizontalDivider()
@@ -162,8 +168,12 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onBack: (
                             Text(unitLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                    OutlinedButton(onClick = { doLog() }) { Text("Log") }
-                    Button(onClick = { doAdd() }) { Text("Add") }
+                    if (isEntry) {
+                        Button(onClick = { doDone() }) { Text("Done") }
+                    } else {
+                        OutlinedButton(onClick = { doLog() }) { Text("Log") }
+                        Button(onClick = { doAdd() }) { Text("Add") }
+                    }
                 }
             }
         }
@@ -187,7 +197,9 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onBack: (
                     units = d.units.map { it.label },
                     selectedUnit = unitLabel,
                     onUnitSelect = { unitLabel = it },
-                    actions = listOf(
+                    actions = if (isEntry) listOf(
+                        PadAction("Done", primary = true, onClick = { doDone() })
+                    ) else listOf(
                         PadAction("Log", onClick = { doLog() }),
                         PadAction("Add", primary = true, onClick = { doAdd() })
                     ),
@@ -200,6 +212,7 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onBack: (
 
 @Composable
 private fun ContributionCard(
+    title: String,
     protein: Double,
     carb: Double,
     fat: Double,
@@ -214,7 +227,7 @@ private fun ContributionCard(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text("Contribution to Remaining Daily Macros", style = MaterialTheme.typography.titleSmall)
+            Text(title, style = MaterialTheme.typography.titleSmall)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ContribColumn("P", protein, remProtein, ProteinColor, Modifier.weight(1f))
                 ContribColumn("C", carb, remCarb, CarbColor, Modifier.weight(1f))

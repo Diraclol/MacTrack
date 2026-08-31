@@ -19,6 +19,9 @@ interface MealEntryDao {
     @Query("SELECT DISTINCT date FROM meal_entries WHERE date >= :since")
     fun getLoggedDates(since: String): Flow<List<String>>
 
+    @Query("SELECT * FROM meal_entries WHERE id = :id")
+    suspend fun getById(id: String): MealEntry?
+
     @Delete
     suspend fun delete(entry: MealEntry)
 }

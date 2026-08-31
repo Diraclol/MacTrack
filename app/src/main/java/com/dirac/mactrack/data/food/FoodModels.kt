@@ -3,6 +3,7 @@ package com.dirac.mactrack.data.food
 import com.dirac.mactrack.data.cnf.CnfFood
 import com.dirac.mactrack.data.cnf.CnfMeasure
 import com.dirac.mactrack.data.entity.FoodItem
+import com.dirac.mactrack.data.entity.MealEntry
 
 data class Nutrients(
     val kcal: Double, val protein: Double, val carb: Double, val fat: Double,
@@ -74,6 +75,19 @@ fun foodItemDetail(food: FoodItem): FoodDetail {
         }
     }
     return FoodDetail(food.name, units, defaultUnitLabel = "serving", defaultAmount = 1.0)
+}
+
+// Reopen a logged entry when we cannot (or need not) reload its source food: rebuild a
+// single-unit FoodDetail from the frozen snapshot. Per-unit nutrients = snapshot / amount.
+fun mealEntryDetail(entry: MealEntry): FoodDetail {
+    val amt = if (entry.amount > 0.0) entry.amount else 1.0
+    val perUnit = Nutrients(
+        entry.calories, entry.proteinG, entry.carbG, entry.fatG, entry.fiberG, entry.sugarG,
+        entry.satFatG, entry.sodiumMg, entry.potassiumMg, entry.cholesterolMg
+    ) * (1.0 / amt)
+    val label = entry.unitLabel ?: entry.unit
+    val units = listOf(PortionUnit(label, perUnit, grams = null))
+    return FoodDetail(entry.foodName, units, defaultUnitLabel = label, defaultAmount = amt)
 }
 
 data class Staged(val quantity: Double, val unit: String, val nutrients: Nutrients)

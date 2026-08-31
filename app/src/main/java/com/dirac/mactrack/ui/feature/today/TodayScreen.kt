@@ -60,7 +60,7 @@ private fun hourLabel(hour: Int): String {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TodayScreen(onOpenSearch: () -> Unit, modifier: Modifier = Modifier) {
+fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifier: Modifier = Modifier) {
     val viewModel: MealLogViewModel = viewModel(factory = MealLogViewModel.Factory)
     val entries by viewModel.todayEntries.collectAsState()
     val goal by viewModel.goal.collectAsState()
@@ -168,7 +168,11 @@ fun TodayScreen(onOpenSearch: () -> Unit, modifier: Modifier = Modifier) {
                 selectedUnit = e.unit,
                 onUnitSelect = {},
                 actions = listOf(
-                    PadAction("Save", primary = true, onClick = {
+                    PadAction("Details", onClick = {
+                        editing = null
+                        onOpenEntry(e.id)
+                    }),
+                    PadAction("Done", primary = true, onClick = {
                         amount.toDoubleOrNull()?.let { if (it > 0) viewModel.updateEntryQuantity(e, it) }
                         editing = null
                     })

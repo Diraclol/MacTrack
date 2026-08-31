@@ -107,7 +107,10 @@ fun MacTrackApp() {
         ) {
             composable(Destination.DASHBOARD.route) { DashboardScreen() }
             composable(Destination.FOOD_LOG.route) {
-                TodayScreen(onOpenSearch = { navController.navigate("food_search") })
+                TodayScreen(
+                    onOpenSearch = { navController.navigate("food_search") },
+                    onOpenEntry = { entryId -> navController.navigate("food_detail/entry/$entryId") }
+                )
             }
             composable(Destination.MORE.route) {
                 MoreScreen(

@@ -8,5 +8,6 @@ class MealEntryRepository(private val mealEntryDao: MealEntryDao) {
     fun getEntriesForDate(date: String): Flow<List<MealEntry>> = mealEntryDao.getForDate(date)
     fun getLoggedDates(since: String): Flow<List<String>> = mealEntryDao.getLoggedDates(since)
     suspend fun logEntry(entry: MealEntry) = mealEntryDao.insert(entry)
+    suspend fun getEntry(id: String): MealEntry? = mealEntryDao.getById(id)
     suspend fun deleteEntry(entry: MealEntry) = mealEntryDao.delete(entry)
 }
