@@ -37,6 +37,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 
 private fun servingText(amount: Double): String =
     if (amount % 1.0 == 0.0) amount.toInt().toString() else amount.toString()
@@ -55,6 +56,7 @@ fun UnifiedSearchScreen(
     val cartCount by viewModel.cartCount.collectAsState()
     val focusManager = LocalFocusManager.current
     var showDiscardDialog by remember { mutableStateOf(false) }
+    var barcode by remember { mutableStateOf("") }
 
     // back should guard when the cart has items
     fun attemptBack() {
@@ -76,6 +78,21 @@ fun UnifiedSearchScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
         )
+        // Temporary barcode entry to test Open Food Facts lookups until camera scanning lands.
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = barcode,
+                onValueChange = { barcode = it },
+                label = { Text("Barcode (Open Food Facts)") },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { if (barcode.isNotBlank()) onOpenFood("branded", barcode.trim()) })
+            )
+            Button(onClick = { if (barcode.isNotBlank()) onOpenFood("branded", barcode.trim()) }, enabled = barcode.isNotBlank()) {
+                Text("Look up")
+            }
+        }
         LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (custom.isNotEmpty()) {
                 item { Text("Custom", style = MaterialTheme.typography.titleSmall) }

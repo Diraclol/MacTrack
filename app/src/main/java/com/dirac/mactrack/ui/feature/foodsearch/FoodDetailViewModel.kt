@@ -18,6 +18,7 @@ import com.dirac.mactrack.data.food.cnfFoodDetail
 import com.dirac.mactrack.data.food.foodItemDetail
 import com.dirac.mactrack.data.food.mealEntryDetail
 import com.dirac.mactrack.data.food.stagePortion
+import com.dirac.mactrack.data.off.OpenFoodFactsRepository
 import com.dirac.mactrack.data.repository.FoodRepository
 import com.dirac.mactrack.data.repository.GoalRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
@@ -34,6 +35,7 @@ import java.time.LocalDate
 class FoodDetailViewModel(
     private val foodRepository: FoodRepository,
     private val cnfRepository: CnfRepository,
+    private val openFoodFactsRepository: OpenFoodFactsRepository,
     private val cartRepository: CartRepository,
     private val mealEntryRepository: MealEntryRepository,
     goalRepository: GoalRepository
@@ -48,6 +50,11 @@ class FoodDetailViewModel(
     private val _detail = MutableStateFlow<FoodDetail?>(null)
     val detail: StateFlow<FoodDetail?> = _detail.asStateFlow()
 
+    // False while a load is in flight; true once it finishes (so the screen can tell "loading"
+    // apart from "loaded but nothing found" -- e.g. an offline or unknown barcode).
+    private val _loaded = MutableStateFlow(false)
+    val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
+
     val goal: StateFlow<Goal?> = goalRepository.getLatestGoal()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
@@ -57,6 +64,7 @@ class FoodDetailViewModel(
     fun load(source: String, id: String) {
         loadedSourceType = source
         loadedSourceId = id
+        _loaded.value = false
         viewModelScope.launch {
             val d = withContext(Dispatchers.IO) {
                 when (source) {
@@ -64,6 +72,7 @@ class FoodDetailViewModel(
                         cnfFoodDetail(f, cnfRepository.measures(f.code))
                     }
                     "custom" -> foodRepository.getFood(id)?.let { foodItemDetail(it) }
+                    "branded" -> openFoodFactsRepository.lookup(id)
                     "entry" -> {
                         val e = mealEntryRepository.getEntry(id)
                         loadedEntry = e
@@ -73,6 +82,7 @@ class FoodDetailViewModel(
                 }
             }
             _detail.value = d
+            _loaded.value = true
         }
     }
 
@@ -145,7 +155,7 @@ class FoodDetailViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                FoodDetailViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository, app.goalRepository)
+                FoodDetailViewModel(app.foodRepository, app.cnfRepository, app.openFoodFactsRepository, app.cartRepository, app.mealEntryRepository, app.goalRepository)
             }
         }
     }

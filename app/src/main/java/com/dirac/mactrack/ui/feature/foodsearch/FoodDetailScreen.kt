@@ -61,6 +61,7 @@ private fun fmtAmount(a: Double): String =
 fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onAdded: () -> Unit = onLogged, onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
     val viewModel: FoodDetailViewModel = viewModel(factory = FoodDetailViewModel.Factory)
     val detail by viewModel.detail.collectAsState()
+    val loaded by viewModel.loaded.collectAsState()
     val goal by viewModel.goal.collectAsState()
     val todayEntries by viewModel.todayEntries.collectAsState()
 
@@ -68,7 +69,12 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onAdded: 
 
     val d = detail
     if (d == null || d.units.isEmpty()) {
-        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Loading…") }
+        val message = when {
+            !loaded -> "Loading…"
+            source == "branded" -> "Couldn't find that food. It may not be in Open Food Facts, or you're offline."
+            else -> "Couldn't find that food."
+        }
+        Box(modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) { Text(message) }
         return
     }
 
