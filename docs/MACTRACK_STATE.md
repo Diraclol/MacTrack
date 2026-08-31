@@ -41,12 +41,14 @@ screenshot. We are NOT copying MacroFactor's whole feature set — only what's l
 
 **Food detail.** Shift the content down slightly.
 
-**Navigation / More screen.**
-- Profile moves to the top of the More page.
-- One combined screen to browse foods, recipes, and meals together (replaces the separate
-  Saved Foods / Meals / Recipes entries).
-- Quick Add moves out of More onto the food search screen (part of the search overhaul).
-- Retire the standalone food-search entry in More (search is reachable from the food log).
+**Navigation / More screen.** Target (per MacroFactor's More): a profile header on top -- name,
+"member since", avatar, and streak stats (active / longest / total-tracked days) -- then card
+rows with icons. Local-first, so no Friends/Subscription rows.
+- (done) One combined "Saved Foods, Meals & Recipes" screen (`ui/feature/library/LibraryScreen`,
+  tabs Foods/Recipes/Meals) replaces the three separate entries; the standalone Search-foods
+  entry is retired (search lives on the food log).
+- Still to do: move the profile block to the top with streak stats and restyle rows as cards;
+  move Quick Add out of More onto the search screen (part of the search overhaul).
 
 **Barcode scanning (queue task 6, wanted sooner).** ML Kit; needs the physical device and a
 new dependency — confirm before adding it. Later, Open Food Facts as a "Branded" source
@@ -151,6 +153,27 @@ cart. Pre-v2 rows stay `sourceType = 'unknown'`. Verified in the Database Inspec
    Adaptive expenditure engine. A cleanup pass to extract shared composables (the ring
    composable is duplicated between the dashboard and the food detail screen). KMP.
    JSON backup and export.
+
+## Captured ideas (from MacroFactor screenshots, not yet scheduled)
+
+- **Global "+" FAB** (bottom-right) opening a sheet: food search, Quick Track/Quick Add,
+  barcode, and Create Food / Create Meal / Create Recipe (no alcoholic-bev), plus Log weight /
+  Log water.
+- **Dashboard redesign**: a weekly macro bar chart with a day selector; stat tiles showing
+  "X of goal" plus a period average; Weigh-in / Food Log (heat-map dots) / Weight / Steps
+  widgets; a docked food-search bar.
+- **Food icons**: an emoji per food (bundled emoji, keyword-matched on the food name; store an
+  optional `iconEmoji` on `FoodItem`, fall back to a category default). No network, no assets.
+- **Export logs as JSON** (and maybe `.csv`/`.xlsx`) -- part of import/export. JSON first:
+  serialize `meal_entries` (+ goals/profile) with kotlinx.serialization, write via the Storage
+  Access Framework so the user picks the destination. Import is the harder half (do later).
+- **Nutrition Report screen** (per-macro progress + carb detail: fiber, sugars, added sugars,
+  sugar alcohols, starch -- note we only track a subset without a `cnf.db` rebuild) and a meal
+  "..." menu (Copy Day, Reorder Meals, Day Notes, Log Water, Export Meal History, Delete
+  Today's Foods).
+- **Google Fit / Health Connect** steps integration (tentative yes; Health Connect is the
+  modern path on Android).
+- A **README** with app screenshots, and a **wiki / knowledge base** -- both later.
 
 ## Longer-term vision (from the foundation roadmap, `Desktop/MacTrack.txt`)
 
