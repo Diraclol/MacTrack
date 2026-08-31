@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -67,36 +70,16 @@ fun UnifiedSearchScreen(
     // intercept the system back gesture the same way
     BackHandler(enabled = true) { attemptBack() }
 
-    Column(modifier = modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        BackBar("Search foods", onBack = { attemptBack() })
+    // imePadding lifts the docked bottom bar above the keyboard when it opens.
+    Column(modifier = modifier.fillMaxSize().imePadding()) {
+        BackBar("Search foods", onBack = { attemptBack() }, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
 
-        OutlinedTextField(
-            value = query,
-            onValueChange = { viewModel.onQueryChange(it) },
-            label = { Text("Search foods") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
-        )
-        // Temporary barcode entry to test Open Food Facts lookups until camera scanning lands.
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(
-                value = barcode,
-                onValueChange = { barcode = it },
-                label = { Text("Barcode (Open Food Facts)") },
-                modifier = Modifier.weight(1f),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { if (barcode.isNotBlank()) onOpenFood("branded", barcode.trim()) })
-            )
-            Button(onClick = { if (barcode.isNotBlank()) onOpenFood("branded", barcode.trim()) }, enabled = barcode.isNotBlank()) {
-                Text("Look up")
-            }
-        }
-        LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             if (custom.isNotEmpty()) {
-                item { Text("Custom", style = MaterialTheme.typography.titleSmall) }
+                item { Text("Foods", style = MaterialTheme.typography.titleSmall) }
                 items(items = custom, key = { "c_" + it.id }) { food ->
                     FoodRow(
                         name = food.name,
@@ -118,11 +101,42 @@ fun UnifiedSearchScreen(
                 }
             }
         }
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Cart: $cartCount", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-            Button(onClick = { viewModel.logCart(onLoggedCart) }, enabled = cartCount > 0) {
-                Text("Log Foods")
+
+        // Docked bottom bar: cart action, temporary barcode entry, and the rounded search
+        // field pinned to the bottom (it rises with the keyboard via imePadding above).
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Cart: $cartCount", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                Button(onClick = { viewModel.logCart(onLoggedCart) }, enabled = cartCount > 0) {
+                    Text("Log Foods")
+                }
             }
+            // Temporary barcode entry to test Open Food Facts lookups until camera scanning lands.
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = barcode,
+                    onValueChange = { barcode = it },
+                    label = { Text("Barcode") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { if (barcode.isNotBlank()) onOpenFood("branded", barcode.trim()) })
+                )
+                Button(onClick = { if (barcode.isNotBlank()) onOpenFood("branded", barcode.trim()) }, enabled = barcode.isNotBlank()) {
+                    Text("Look up")
+                }
+            }
+            OutlinedTextField(
+                value = query,
+                onValueChange = { viewModel.onQueryChange(it) },
+                placeholder = { Text("Search for a food") },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                shape = RoundedCornerShape(28.dp),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
+            )
         }
     }
 
