@@ -4,29 +4,80 @@ Accurate as of 2026-08-31.
 
 ## Where we are
 
-MVP is done and working on a real Pixel. Recent commits, newest first:
+MVP is done and working on a real Pixel. Recent work, newest first — all built and verified
+on device:
 
-- `DB v2: meal_entries gains source provenance` — schema v2 with a real `Migration(1,2)`
-- `Food detail: contribution card, pad open on entry`
-- `Add inline quantity edit on the Food Log`
+- `Food detail: Log and Done return to the food log` (Add still returns to search)
+- `Reopen a logged entry in the food detail screen` — queue tasks 1 and 2, done
+- `Write source provenance at every log site (2b)` — 2b, done
+- `Cart: carry source provenance on CartItem`
 
-The next task (2b below) is specified in full and has not been started.
+Schema is v2 (real `Migration(1,2)`), provenance is written at every log site, and a logged
+entry can be reopened in the full detail screen. Current focus is the MacroFactor UI/UX pass
+Dirac is speccing (next section), then the remaining queue.
+
+## Current UI/UX focus (MacroFactor polish)
+
+A visual pass to look and feel more like MacroFactor; `MACROFACTOR_REFERENCE.md` has the
+target screens. Requested by Dirac, grouped. One buildable step at a time; he reviews each by
+screenshot. We are NOT copying MacroFactor's whole feature set — only what's listed.
+
+**Search overhaul (this is queue task 4, expanded).**
+- Category tabs: All / Foods / Recipes / Meals.
+- Empty query shows, in order: Recent (recently logged, from `meal_entries`), then Saved
+  (all foods, meals, recipes), then Common (CNF).
+- Results appear in rounded boxes when typing.
+- A Quick Add entry point on this screen.
+- Top-right control to commit staged foods to the log, with calories-added-of-budget beside
+  it (MacroFactor's `X / 2500`).
+- Search field docked above the keyboard.
+
+**Food log.**
+- Day navigation: arrows on each end of the header to switch days. Surfaces the "goal as of
+  date" known issue below — fix `getLatestGoal` when this lands.
+- Each hour block shows its total macros (P/C/F plus cal), not just calories; brighter and
+  more readable.
+- Calorie numbers on the right want a "cal" label to read right.
+
+**Food detail.** Shift the content down slightly.
+
+**Navigation / More screen.**
+- Profile moves to the top of the More page.
+- One combined screen to browse foods, recipes, and meals together (replaces the separate
+  Saved Foods / Meals / Recipes entries).
+- Quick Add moves out of More onto the food search screen (part of the search overhaul).
+- Retire the standalone food-search entry in More (search is reachable from the food log).
+
+**Barcode scanning (queue task 6, wanted sooner).** ML Kit; needs the physical device and a
+new dependency — confirm before adding it. Later, Open Food Facts as a "Branded" source
+mapped into `FoodDetail` with the barcode as `sourceId`.
+
+**Goals.** A "reassess" action on the Goals screen re-runs onboarding, but only for activity
+level, goal type, protein level, and fat level; everything else (sex, age, height, weight)
+stays as-is. It recomputes the `Goal` (Mifflin-St Jeor) and writes a NEW `Goal` row so goal
+history is preserved for the "goal as of date" fix. To enable this, split onboarding into
+separate per-step pages (activity, goal, protein, fat, ...) as reusable composables, so the
+reassess flow can present just the four relevant steps instead of the whole thing.
+
+**Global.** More color across the app (specifics pending from Dirac).
 
 ## What is built and working
 
 Onboarding with static Mifflin-St Jeor producing a `Goal` and `UserProfile`. Light, dark,
 and system theming via SharedPreferences. Floating bottom nav on the three tab routes.
 Dashboard with calorie ring, macro bars, and a 30-day logging streak grid. Time-based food
-log (date header, Cal/P/F/C "left" strip, hour pills with subtotals, food cards with a
-calories number, bottom search bar). Tap a logged entry to rescale its amount in a
-bottom-sheet number pad. Unified food search across custom foods and CNF, into a shared
-food detail screen. Cart staging (`+` on a search row, "Log Foods" to commit). Saved meals,
+log (date header, Cal/P/F/C "left" strip, hour pills with subtotals, food cards). Tap a
+logged entry to rescale it in a bottom-sheet number pad, or open Details to reopen it in the
+full detail screen. Unified food search across custom foods and CNF, into a shared food
+detail screen. Cart staging (`+` on a search row, "Log Foods" to commit). Saved meals,
 recipes (one-way into a `FoodItem`), weight logging, Quick Add.
 
-The food detail screen currently: opens with the number pad up over a dim scrim, first key
-press replaces the prefilled amount, tapping the scrim drops the pad to a docked bar with
-the amount box plus Log and Add, and shows calorie and macro rings, a "Contribution to
-Remaining Daily Macros" card, and a micronutrient list.
+The food detail screen opens with the number pad up over a dim scrim; the first key press
+replaces the prefilled amount; tapping the scrim drops the pad to a docked bar. It shows
+calorie and macro rings, a contribution card, and a micronutrient list. For a food it offers
+Log and Add; reopened as an entry (`source == "entry"`) it offers a single Done, reloads the
+real food's full portion list from `sourceId` (snapshot fallback for quick/unknown rows), and
+measures the card against the full daily goal.
 
 Nutrients tracked: 4 macros plus 6 micros (fiber g, sugar g, saturated fat g, sodium mg,
 potassium mg, cholesterol mg). CNF has fiber, sodium and potassium but never caffeine.
@@ -56,93 +107,37 @@ Columns added in v2: `sourceType` (`cnf` | `custom` | `quick` | `recipe` | `bran
 v2 carry `sourceType = 'unknown'` with nulls, permanently — every read path needs a
 snapshot-derived fallback for them.
 
-## NEXT TASK — 2b: write provenance at every log site
+## 2b (done): provenance at every log site
 
-Schema v2 exists but nothing populates the new columns yet. Five write sites plus the cart.
-All edits are additive. Nothing should change visually.
+Every write path sets `sourceType`/`sourceId`/`unitLabel`/`updatedAt`: food detail
+`log`/`addToCart`, unified search `addToCart`/`logCart`, quick add (`quick`), meal templates
+(`custom`), and the rescale path (`updatedAt`); `CartItem` carries the fields through the
+cart. Pre-v2 rows stay `sourceType = 'unknown'`. Verified in the Database Inspector.
 
-**`data/cart/Cart.kt`** — the cart sits between the food and the log, so it has to carry
-the fields. Add to `CartItem`, after `nutrients`:
+## Queue
 
-```kotlin
-    val sourceType: String = "unknown",
-    val sourceId: String? = null,
-    val unitLabel: String? = null
-```
+1. **(done) Reopen entries / `mealEntryDetail`.** Reopening a logged food reloads the real
+   food from `sourceId` for the full portion list, preselecting the logged unit; snapshot
+   fallback for quick/unknown rows or a deleted food. `mealEntryDetail` lives in
+   `FoodModels.kt`.
 
-**`ui/feature/foodsearch/FoodDetailViewModel.kt`** — remember what the screen was opened
-with. Add fields above `_detail`:
-
-```kotlin
-    private var loadedSourceType: String = "unknown"
-    private var loadedSourceId: String? = null
-```
-
-Record them at the top of `load(source, id)`, before `viewModelScope.launch`. Then in
-`addToCart`, pass `sourceType = loadedSourceType, sourceId = loadedSourceId,
-unitLabel = unit.label` into `CartItem`. And in `log`, after `cholesterolMg = s.cholesterol`,
-add `sourceType = loadedSourceType, sourceId = loadedSourceId, unitLabel = unit.label,
-updatedAt = System.currentTimeMillis()`.
-
-**`ui/feature/foodsearch/UnifiedSearchViewModel.kt`** — `addToCart(source, id)` already has
-both values, so pass `sourceType = source, sourceId = id, unitLabel = unit.label` into
-`CartItem`. In `logCart`, pass them through from the cart item:
-`sourceType = ci.sourceType, sourceId = ci.sourceId, unitLabel = ci.unitLabel,
-updatedAt = System.currentTimeMillis()`.
-
-**`ui/feature/foodsearch/QuickAddViewModel.kt`** — `sourceType = "quick"`,
-`unitLabel = "serving"`, `updatedAt = System.currentTimeMillis()`. No `sourceId`; a quick
-add has no food behind it and null is the correct answer.
-
-**`ui/feature/meals/MealsViewModel.kt`** — in `logTemplate`, each row is a `FoodItem`, so
-`sourceType = "custom"`, `sourceId = food.id`, `unitLabel = "serving"`,
-`updatedAt = System.currentTimeMillis()`. ("Logged as part of meal X" would be a separate
-`groupId` column later, not this field.)
-
-**`ui/feature/today/MealLogViewModel.kt`** — in `updateEntryQuantity`'s `entry.copy(...)`,
-add `updatedAt = System.currentTimeMillis()`. `sourceType` and `sourceId` carry over
-through `copy` automatically.
-
-Verify with App Inspection's Database Inspector: a newly logged CNF food should show
-`sourceType` `cnf`, a numeric `sourceId`, and a `unitLabel` like `30 g`. Cart-logged and
-Quick Add rows should show `cnf`/`custom` and `quick` respectively. Pre-v2 rows stay
-`unknown`.
-
-## Then, in order
-
-1. **Upgrade `mealEntryDetail`.** When `sourceId` is present, reload the real food (CNF or
-   custom) and preselect the logged `unitLabel`, giving the full portion list and exact
-   per-unit values. Keep the current snapshot-derived single unit as the fallback for
-   `unknown` rows.
-
-2. **Log-entry edit sheet: `Details` and `Done`.** Replace the sheet pad's single `Save`
-   with two actions. `Done` saves the amount as it does today. `Details` opens the food
-   detail screen for that entry, which needs:
-   - `MealEntryDao`: `@Query("SELECT * FROM meal_entries WHERE id = :id") suspend fun getById(id: String): MealEntry?` (a query only, no schema change)
-   - `MealEntryRepository.getEntry(id)`
-   - `FoodDetailViewModel`: an `"entry"` branch in `load` that fetches the entry and maps
-     it with `mealEntryDetail`, plus `updateEntry(amount, unit, onDone)` which rewrites the
-     same row id (`e.copy(...)` through `logEntry`, since insert is `OnConflictStrategy.REPLACE`)
-   - `FoodDetailScreen`: an entry mode (`source == "entry"`) showing a single `Done` action
-     instead of Log and Add, and titling the card "Contribution to Daily Goal" measured
-     against the full goal rather than the remainder — MacroFactor does exactly this,
-     because the entry is already counted in today's totals
-   - `TodayScreen`: an `onOpenEntry: (String) -> Unit` parameter
-   - `MacTrackApp`: no new route needed — reuse `food_detail/{source}/{id}` with
-     `navController.navigate("food_detail/entry/$entryId")`. The bottom bar already hides there.
+2. **(done) Log-entry edit sheet: `Details` and `Done`.** Details opens the entry in the
+   detail screen (entry mode, single Done, card measured against the full goal); Done
+   rescales in place. Reuses `food_detail/entry/{id}`.
 
 3. **A Room migration test.** There is a migration chain and no test for it. Use
    `MigrationTestHelper` (instrumented) to create a v1 database with a row, run
    `MIGRATION_1_2`, and assert the row survives with `sourceType = 'unknown'`. This is the
    safety net for every future schema change.
 
-4. **Search overhaul.** Category tabs (All / Recipes / Meals / Foods). With an empty query,
-   show Recent (derived from `meal_entries`, now possible because of provenance) and Saved
-   (all foods, meals and recipes, alphabetical). Move the search field to a docked bar above
-   the keyboard that rises with it. Meals and recipes become searchable result types.
+4. **Search overhaul.** See "Current UI/UX focus" above for the current, expanded spec
+   (tabs All/Foods/Recipes/Meals; Recent/Saved/Common; Quick Add; top-right log + cals;
+   rounded boxes; docked search field). Recent is now derivable from `meal_entries` thanks
+   to provenance. Meals and recipes become searchable result types.
 
 5. **Food log header.** Swipe to toggle each total between "left" and "X / goal". Make the
    four header nutrients interchangeable with any micro (pairs with dashboard customization).
+   Pairs with the day-navigation and hour-block work in the current focus.
 
 6. **Barcode scanning.** First true post-MVP feature. ML Kit, needs the physical device.
    Later, Open Food Facts as a "Branded" source mapped into `FoodDetail` with the barcode
@@ -157,16 +152,29 @@ Quick Add rows should show `cnf`/`custom` and `quick` respectively. Pre-v2 rows 
    composable is duplicated between the dashboard and the food detail screen). KMP.
    JSON backup and export.
 
+## Longer-term vision (from the foundation roadmap, `Desktop/MacTrack.txt`)
+
+Beyond the queue, the original plan calls for, roughly in order: a review-before-save flow
+(the cart is a first step); AI text parsing ("2 eggs, protein shake, 20 grapes" -> match
+against the local DB -> review -> confirm; the DB is the source of truth, AI never
+auto-saves); AI photo estimation (vision -> match -> review, never auto-save); import/export
+logs (`.csv`/`.xlsx`); accounts + sync; more micronutrients (vitamins, minerals, aminos,
+soluble/insoluble fiber, additives -- requires rebuilding `cnf.db`, a separate project);
+workout integration; and a heat-map calendar (the dashboard streak grid is a start). CI is
+also wanted (there is a `.github/` dir). None of these are scheduled yet -- the near-term
+focus is the UI/UX pass above.
+
 ## Known issues worth fixing when nearby
 
 - **Goals are read as "latest", not "as of that date."** `GoalRepository.getLatestGoal()`
-  is used everywhere, so once date navigation exists, historical days will be measured
-  against today's goal. The fix is a query-only change:
+  is used everywhere, so once date navigation exists (see current focus), historical days
+  will be measured against today's goal. The fix is a query-only change:
   `SELECT * FROM goals WHERE createdAt <= :endOfDay ORDER BY createdAt DESC LIMIT 1`.
 - **The edit sheet's pad appends to the prefilled amount** instead of replacing on the
   first key press, unlike the food detail screen, which does replace. They should match.
 - **`FoodDetailScreen` and `DashboardScreen` each define their own ring composable** and
-  their own macro colour constants. Extract when doing the cleanup pass.
+  their own macro colour constants. Extract when doing the cleanup pass (pairs with the
+  "more color" global request — a shared macro palette).
 
 ## Gotchas that have actually cost time
 
