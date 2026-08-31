@@ -11,20 +11,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,10 +34,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.MealEntry
+import com.dirac.mactrack.ui.common.NumberPad
+import com.dirac.mactrack.ui.common.PadAction
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
@@ -58,6 +58,7 @@ private fun hourLabel(hour: Int): String {
     return "$h12 $ampm"
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodayScreen(onOpenSearch: () -> Unit, modifier: Modifier = Modifier) {
     val viewModel: MealLogViewModel = viewModel(factory = MealLogViewModel.Factory)
@@ -152,39 +153,30 @@ fun TodayScreen(onOpenSearch: () -> Unit, modifier: Modifier = Modifier) {
 
     val e = editing
     if (e != null) {
-        EditQuantityDialog(
-            entry = e,
-            onDismiss = { editing = null },
-            onSave = { newQty ->
-                viewModel.updateEntryQuantity(e, newQty)
-                editing = null
-            }
-        )
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        var amount by remember(e) { mutableStateOf(servings(e.quantity)) }
+        ModalBottomSheet(onDismissRequest = { editing = null }, sheetState = sheetState) {
+            Text(
+                e.foodName,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+            NumberPad(
+                value = amount,
+                onValueChange = { amount = it },
+                units = listOf(e.unit),
+                selectedUnit = e.unit,
+                onUnitSelect = {},
+                actions = listOf(
+                    PadAction("Save", primary = true, onClick = {
+                        amount.toDoubleOrNull()?.let { if (it > 0) viewModel.updateEntryQuantity(e, it) }
+                        editing = null
+                    })
+                ),
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+        }
     }
-}
-
-@Composable
-private fun EditQuantityDialog(entry: MealEntry, onDismiss: () -> Unit, onSave: (Double) -> Unit) {
-    var qty by remember { mutableStateOf(servings(entry.quantity)) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(entry.foodName) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Amount in ${entry.unit}", style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(
-                    value = qty,
-                    onValueChange = { qty = it },
-                    label = { Text("Amount") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { qty.toDoubleOrNull()?.let { if (it > 0) onSave(it) } }) { Text("Save") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
 }
 
 @Composable

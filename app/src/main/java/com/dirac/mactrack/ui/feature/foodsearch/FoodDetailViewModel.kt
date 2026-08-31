@@ -10,6 +10,7 @@ import com.dirac.mactrack.MacTrackApplication
 import com.dirac.mactrack.data.cart.CartItem
 import com.dirac.mactrack.data.cart.CartRepository
 import com.dirac.mactrack.data.cnf.CnfRepository
+import com.dirac.mactrack.data.entity.Goal
 import com.dirac.mactrack.data.entity.MealEntry
 import com.dirac.mactrack.data.food.FoodDetail
 import com.dirac.mactrack.data.food.PortionUnit
@@ -17,11 +18,14 @@ import com.dirac.mactrack.data.food.cnfFoodDetail
 import com.dirac.mactrack.data.food.foodItemDetail
 import com.dirac.mactrack.data.food.stagePortion
 import com.dirac.mactrack.data.repository.FoodRepository
+import com.dirac.mactrack.data.repository.GoalRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -30,13 +34,20 @@ class FoodDetailViewModel(
     private val foodRepository: FoodRepository,
     private val cnfRepository: CnfRepository,
     private val cartRepository: CartRepository,
-    private val mealEntryRepository: MealEntryRepository
+    private val mealEntryRepository: MealEntryRepository,
+    goalRepository: GoalRepository
 ) : ViewModel() {
 
     private val today: String = LocalDate.now().toString()
 
     private val _detail = MutableStateFlow<FoodDetail?>(null)
     val detail: StateFlow<FoodDetail?> = _detail.asStateFlow()
+
+    val goal: StateFlow<Goal?> = goalRepository.getLatestGoal()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val todayEntries: StateFlow<List<MealEntry>> = mealEntryRepository.getEntriesForDate(today)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun load(source: String, id: String) {
         viewModelScope.launch {
@@ -81,7 +92,7 @@ class FoodDetailViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                FoodDetailViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository)
+                FoodDetailViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository, app.goalRepository)
             }
         }
     }

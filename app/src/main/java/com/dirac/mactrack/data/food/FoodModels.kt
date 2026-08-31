@@ -78,8 +78,10 @@ fun foodItemDetail(food: FoodItem): FoodDetail {
 
 data class Staged(val quantity: Double, val unit: String, val nutrients: Nutrients)
 
+private fun round2(x: Double): Double = kotlin.math.round(x * 100.0) / 100.0
+
 fun stagePortion(amount: Double, unit: PortionUnit): Staged {
     val n = unit.per * amount
     val g = unit.grams
-    return if (g != null) Staged(amount * g, "g", n) else Staged(amount, unit.label, n)
+    return if (g != null) Staged(round2(amount * g), "g", n) else Staged(round2(amount), unit.label, n)
 }

@@ -33,6 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.ui.common.BackBar
 import kotlin.math.roundToInt
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 
 private fun servingText(amount: Double): String =
     if (amount % 1.0 == 0.0) amount.toInt().toString() else amount.toString()
@@ -49,7 +53,7 @@ fun UnifiedSearchScreen(
     val custom by viewModel.custom.collectAsState()
     val common by viewModel.common.collectAsState()
     val cartCount by viewModel.cartCount.collectAsState()
-
+    val focusManager = LocalFocusManager.current
     var showDiscardDialog by remember { mutableStateOf(false) }
 
     // back should guard when the cart has items
@@ -67,7 +71,10 @@ fun UnifiedSearchScreen(
             value = query,
             onValueChange = { viewModel.onQueryChange(it) },
             label = { Text("Search foods") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
         )
         LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (custom.isNotEmpty()) {

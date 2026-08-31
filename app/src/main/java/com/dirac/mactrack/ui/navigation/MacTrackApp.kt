@@ -44,51 +44,56 @@ fun MacTrackApp() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
+    val tabRoutes = Destination.entries.map { it.route }
+    val showBottomBar = currentRoute in tabRoutes
+
     Scaffold(
         bottomBar = {
-            Surface(
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                shadowElevation = 8.dp,
-                tonalElevation = 3.dp
-            ) {
-                Row(
+            if (showBottomBar) {
+                Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
+                        .navigationBarsPadding()
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shadowElevation = 8.dp,
+                    tonalElevation = 3.dp
                 ) {
-                    Destination.entries.forEach { destination ->
-                        val selected = currentRoute == destination.route
-                        val tint = if (selected) {
-                            MaterialTheme.colorScheme.onSecondaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .clickable {
-                                    navController.navigate(destination.route) {
-                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Destination.entries.forEach { destination ->
+                            val selected = currentRoute == destination.route
+                            val tint = if (selected) {
+                                MaterialTheme.colorScheme.onSecondaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(2.dp),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .clickable {
+                                        navController.navigate(destination.route) {
+                                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
                                     }
-                                }
-                                .background(
-                                    if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
-                                )
-                                .padding(horizontal = 20.dp, vertical = 8.dp)
-                        ) {
-                            Icon(destination.icon, contentDescription = destination.label, tint = tint)
-                            Text(destination.label, style = MaterialTheme.typography.labelSmall, color = tint)
+                                    .background(
+                                        if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
+                                    )
+                                    .padding(horizontal = 20.dp, vertical = 8.dp)
+                            ) {
+                                Icon(destination.icon, contentDescription = destination.label, tint = tint)
+                                Text(destination.label, style = MaterialTheme.typography.labelSmall, color = tint)
+                            }
                         }
                     }
                 }

@@ -1,24 +1,29 @@
 package com.dirac.mactrack.ui.feature.foodsearch
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,27 +34,35 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.ui.common.BackBar
+import com.dirac.mactrack.ui.common.NumberPad
+import com.dirac.mactrack.ui.common.PadAction
 import java.time.LocalTime
 import kotlin.math.roundToInt
 
 private val ProteinColor = Color(0xFFE91E63)
 private val CarbColor = Color(0xFF2196F3)
 private val FatColor = Color(0xFF4CAF50)
+private val CalorieColor = Color(0xFFFF9800)
+
+private fun fmtAmount(a: Double): String =
+    if (a % 1.0 == 0.0) a.toInt().toString() else a.toString()
 
 @Composable
 fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
     val viewModel: FoodDetailViewModel = viewModel(factory = FoodDetailViewModel.Factory)
     val detail by viewModel.detail.collectAsState()
+    val goal by viewModel.goal.collectAsState()
+    val todayEntries by viewModel.todayEntries.collectAsState()
 
     LaunchedEffect(source, id) { viewModel.load(source, id) }
 
@@ -59,73 +72,203 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onBack: (
         return
     }
 
-    var amount by remember(d) {
-        mutableStateOf(if (d.defaultAmount % 1.0 == 0.0) d.defaultAmount.toInt().toString() else d.defaultAmount.toString())
-    }
+    var amount by remember(d) { mutableStateOf(fmtAmount(d.defaultAmount)) }
     var unitLabel by remember(d) { mutableStateOf(d.defaultUnitLabel) }
-    val unit = d.units.find { it.label == unitLabel } ?: d.units.first()
+    var padOpen by remember(d) { mutableStateOf(true) }
+    var amountFresh by remember(d) { mutableStateOf(true) }
 
+    val unit = d.units.find { it.label == unitLabel } ?: d.units.first()
     val amt = amount.toDoubleOrNull() ?: 0.0
     val s = unit.per * amt
 
     val pC = unit.per.protein * 4; val fC = unit.per.fat * 9; val cC = unit.per.carb * 4
     val tot = (pC + fC + cC).let { if (it <= 0.0) 1.0 else it }
 
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        BackBar(d.name, onBack)
+    // What is left of today's goal, before this food gets logged. null = no goal saved yet.
+    val totalCal = todayEntries.sumOf { it.calories }
+    val totalP = todayEntries.sumOf { it.proteinG }
+    val totalC = todayEntries.sumOf { it.carbG }
+    val totalF = todayEntries.sumOf { it.fatG }
+    val remCal = goal?.let { (it.calorieGoal - totalCal).coerceAtLeast(0.0) }
+    val remP = goal?.let { (it.proteinGoalG - totalP).coerceAtLeast(0.0) }
+    val remC = goal?.let { (it.carbGoalG - totalC).coerceAtLeast(0.0) }
+    val remF = goal?.let { (it.fatGoalG - totalF).coerceAtLeast(0.0) }
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("${s.kcal.roundToInt()}", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("Calories", style = MaterialTheme.typography.labelSmall)
+    fun doLog() {
+        val now = LocalTime.now()
+        viewModel.log(amt, unit, now.hour * 60 + now.minute, onLogged)
+    }
+    fun doAdd() { viewModel.addToCart(amt, unit); onLogged() }
+
+    // First key press after the pad opens replaces the prefilled amount instead of appending.
+    fun onPadValue(new: String) {
+        val next = if (amountFresh && new.length > amount.length) new.drop(amount.length) else new
+        amount = if (next.startsWith(".")) "0$next" else next
+        amountFresh = false
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            BackBar(d.name, onBack, modifier = Modifier.padding(horizontal = 16.dp))
+
+            // scrollable content
+            Column(
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("${s.kcal.roundToInt()}", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Text("Calories", style = MaterialTheme.typography.labelSmall)
+                    }
+                    ShareRing("Protein", (pC / tot * 100).roundToInt(), s.protein, ProteinColor)
+                    ShareRing("Fat", (fC / tot * 100).roundToInt(), s.fat, FatColor)
+                    ShareRing("Carbs", (cC / tot * 100).roundToInt(), s.carb, CarbColor)
+                }
+
+                ContributionCard(
+                    protein = s.protein, carb = s.carb, fat = s.fat, calories = s.kcal,
+                    remProtein = remP, remCarb = remC, remFat = remF, remCalories = remCal
+                )
+
+                HorizontalDivider()
+
+                Text("Nutrition (this serving)", style = MaterialTheme.typography.titleSmall)
+                MicroRow("Fiber", s.fiber, "g")
+                MicroRow("Sugar", s.sugar, "g")
+                MicroRow("Saturated fat", s.satFat, "g")
+                MicroRow("Sodium", s.sodium, "mg")
+                MicroRow("Potassium", s.potassium, "mg")
+                MicroRow("Cholesterol", s.cholesterol, "mg")
             }
-            ShareRing("Protein", (pC / tot * 100).roundToInt(), s.protein, ProteinColor)
-            ShareRing("Fat", (fC / tot * 100).roundToInt(), s.fat, FatColor)
-            ShareRing("Carbs", (cC / tot * 100).roundToInt(), s.carb, CarbColor)
+
+            // docked bottom bar
+            Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 3.dp, shadowElevation = 8.dp) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
+                            .clickable { padOpen = true; amountFresh = true }
+                            .padding(horizontal = 16.dp, vertical = 14.dp)
+                    ) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(amount.ifEmpty { "0" }, fontWeight = FontWeight.Bold)
+                            Text(unitLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    OutlinedButton(onClick = { doLog() }) { Text("Log") }
+                    Button(onClick = { doAdd() }) { Text("Add") }
+                }
+            }
         }
 
-        HorizontalDivider()
+        // number pad popup + dismiss scrim
+        if (padOpen) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.32f))
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { padOpen = false }
+            )
+            Surface(
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 12.dp
+            ) {
+                NumberPad(
+                    value = amount,
+                    onValueChange = { onPadValue(it) },
+                    units = d.units.map { it.label },
+                    selectedUnit = unitLabel,
+                    onUnitSelect = { unitLabel = it },
+                    actions = listOf(
+                        PadAction("Log", onClick = { doLog() }),
+                        PadAction("Add", primary = true, onClick = { doAdd() })
+                    ),
+                    modifier = Modifier.padding(vertical = 12.dp)
+                )
+            }
+        }
+    }
+}
 
-        OutlinedTextField(
-            value = amount,
-            onValueChange = { amount = it },
-            label = { Text("Amount") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            modifier = Modifier.fillMaxWidth()
+@Composable
+private fun ContributionCard(
+    protein: Double,
+    carb: Double,
+    fat: Double,
+    calories: Double,
+    remProtein: Double?,
+    remCarb: Double?,
+    remFat: Double?,
+    remCalories: Double?
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("Contribution to Remaining Daily Macros", style = MaterialTheme.typography.titleSmall)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ContribColumn("P", protein, remProtein, ProteinColor, Modifier.weight(1f))
+                ContribColumn("C", carb, remCarb, CarbColor, Modifier.weight(1f))
+                ContribColumn("F", fat, remFat, FatColor, Modifier.weight(1f))
+                ContribColumn("Cal", calories, remCalories, CalorieColor, Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContribColumn(
+    label: String,
+    value: Double,
+    remaining: Double?,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    val hasGoal = remaining != null
+    val target = remaining ?: 0.0
+    val pct = when {
+        !hasGoal -> 0
+        target <= 0.0 -> 100
+        else -> (value / target * 100).roundToInt()
+    }
+    val fill = when {
+        !hasGoal -> 0f
+        target <= 0.0 -> 1f
+        else -> (value / target).coerceIn(0.0, 1.0).toFloat()
+    }
+    val caption = if (hasGoal) "$pct% › ${target.roundToInt()}" else "no goal"
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            "$label ${value.roundToInt()}",
+            style = MaterialTheme.typography.titleSmall,
+            color = color,
+            fontWeight = FontWeight.Bold
         )
-        Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            d.units.forEach { u ->
-                FilterChip(selected = unitLabel == u.label, onClick = { unitLabel = u.label }, label = { Text(u.label) })
-            }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .background(color.copy(alpha = 0.24f))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(fill)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(color)
+            )
         }
-        unit.grams?.let { g -> Text("= ${(amt * g).roundToInt()} g", style = MaterialTheme.typography.bodySmall) }
-
-        HorizontalDivider()
-
-        Text("Nutrition (this serving)", style = MaterialTheme.typography.titleSmall)
-        MicroRow("Fiber", s.fiber, "g")
-        MicroRow("Sugar", s.sugar, "g")
-        MicroRow("Saturated fat", s.satFat, "g")
-        MicroRow("Sodium", s.sodium, "mg")
-        MicroRow("Potassium", s.potassium, "mg")
-        MicroRow("Cholesterol", s.cholesterol, "mg")
-
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(
-                onClick = { viewModel.addToCart(amt, unit); onLogged() },
-                modifier = Modifier.weight(1f)
-            ) { Text("Add to cart") }
-            Button(
-                onClick = {
-                    val now = LocalTime.now()
-                    viewModel.log(amt, unit, now.hour * 60 + now.minute, onLogged)
-                },
-                modifier = Modifier.weight(1f)
-            ) { Text("Log now") }
-        }
+        Text(caption, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
