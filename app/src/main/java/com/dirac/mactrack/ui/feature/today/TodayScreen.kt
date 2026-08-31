@@ -1,5 +1,6 @@
 package com.dirac.mactrack.ui.feature.today
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,23 +11,31 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.MealEntry
@@ -61,6 +70,8 @@ fun TodayScreen(onOpenSearch: () -> Unit, modifier: Modifier = Modifier) {
     val totalC = entries.sumOf { it.carbG }
 
     val byHour = entries.groupBy { it.timeMinutes / 60 }.toSortedMap()
+
+    var editing by remember { mutableStateOf<MealEntry?>(null) }
 
     val today = LocalDate.now()
     val dateLabel = "${today.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()).uppercase()}, " +
@@ -113,7 +124,11 @@ fun TodayScreen(onOpenSearch: () -> Unit, modifier: Modifier = Modifier) {
                     }
                 }
                 items(items = hourEntries, key = { it.id }) { entry ->
-                    FoodCard(entry = entry, onDelete = { viewModel.deleteEntry(entry) })
+                    FoodCard(
+                        entry = entry,
+                        onClick = { editing = entry },
+                        onDelete = { viewModel.deleteEntry(entry) }
+                    )
                 }
             }
         }
@@ -134,6 +149,42 @@ fun TodayScreen(onOpenSearch: () -> Unit, modifier: Modifier = Modifier) {
             }
         }
     }
+
+    val e = editing
+    if (e != null) {
+        EditQuantityDialog(
+            entry = e,
+            onDismiss = { editing = null },
+            onSave = { newQty ->
+                viewModel.updateEntryQuantity(e, newQty)
+                editing = null
+            }
+        )
+    }
+}
+
+@Composable
+private fun EditQuantityDialog(entry: MealEntry, onDismiss: () -> Unit, onSave: (Double) -> Unit) {
+    var qty by remember { mutableStateOf(servings(entry.quantity)) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(entry.foodName) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Amount in ${entry.unit}", style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(
+                    value = qty,
+                    onValueChange = { qty = it },
+                    label = { Text("Amount") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { qty.toDoubleOrNull()?.let { if (it > 0) onSave(it) } }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
 }
 
 @Composable
@@ -150,8 +201,8 @@ private fun TotalStat(modifier: Modifier, label: String, consumed: Double, goal:
 }
 
 @Composable
-private fun FoodCard(entry: MealEntry, onDelete: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun FoodCard(entry: MealEntry, onClick: () -> Unit, onDelete: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(entry.foodName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)

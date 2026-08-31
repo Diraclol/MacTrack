@@ -34,6 +34,30 @@ class MealLogViewModel(
         viewModelScope.launch { mealEntryRepository.deleteEntry(entry) }
     }
 
+    // Rescale an already-logged entry to a new amount (same id = update in place).
+    fun updateEntryQuantity(entry: MealEntry, newQuantity: Double) {
+        if (entry.quantity <= 0.0 || newQuantity <= 0.0) return
+        val factor = newQuantity / entry.quantity
+        viewModelScope.launch {
+            mealEntryRepository.logEntry(
+                entry.copy(
+                    amount = entry.amount * factor,
+                    quantity = newQuantity,
+                    calories = entry.calories * factor,
+                    proteinG = entry.proteinG * factor,
+                    carbG = entry.carbG * factor,
+                    fatG = entry.fatG * factor,
+                    fiberG = entry.fiberG * factor,
+                    sugarG = entry.sugarG * factor,
+                    satFatG = entry.satFatG * factor,
+                    sodiumMg = entry.sodiumMg * factor,
+                    potassiumMg = entry.potassiumMg * factor,
+                    cholesterolMg = entry.cholesterolMg * factor
+                )
+            )
+        }
+    }
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
