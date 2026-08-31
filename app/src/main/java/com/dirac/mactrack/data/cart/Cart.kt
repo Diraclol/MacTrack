@@ -11,7 +11,10 @@ data class CartItem(
     val name: String,
     val quantity: Double,
     val unit: String,
-    val nutrients: Nutrients
+    val nutrients: Nutrients,
+    val sourceType: String = "unknown",
+    val sourceId: String? = null,
+    val unitLabel: String? = null
 )
 
 class CartRepository {
