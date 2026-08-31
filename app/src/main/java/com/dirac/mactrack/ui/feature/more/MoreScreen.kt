@@ -42,12 +42,9 @@ private fun pretty(name: String) = name.lowercase().replaceFirstChar { it.upperc
 @Composable
 fun MoreScreen(
     modifier: Modifier = Modifier,
-    onOpenSavedFoods: () -> Unit = {},
-    onOpenMeals: () -> Unit = {},
-    onOpenRecipes: () -> Unit = {},
-    onOpenGoals: () -> Unit = {} ,
+    onOpenLibrary: () -> Unit = {},
+    onOpenGoals: () -> Unit = {},
     onOpenQuickAdd: () -> Unit = {},
-    onOpenFoodSearch: () -> Unit = {},
 ) {
     val weightViewModel: WeightViewModel = viewModel(factory = WeightViewModel.Factory)
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
@@ -70,20 +67,11 @@ fun MoreScreen(
                 OutlinedButton(onClick = onOpenQuickAdd, modifier = Modifier.fillMaxWidth()) {
                     Text("Quick add")
                 }
-                OutlinedButton(onClick = onOpenSavedFoods, modifier = Modifier.fillMaxWidth()) {
-                    Text("Saved foods")
-                }
-                OutlinedButton(onClick = onOpenMeals, modifier = Modifier.fillMaxWidth()) {
-                    Text("Meals")
-                }
-                OutlinedButton(onClick = onOpenRecipes, modifier = Modifier.fillMaxWidth()) {
-                    Text("Recipes")
+                OutlinedButton(onClick = onOpenLibrary, modifier = Modifier.fillMaxWidth()) {
+                    Text("Saved Foods, Meals & Recipes")
                 }
                 OutlinedButton(onClick = onOpenGoals, modifier = Modifier.fillMaxWidth()) {
                     Text("Goals")
-                }
-                OutlinedButton(onClick = onOpenFoodSearch, modifier = Modifier.fillMaxWidth()) {
-                    Text("Search foods")
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 Text("Theme", style = MaterialTheme.typography.titleMedium)

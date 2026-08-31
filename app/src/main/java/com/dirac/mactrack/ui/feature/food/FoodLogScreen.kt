@@ -35,7 +35,7 @@ import com.dirac.mactrack.ui.common.BackBar
 import kotlin.math.roundToInt
 
 @Composable
-fun FoodLogScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}) {
+fun FoodLogScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBar: Boolean = true) {
     val viewModel: FoodViewModel = viewModel(factory = FoodViewModel.Factory)
     val foods by viewModel.foods.collectAsState()
 
@@ -57,7 +57,7 @@ fun FoodLogScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}) {
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        item { BackBar("Saved foods", onBack) }
+        if (showBar) item { BackBar("Saved foods", onBack) }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(

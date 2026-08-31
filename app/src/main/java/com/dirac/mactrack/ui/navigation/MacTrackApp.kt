@@ -26,12 +26,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.dirac.mactrack.ui.feature.dashboard.DashboardScreen
-import com.dirac.mactrack.ui.feature.food.FoodLogScreen
+import com.dirac.mactrack.ui.feature.library.LibraryScreen
 import com.dirac.mactrack.ui.feature.goals.GoalsScreen
 import com.dirac.mactrack.ui.feature.more.MoreScreen
 import com.dirac.mactrack.ui.feature.today.TodayScreen
-import com.dirac.mactrack.ui.feature.meals.MealsScreen
-import com.dirac.mactrack.ui.feature.recipes.RecipesScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.dirac.mactrack.ui.feature.foodsearch.QuickAddScreen
@@ -114,17 +112,12 @@ fun MacTrackApp() {
             }
             composable(Destination.MORE.route) {
                 MoreScreen(
-                    onOpenSavedFoods = { navController.navigate("saved_foods") },
-                    onOpenMeals = { navController.navigate("meals") },
-                    onOpenRecipes = { navController.navigate("recipes") },
+                    onOpenLibrary = { navController.navigate("library") },
                     onOpenGoals = { navController.navigate("goals") },
                     onOpenQuickAdd = { navController.navigate("quick_add") },
-                    onOpenFoodSearch = { navController.navigate("food_search") },
                 )
             }
-            composable("saved_foods") { FoodLogScreen(onBack = { navController.popBackStack() }) }
-            composable("meals") { MealsScreen(onBack = { navController.popBackStack() }) }
-            composable("recipes") { RecipesScreen(onBack = { navController.popBackStack() }) }
+            composable("library") { LibraryScreen(onBack = { navController.popBackStack() }) }
             composable("goals") { GoalsScreen(onBack = { navController.popBackStack() }) }
             composable("quick_add") {
                 QuickAddScreen(

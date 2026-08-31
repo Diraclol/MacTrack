@@ -32,7 +32,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.ui.common.BackBar
 
 @Composable
-fun MealsScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}) {
+fun MealsScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBar: Boolean = true) {
     val viewModel: MealsViewModel = viewModel(factory = MealsViewModel.Factory)
     val foods by viewModel.foods.collectAsState()
     val templates by viewModel.templates.collectAsState()
@@ -44,7 +44,7 @@ fun MealsScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}) {
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item { BackBar("Meals", onBack) }
+        if (showBar) item { BackBar("Meals", onBack) }
 
         items(items = templates, key = { it.id }) { template ->
             Card(modifier = Modifier.fillMaxWidth()) {
