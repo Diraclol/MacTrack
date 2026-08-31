@@ -29,7 +29,11 @@ screenshot. We are NOT copying MacroFactor's whole feature set — only what's l
 - Results appear in rounded boxes when typing.
 - A Quick Add entry point on this screen.
 - Top-right control to commit staged foods to the log, with calories-added-of-budget beside
-  it (MacroFactor's `X / 2500`).
+  it and a staged-items chip (MacroFactor's `X / 2500` + the two mini icons).
+- Tapping the top-right commit opens a **"Review Foods"** screen: the staged foods with their
+  combined **impact on the daily goal** (per-macro remaining bars + a nutrition-detail ring),
+  and "Add More Foods" / "Log N Foods" actions. This is our cart upgraded into the
+  review-before-save flow.
 - Search field docked above the keyboard.
 
 **Food log.**
@@ -173,6 +177,12 @@ cart. Pre-v2 rows stay `sourceType = 'unknown'`. Verified in the Database Inspec
   Today's Foods).
 - **Google Fit / Health Connect** steps integration (tentative yes; Health Connect is the
   modern path on Android).
+- **AI parsing (admin-only, much later)**: BYO Gemini API key -- the maintainer runs it; other
+  users supply their own key. Flow: write out an ingredient list; each item matches a stated
+  brand, or the CNF "Common" DB if no brand is given; the matches mass-add to the cart for the
+  user to edit/remove; then log as a meal or save as a recipe. The DB is the source of truth;
+  AI never auto-saves. Also possible: Firebase auth for accounts. All of this needs the
+  INTERNET permission (added now for barcode).
 - A **README** with app screenshots, and a **wiki / knowledge base** -- both later.
 
 ## Longer-term vision (from the foundation roadmap, `Desktop/MacTrack.txt`)
