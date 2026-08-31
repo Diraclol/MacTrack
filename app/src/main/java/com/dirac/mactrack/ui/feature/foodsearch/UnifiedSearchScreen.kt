@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.data.food.foodEmoji
 import com.dirac.mactrack.ui.common.BackBar
 import kotlin.math.roundToInt
 import androidx.compose.foundation.text.KeyboardActions
@@ -147,6 +148,7 @@ fun UnifiedSearchScreen(
 @Composable
 private fun FoodRow(name: String, line: String, onOpen: () -> Unit, onAdd: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(foodEmoji(name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
         Column(modifier = Modifier.weight(1f).clickable { onOpen() }) {
             Text(name, style = MaterialTheme.typography.bodyLarge)
             Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
