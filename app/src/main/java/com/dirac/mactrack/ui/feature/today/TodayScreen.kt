@@ -105,6 +105,9 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
             }
             byHour.forEach { (hour, hourEntries) ->
                 val hourCal = hourEntries.sumOf { it.calories }
+                val hourP = hourEntries.sumOf { it.proteinG }
+                val hourC = hourEntries.sumOf { it.carbG }
+                val hourF = hourEntries.sumOf { it.fatG }
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -118,11 +121,12 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
-                        Text(
-                            "${hourCal.roundToInt()} cal",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("${hourP.roundToInt()}P", style = MaterialTheme.typography.labelMedium, color = ProteinColor)
+                            Text("${hourC.roundToInt()}C", style = MaterialTheme.typography.labelMedium, color = CarbColor)
+                            Text("${hourF.roundToInt()}F", style = MaterialTheme.typography.labelMedium, color = FatColor)
+                            Text("${hourCal.roundToInt()} cal", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
                 items(items = hourEntries, key = { it.id }) { entry ->
@@ -210,7 +214,10 @@ private fun FoodCard(entry: MealEntry, onClick: () -> Unit, onDelete: () -> Unit
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Text("${entry.calories.roundToInt()}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Column(horizontalAlignment = Alignment.End) {
+                Text("${entry.calories.roundToInt()}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("cal", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Filled.Delete, contentDescription = "Remove ${entry.foodName}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }

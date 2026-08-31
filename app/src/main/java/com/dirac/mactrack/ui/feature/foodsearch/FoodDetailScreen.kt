@@ -117,7 +117,7 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onAdded: 
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            BackBar(d.name, onBack, modifier = Modifier.padding(horizontal = 16.dp))
+            BackBar(d.name, onBack, modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp))
 
             // scrollable content
             Column(
