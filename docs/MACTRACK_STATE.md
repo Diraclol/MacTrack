@@ -199,8 +199,24 @@ focus is the UI/UX pass above.
 
 ## Work session notes (2026-08-31)
 
-Working the queue one buildable + verified + committed step at a time; Dirac builds/tests on
-return. Verification is done with review.
+Worked the queue one buildable + verified + committed step at a time; Dirac builds/tests on
+return. Verification was done with review.
+
+**Shipped this session (all verified + committed + pushed):**
+- Food log: emoji icon per food; hour blocks show P/C/F totals; a "cal" label; detail nudged down.
+- Search: emoji icons on result rows; a docked search bar that rises with the keyboard; a
+  Recent section (empty query) of re-openable recently-logged foods.
+- Barcode: Open Food Facts branded lookup (with a temporary barcode field to test until camera
+  scanning lands).
+- Edit sheet now offers all of a food's units (shared reload) -- which surfaced and fixed a
+  30x cart-logged `amount` corruption bug (`CartItem` now carries the real count; also hardens
+  the reopen-entry feature).
+- More: profile header card on top, card-styled nav rows, and logging streak stats
+  (active / longest / total tracked).
+- Food detail: emoji in the title.
+
+The verification loop earned its keep -- it caught the cart-`amount` data-corruption bug
+before it could ever reach the device.
 
 - **Gemini key**: Dirac has a Gemini API key (currently powering his homelab) that can be
   shared for the app's AI features and exposes many models. Confirms the AI plan (admin runs
