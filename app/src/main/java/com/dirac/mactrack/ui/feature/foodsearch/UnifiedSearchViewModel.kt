@@ -72,7 +72,8 @@ class UnifiedSearchViewModel(
                     else -> null
                 }
             } ?: return@launch
-            val unit = detail.units.firstOrNull() ?: return@launch
+            val unit = detail.units.find { it.label == detail.defaultUnitLabel }
+                ?: detail.units.firstOrNull() ?: return@launch
             val staged = stagePortion(detail.defaultAmount, unit)
             cartRepository.add(CartItem(name = detail.name, quantity = staged.quantity, unit = staged.unit, nutrients = staged.nutrients))
         }

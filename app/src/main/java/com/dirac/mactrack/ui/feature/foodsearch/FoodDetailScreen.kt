@@ -62,7 +62,7 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onBack: (
     var amount by remember(d) {
         mutableStateOf(if (d.defaultAmount % 1.0 == 0.0) d.defaultAmount.toInt().toString() else d.defaultAmount.toString())
     }
-    var unitLabel by remember(d) { mutableStateOf(d.units.first().label) }
+    var unitLabel by remember(d) { mutableStateOf(d.defaultUnitLabel) }
     val unit = d.units.find { it.label == unitLabel } ?: d.units.first()
 
     val amt = amount.toDoubleOrNull() ?: 0.0

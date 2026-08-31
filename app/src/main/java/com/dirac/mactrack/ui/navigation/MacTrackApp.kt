@@ -101,7 +101,9 @@ fun MacTrackApp() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Destination.DASHBOARD.route) { DashboardScreen() }
-            composable(Destination.FOOD_LOG.route) { TodayScreen() }
+            composable(Destination.FOOD_LOG.route) {
+                TodayScreen(onOpenSearch = { navController.navigate("food_search") })
+            }
             composable(Destination.MORE.route) {
                 MoreScreen(
                     onOpenSavedFoods = { navController.navigate("saved_foods") },
@@ -112,11 +114,16 @@ fun MacTrackApp() {
                     onOpenFoodSearch = { navController.navigate("food_search") },
                 )
             }
-            composable("quick_add") { QuickAddScreen(onDone = { navController.popBackStack() }) }
-            composable("saved_foods") { FoodLogScreen() }
-            composable("meals") { MealsScreen() }
-            composable("recipes") { RecipesScreen() }
-            composable("goals") { GoalsScreen() }
+            composable("saved_foods") { FoodLogScreen(onBack = { navController.popBackStack() }) }
+            composable("meals") { MealsScreen(onBack = { navController.popBackStack() }) }
+            composable("recipes") { RecipesScreen(onBack = { navController.popBackStack() }) }
+            composable("goals") { GoalsScreen(onBack = { navController.popBackStack() }) }
+            composable("quick_add") {
+                QuickAddScreen(
+                    onDone = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() }
+                )
+            }
             composable("food_search") {
                 UnifiedSearchScreen(
                     onOpenFood = { source, id -> navController.navigate("food_detail/$source/$id") },
@@ -140,11 +147,6 @@ fun MacTrackApp() {
                     onBack = { navController.popBackStack() }
                 )
             }
-            composable("saved_foods") { FoodLogScreen() }
-            composable("meals") { MealsScreen(onBack = { navController.popBackStack() }) }
-            composable("recipes") { RecipesScreen() }
-            composable("goals") { GoalsScreen() }
-            composable("quick_add") { QuickAddScreen(onDone = { navController.popBackStack() }) }
         }
     }
 }

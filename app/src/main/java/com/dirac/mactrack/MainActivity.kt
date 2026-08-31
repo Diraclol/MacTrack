@@ -8,6 +8,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -33,14 +35,19 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
             MacTrackTheme(darkTheme = darkTheme) {
-                val goalViewModel: GoalViewModel = viewModel(factory = GoalViewModel.Factory)
-                val hasGoal by goalViewModel.hasGoal.collectAsState()
-                when (hasGoal) {
-                    null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    val goalViewModel: GoalViewModel = viewModel(factory = GoalViewModel.Factory)
+                    val hasGoal by goalViewModel.hasGoal.collectAsState()
+                    when (hasGoal) {
+                        null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                        false -> OnboardingScreen()
+                        true -> MacTrackApp()
                     }
-                    false -> OnboardingScreen()
-                    true -> MacTrackApp()
                 }
             }
         }

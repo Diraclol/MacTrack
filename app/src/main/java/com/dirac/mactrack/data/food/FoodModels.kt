@@ -26,20 +26,39 @@ data class PortionUnit(
 data class FoodDetail(
     val name: String,
     val units: List<PortionUnit>,
+    val defaultUnitLabel: String,
     val defaultAmount: Double
 )
+
+private fun isJunkMeasure(desc: String): Boolean {
+    val d = desc.lowercase()
+    return d.contains("refuse") || d.contains("as purchased") || d.isBlank()
+}
 
 fun cnfFoodDetail(food: CnfFood, measures: List<CnfMeasure>): FoodDetail {
     val perGram = Nutrients(
         food.kcal, food.protein, food.carb, food.fat, food.fiber, food.sugar,
         food.satFat, food.sodium, food.potassium, food.cholesterol
     ) * (1.0 / 100.0)
+
+    val goodMeasures = measures.filter { it.grams > 0.0 && !isJunkMeasure(it.description) }
+
     val units = buildList {
         add(PortionUnit("g", perGram, 1.0))
         add(PortionUnit("oz", perGram * 28.3495, 28.3495))
-        measures.forEach { m -> add(PortionUnit(m.description, perGram * m.grams, m.grams)) }
+        goodMeasures.forEach { m -> add(PortionUnit(m.description, perGram * m.grams, m.grams)) }
     }
-    return FoodDetail(food.name, units, defaultAmount = 100.0)
+
+    // Prefer a single natural unit ("1 slice", "1 large egg", "1 cup"); else any real
+    // measure; else fall back to 100 g.
+    val preferred = goodMeasures.firstOrNull { it.description.trim().startsWith("1 ") }
+        ?: goodMeasures.firstOrNull()
+
+    return if (preferred != null) {
+        FoodDetail(food.name, units, defaultUnitLabel = preferred.description, defaultAmount = 1.0)
+    } else {
+        FoodDetail(food.name, units, defaultUnitLabel = "g", defaultAmount = 100.0)
+    }
 }
 
 fun foodItemDetail(food: FoodItem): FoodDetail {
@@ -54,7 +73,7 @@ fun foodItemDetail(food: FoodItem): FoodDetail {
             add(PortionUnit(food.servingUnit, perServing * (1.0 / gramsPerServing), 1.0))
         }
     }
-    return FoodDetail(food.name, units, defaultAmount = 1.0)
+    return FoodDetail(food.name, units, defaultUnitLabel = "serving", defaultAmount = 1.0)
 }
 
 data class Staged(val quantity: Double, val unit: String, val nutrients: Nutrients)
