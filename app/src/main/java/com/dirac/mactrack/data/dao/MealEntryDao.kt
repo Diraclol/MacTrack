@@ -22,6 +22,14 @@ interface MealEntryDao {
     @Query("SELECT * FROM meal_entries WHERE id = :id")
     suspend fun getById(id: String): MealEntry?
 
+    // The most-recent log of each distinct re-openable food (has provenance), newest first.
+    // SQLite returns the MAX(createdAt) row's columns for each group.
+    @Query(
+        "SELECT * FROM meal_entries WHERE sourceId IS NOT NULL " +
+            "GROUP BY sourceType, sourceId ORDER BY MAX(createdAt) DESC LIMIT :limit"
+    )
+    fun getRecentDistinct(limit: Int): Flow<List<MealEntry>>
+
     @Delete
     suspend fun delete(entry: MealEntry)
 }

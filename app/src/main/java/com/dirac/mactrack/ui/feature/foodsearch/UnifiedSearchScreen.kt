@@ -58,6 +58,7 @@ fun UnifiedSearchScreen(
     val custom by viewModel.custom.collectAsState()
     val common by viewModel.common.collectAsState()
     val cartCount by viewModel.cartCount.collectAsState()
+    val recent by viewModel.recent.collectAsState()
     val focusManager = LocalFocusManager.current
     var showDiscardDialog by remember { mutableStateOf(false) }
     var barcode by remember { mutableStateOf("") }
@@ -78,26 +79,40 @@ fun UnifiedSearchScreen(
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (custom.isNotEmpty()) {
-                item { Text("Foods", style = MaterialTheme.typography.titleSmall) }
-                items(items = custom, key = { "c_" + it.id }) { food ->
-                    FoodRow(
-                        name = food.name,
-                        line = "${food.calories.roundToInt()} cal · ${food.proteinG.roundToInt()}P ${food.carbG.roundToInt()}C ${food.fatG.roundToInt()}F · per ${servingText(food.servingSize)} ${food.servingUnit}",
-                        onOpen = { onOpenFood("custom", food.id) },
-                        onAdd = { viewModel.addToCart("custom", food.id) }
-                    )
+            if (query.isBlank()) {
+                if (recent.isNotEmpty()) {
+                    item { Text("Recent", style = MaterialTheme.typography.titleSmall) }
+                    items(items = recent, key = { "r_" + it.id }) { entry ->
+                        FoodRow(
+                            name = entry.foodName,
+                            line = "${entry.calories.roundToInt()} cal · ${entry.proteinG.roundToInt()}P ${entry.carbG.roundToInt()}C ${entry.fatG.roundToInt()}F · last ${servingText(entry.amount)} ${entry.unitLabel ?: entry.unit}",
+                            onOpen = { entry.sourceId?.let { onOpenFood(entry.sourceType, it) } },
+                            onAdd = { entry.sourceId?.let { viewModel.addToCart(entry.sourceType, it) } }
+                        )
+                    }
                 }
-            }
-            if (common.isNotEmpty()) {
-                item { Text("Common", style = MaterialTheme.typography.titleSmall) }
-                items(items = common, key = { "n_" + it.code }) { food ->
-                    FoodRow(
-                        name = food.name,
-                        line = "${food.kcal.roundToInt()} cal · ${food.protein.roundToInt()}P ${food.carb.roundToInt()}C ${food.fat.roundToInt()}F · per 100 g",
-                        onOpen = { onOpenFood("cnf", food.code.toString()) },
-                        onAdd = { viewModel.addToCart("cnf", food.code.toString()) }
-                    )
+            } else {
+                if (custom.isNotEmpty()) {
+                    item { Text("Foods", style = MaterialTheme.typography.titleSmall) }
+                    items(items = custom, key = { "c_" + it.id }) { food ->
+                        FoodRow(
+                            name = food.name,
+                            line = "${food.calories.roundToInt()} cal · ${food.proteinG.roundToInt()}P ${food.carbG.roundToInt()}C ${food.fatG.roundToInt()}F · per ${servingText(food.servingSize)} ${food.servingUnit}",
+                            onOpen = { onOpenFood("custom", food.id) },
+                            onAdd = { viewModel.addToCart("custom", food.id) }
+                        )
+                    }
+                }
+                if (common.isNotEmpty()) {
+                    item { Text("Common", style = MaterialTheme.typography.titleSmall) }
+                    items(items = common, key = { "n_" + it.code }) { food ->
+                        FoodRow(
+                            name = food.name,
+                            line = "${food.kcal.roundToInt()} cal · ${food.protein.roundToInt()}P ${food.carb.roundToInt()}C ${food.fat.roundToInt()}F · per 100 g",
+                            onOpen = { onOpenFood("cnf", food.code.toString()) },
+                            onAdd = { viewModel.addToCart("cnf", food.code.toString()) }
+                        )
+                    }
                 }
             }
         }

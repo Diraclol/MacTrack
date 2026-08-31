@@ -55,6 +55,10 @@ class UnifiedSearchViewModel(
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
+    // Recently logged foods that can be reopened (have provenance), for the empty-query view.
+    val recent: StateFlow<List<MealEntry>> = mealEntryRepository.getRecentDistinct(20)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun onQueryChange(q: String) {
         _query.value = q
         viewModelScope.launch {
