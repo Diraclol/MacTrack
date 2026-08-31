@@ -70,7 +70,11 @@ class MealsViewModel(
                         satFatG = food.satFatG * a,
                         sodiumMg = food.sodiumMg * a,
                         potassiumMg = food.potassiumMg * a,
-                        cholesterolMg = food.cholesterolMg * a
+                        cholesterolMg = food.cholesterolMg * a,
+                        sourceType = "custom",
+                        sourceId = food.id,
+                        unitLabel = "serving",
+                        updatedAt = System.currentTimeMillis()
                     )
                 )
             }

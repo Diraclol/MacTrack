@@ -37,7 +37,10 @@ class QuickAddViewModel(private val mealEntryRepository: MealEntryRepository) : 
                     calories = calories,
                     proteinG = protein,
                     carbG = carb,
-                    fatG = fat
+                    fatG = fat,
+                    sourceType = "quick",
+                    unitLabel = "serving",
+                    updatedAt = System.currentTimeMillis()
                 )
             )
             onDone()

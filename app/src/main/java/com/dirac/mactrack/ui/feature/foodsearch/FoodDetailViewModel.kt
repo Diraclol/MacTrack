@@ -40,6 +40,9 @@ class FoodDetailViewModel(
 
     private val today: String = LocalDate.now().toString()
 
+    private var loadedSourceType: String = "unknown"
+    private var loadedSourceId: String? = null
+
     private val _detail = MutableStateFlow<FoodDetail?>(null)
     val detail: StateFlow<FoodDetail?> = _detail.asStateFlow()
 
@@ -50,6 +53,8 @@ class FoodDetailViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun load(source: String, id: String) {
+        loadedSourceType = source
+        loadedSourceId = id
         viewModelScope.launch {
             val d = withContext(Dispatchers.IO) {
                 when (source) {
@@ -67,7 +72,7 @@ class FoodDetailViewModel(
     fun addToCart(amount: Double, unit: PortionUnit) {
         val d = _detail.value ?: return
         val staged = stagePortion(amount, unit)
-        cartRepository.add(CartItem(name = d.name, quantity = staged.quantity, unit = staged.unit, nutrients = staged.nutrients))
+        cartRepository.add(CartItem(name = d.name, quantity = staged.quantity, unit = staged.unit, nutrients = staged.nutrients, sourceType = loadedSourceType, sourceId = loadedSourceId, unitLabel = unit.label))
     }
 
     fun log(amount: Double, unit: PortionUnit, timeMinutes: Int, onDone: () -> Unit) {
@@ -81,7 +86,9 @@ class FoodDetailViewModel(
                     amount = amount, quantity = staged.quantity, unit = staged.unit,
                     calories = s.kcal, proteinG = s.protein, carbG = s.carb, fatG = s.fat,
                     fiberG = s.fiber, sugarG = s.sugar, satFatG = s.satFat,
-                    sodiumMg = s.sodium, potassiumMg = s.potassium, cholesterolMg = s.cholesterol
+                    sodiumMg = s.sodium, potassiumMg = s.potassium, cholesterolMg = s.cholesterol,
+                    sourceType = loadedSourceType, sourceId = loadedSourceId, unitLabel = unit.label,
+                    updatedAt = System.currentTimeMillis()
                 )
             )
             onDone()

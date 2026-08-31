@@ -52,7 +52,8 @@ class MealLogViewModel(
                     satFatG = entry.satFatG * factor,
                     sodiumMg = entry.sodiumMg * factor,
                     potassiumMg = entry.potassiumMg * factor,
-                    cholesterolMg = entry.cholesterolMg * factor
+                    cholesterolMg = entry.cholesterolMg * factor,
+                    updatedAt = System.currentTimeMillis()
                 )
             )
         }
