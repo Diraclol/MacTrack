@@ -1,9 +1,13 @@
 package com.dirac.mactrack.ui.feature.today
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,8 +38,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.MealEntry
@@ -51,6 +59,18 @@ private val CalorieColor = Color(0xFFFF9800)
 private val ProteinColor = Color(0xFFE91E63)
 private val FatColor = Color(0xFF4CAF50)
 private val CarbColor = Color(0xFF2196F3)
+private val SodiumColor = Color(0xFF26A69A)
+private val PotassiumColor = Color(0xFF66BB6A)
+private val FiberColor = Color(0xFF42A5F5)
+private val CaffeineColor = Color(0xFFAB47BC)
+
+// Soft daily reference targets for the micronutrient mini-bars (a scale, not a user goal).
+private const val SodiumTargetMg = 2300.0
+private const val PotassiumTargetMg = 3400.0
+private const val FiberTargetG = 28.0
+private const val CaffeineTargetMg = 400.0
+
+private fun oneDecimal(x: Double): String = String.format(Locale.US, "%.1f", x)
 
 private fun servings(amount: Double): String =
     if (amount % 1.0 == 0.0) amount.toInt().toString() else amount.toString()
@@ -72,6 +92,11 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
     val totalP = entries.sumOf { it.proteinG }
     val totalF = entries.sumOf { it.fatG }
     val totalC = entries.sumOf { it.carbG }
+    val totalSodium = entries.sumOf { it.sodiumMg }
+    val totalPotassium = entries.sumOf { it.potassiumMg }
+    val totalFiber = entries.sumOf { it.fiberG }
+    // Caffeine isn't a tracked column yet (needs a schema field); shows 0 until that lands.
+    val totalCaffeine = 0.0
 
     val byHour = entries.groupBy { it.timeMinutes / 60 }.toSortedMap()
 
@@ -96,6 +121,14 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
         }
 
         LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            item {
+                NutrientBox(
+                    sodiumMg = totalSodium,
+                    potassiumMg = totalPotassium,
+                    fiberG = totalFiber,
+                    caffeineMg = totalCaffeine
+                )
+            }
             if (byHour.isEmpty()) {
                 item {
                     Text(
@@ -124,10 +157,10 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
                             )
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text("${hourP.roundToInt()}P", style = MaterialTheme.typography.labelMedium, color = ProteinColor)
-                            Text("${hourC.roundToInt()}C", style = MaterialTheme.typography.labelMedium, color = CarbColor)
-                            Text("${hourF.roundToInt()}F", style = MaterialTheme.typography.labelMedium, color = FatColor)
-                            Text("${hourCal.roundToInt()} cal", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            MacroPill("${hourP.roundToInt()}P", ProteinColor)
+                            MacroPill("${hourC.roundToInt()}C", CarbColor)
+                            MacroPill("${hourF.roundToInt()}F", FatColor)
+                            MacroPill("${hourCal.roundToInt()}", CalorieColor, Icons.Filled.LocalFireDepartment)
                         }
                     }
                 }
@@ -144,7 +177,8 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
         Surface(
             onClick = onOpenSearch,
             shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
+            color = Color.Transparent,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
         ) {
             Row(
@@ -223,23 +257,84 @@ private fun TotalStat(modifier: Modifier, label: String, consumed: Double, goal:
     }
 }
 
+// A row of compact micronutrient cards (value + a mini bar vs a reference target).
+@Composable
+private fun NutrientBox(sodiumMg: Double, potassiumMg: Double, fiberG: Double, caffeineMg: Double) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        NutrientCard("Sodium", "${sodiumMg.roundToInt()} mg", (sodiumMg / SodiumTargetMg).coerceIn(0.0, 1.0).toFloat(), SodiumColor)
+        NutrientCard("Potassium", "${potassiumMg.roundToInt()} mg", (potassiumMg / PotassiumTargetMg).coerceIn(0.0, 1.0).toFloat(), PotassiumColor)
+        NutrientCard("Dietary Fiber", "${oneDecimal(fiberG)} g", (fiberG / FiberTargetG).coerceIn(0.0, 1.0).toFloat(), FiberColor)
+        NutrientCard("Caffeine", "${caffeineMg.roundToInt()} mg", (caffeineMg / CaffeineTargetMg).coerceIn(0.0, 1.0).toFloat(), CaffeineColor)
+    }
+}
+
+@Composable
+private fun RowScope.NutrientCard(label: String, value: String, fraction: Float, color: Color) {
+    Card(modifier = Modifier.weight(1f)) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2
+            )
+            Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+            LinearProgressIndicator(
+                progress = { fraction },
+                color = color,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp))
+            )
+        }
+    }
+}
+
+// A small outlined pill for a macro (or calories, with a flame icon) on the hour header.
+@Composable
+private fun MacroPill(text: String, color: Color, icon: ImageVector? = null) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(50))
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(12.dp))
+        }
+        Text(text, style = MaterialTheme.typography.labelMedium, color = color)
+    }
+}
+
 @Composable
 private fun FoodCard(entry: MealEntry, onClick: () -> Unit, onDelete: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(foodEmoji(entry.foodName), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
+            Text(foodEmoji(entry.foodName), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(entry.foodName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                Text(
+                    entry.foodName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Text(
                     "${entry.proteinG.roundToInt()}P ${entry.fatG.roundToInt()}F ${entry.carbG.roundToInt()}C · ${servings(entry.quantity)} ${entry.unit}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Text("${entry.calories.roundToInt()}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("cal", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            Text(
+                "${entry.calories.roundToInt()} cal",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 8.dp)
+            )
             IconButton(onClick = onDelete) {
                 Icon(Icons.Filled.Delete, contentDescription = "Remove ${entry.foodName}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }

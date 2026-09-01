@@ -6,10 +6,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,18 +39,6 @@ private val ProteinColor = Color(0xFFE91E63)
 private val CarbColor = Color(0xFF2196F3)
 private val FatColor = Color(0xFF4CAF50)
 private val CalorieColor = Color(0xFFFF9800)
-private val SodiumColor = Color(0xFF26A69A)
-private val PotassiumColor = Color(0xFF66BB6A)
-private val FiberColor = Color(0xFF42A5F5)
-private val SugarColor = Color(0xFFAB47BC)
-
-// Soft daily reference targets for the micronutrient mini-bars (not user goals, just a scale).
-private const val SodiumTargetMg = 2300.0
-private const val PotassiumTargetMg = 3400.0
-private const val FiberTargetG = 28.0
-private const val SugarTargetG = 50.0
-
-private fun oneDecimal(x: Double): String = String.format(Locale.US, "%.1f", x)
 
 @Composable
 fun DashboardScreen(modifier: Modifier = Modifier) {
@@ -65,10 +51,6 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
     val totalP = entries.sumOf { it.proteinG }
     val totalC = entries.sumOf { it.carbG }
     val totalF = entries.sumOf { it.fatG }
-    val totalSodium = entries.sumOf { it.sodiumMg }
-    val totalPotassium = entries.sumOf { it.potassiumMg }
-    val totalFiber = entries.sumOf { it.fiberG }
-    val totalSugar = entries.sumOf { it.sugarG }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(16.dp),
@@ -92,14 +74,6 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
                 p = totalP, pGoal = goal?.proteinGoalG ?: 0.0,
                 f = totalF, fGoal = goal?.fatGoalG ?: 0.0,
                 c = totalC, cGoal = goal?.carbGoalG ?: 0.0
-            )
-        }
-        item {
-            NutrientBox(
-                sodiumMg = totalSodium,
-                potassiumMg = totalPotassium,
-                fiberG = totalFiber,
-                sugarG = totalSugar
             )
         }
         item { FoodStreakCard(loggedDates = loggedDates.toSet()) }
@@ -184,42 +158,6 @@ private fun MacroBar(label: String, current: Double, goal: Double, color: Color)
             )
         }
         LinearProgressIndicator(progress = { fraction }, color = color, modifier = Modifier.fillMaxWidth())
-    }
-}
-
-// A row of compact micronutrient cards (value + a mini bar vs a reference target), mirroring
-// MacroFactor's dashboard nutrient box.
-@Composable
-private fun NutrientBox(sodiumMg: Double, potassiumMg: Double, fiberG: Double, sugarG: Double) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        NutrientCard("Sodium", "${sodiumMg.roundToInt()} mg", (sodiumMg / SodiumTargetMg).coerceIn(0.0, 1.0).toFloat(), SodiumColor)
-        NutrientCard("Potassium", "${potassiumMg.roundToInt()} mg", (potassiumMg / PotassiumTargetMg).coerceIn(0.0, 1.0).toFloat(), PotassiumColor)
-        NutrientCard("Dietary Fiber", "${oneDecimal(fiberG)} g", (fiberG / FiberTargetG).coerceIn(0.0, 1.0).toFloat(), FiberColor)
-        NutrientCard("Sugar", "${oneDecimal(sugarG)} g", (sugarG / SugarTargetG).coerceIn(0.0, 1.0).toFloat(), SugarColor)
-    }
-}
-
-@Composable
-private fun RowScope.NutrientCard(label: String, value: String, fraction: Float, color: Color) {
-    Card(modifier = Modifier.weight(1f)) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2
-            )
-            Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1)
-            LinearProgressIndicator(
-                progress = { fraction },
-                color = color,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp))
-            )
-        }
     }
 }
 
