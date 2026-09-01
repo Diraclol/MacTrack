@@ -30,3 +30,12 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         db.execSQL("ALTER TABLE meal_entries ADD COLUMN caffeineMg REAL NOT NULL DEFAULT 0")
     }
 }
+
+// 4 -> 5: custom foods can carry a chosen icon and a barcode. Both nullable TEXT, so no
+// DEFAULT (and no @ColumnInfo(defaultValue) on FoodItem.emoji / FoodItem.barcode).
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE food_items ADD COLUMN emoji TEXT")
+        db.execSQL("ALTER TABLE food_items ADD COLUMN barcode TEXT")
+    }
+}

@@ -10,5 +10,6 @@ class FoodRepository(private val foodItemDao: FoodItemDao) {
     suspend fun getFood(id: String): FoodItem? = foodItemDao.getById(id)
     suspend fun addFood(foodItem: FoodItem) = foodItemDao.upsert(foodItem)
     suspend fun setFavorite(id: String, favorite: Boolean) = foodItemDao.setFavorite(id, favorite)
+    suspend fun setEmoji(id: String, emoji: String?) = foodItemDao.setEmoji(id, emoji)
     suspend fun deleteFood(foodItem: FoodItem) = foodItemDao.delete(foodItem)
 }

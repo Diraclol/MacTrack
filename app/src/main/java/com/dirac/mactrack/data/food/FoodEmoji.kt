@@ -64,3 +64,8 @@ fun foodEmoji(name: String): String {
     }
     return DEFAULT_EMOJI
 }
+
+// The icon to show for a saved food: the user's chosen emoji if set, otherwise the
+// name-derived one. Used everywhere a FoodItem's icon is rendered.
+fun foodIcon(emoji: String?, name: String): String =
+    emoji?.takeIf { it.isNotBlank() } ?: foodEmoji(name)

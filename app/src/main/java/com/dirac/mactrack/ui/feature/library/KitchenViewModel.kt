@@ -77,6 +77,10 @@ class KitchenViewModel(
         viewModelScope.launch { foodRepository.deleteFood(food) }
     }
 
+    fun setEmoji(id: String, emoji: String?) {
+        viewModelScope.launch { foodRepository.setEmoji(id, emoji) }
+    }
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

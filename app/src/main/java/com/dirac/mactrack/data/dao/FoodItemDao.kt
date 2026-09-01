@@ -25,6 +25,9 @@ interface FoodItemDao {
     @Query("UPDATE food_items SET favorite = :favorite WHERE id = :id")
     suspend fun setFavorite(id: String, favorite: Boolean)
 
+    @Query("UPDATE food_items SET emoji = :emoji WHERE id = :id")
+    suspend fun setEmoji(id: String, emoji: String?)
+
     @Delete
     suspend fun delete(foodItem: FoodItem)
 }

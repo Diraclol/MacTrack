@@ -59,7 +59,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.dirac.mactrack.data.food.foodEmoji
+import com.dirac.mactrack.data.food.foodIcon
 import kotlin.math.roundToInt
 
 private fun servingText(amount: Double): String =
@@ -255,7 +255,8 @@ private fun AllTab(
                         onOpen = { onOpenFood("custom", food.id) },
                         onAdd = { viewModel.addToCart("custom", food.id) },
                         favorite = food.favorite,
-                        onToggleFavorite = { viewModel.toggleFavorite(food) }
+                        onToggleFavorite = { viewModel.toggleFavorite(food) },
+                        emojiOverride = food.emoji
                     )
                 }
             }
@@ -272,7 +273,8 @@ private fun AllTab(
                         onOpen = { onOpenFood("custom", food.id) },
                         onAdd = { viewModel.addToCart("custom", food.id) },
                         favorite = food.favorite,
-                        onToggleFavorite = { viewModel.toggleFavorite(food) }
+                        onToggleFavorite = { viewModel.toggleFavorite(food) },
+                        emojiOverride = food.emoji
                     )
                 }
             }
@@ -311,7 +313,8 @@ private fun FoodsTab(
                 onOpen = { onOpenFood("custom", food.id) },
                 onAdd = { viewModel.addToCart("custom", food.id) },
                 favorite = food.favorite,
-                onToggleFavorite = { viewModel.toggleFavorite(food) }
+                onToggleFavorite = { viewModel.toggleFavorite(food) },
+                emojiOverride = food.emoji
             )
         }
     }
@@ -424,14 +427,15 @@ private fun FoodRow(
     onOpen: () -> Unit,
     onAdd: () -> Unit,
     favorite: Boolean? = null,
-    onToggleFavorite: () -> Unit = {}
+    onToggleFavorite: () -> Unit = {},
+    emojiOverride: String? = null
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().clickable { onOpen() }.padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(foodEmoji(name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
+            Text(foodIcon(emojiOverride, name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

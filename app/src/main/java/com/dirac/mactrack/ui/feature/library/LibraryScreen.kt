@@ -50,8 +50,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.FoodItem
-import com.dirac.mactrack.data.food.foodEmoji
+import com.dirac.mactrack.data.food.foodIcon
 import com.dirac.mactrack.ui.common.BackBar
+import com.dirac.mactrack.ui.common.EmojiPickerDialog
+import com.dirac.mactrack.ui.common.FOOD_EMOJIS
 import kotlin.math.roundToInt
 
 private val ProteinColor = Color(0xFFE91E63)
@@ -83,6 +85,7 @@ fun LibraryScreen(
     var tab by remember { mutableStateOf(0) }
     var showCreate by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<FoodItem?>(null) }
+    var pendingIconEdit by remember { mutableStateOf<FoodItem?>(null) }
 
     val showFoods = tab == 0 || tab == 3
     val showMeals = tab == 0 || tab == 2
@@ -112,7 +115,7 @@ fun LibraryScreen(
 
             if (showFoods) {
                 items(items = foods, key = { "f_" + it.id }) { food ->
-                    FoodRow(food = food, onOpen = { onOpenFood(food.id) }, onLongPress = { pendingDelete = food })
+                    FoodRow(food = food, onOpen = { onOpenFood(food.id) }, onLongPress = { pendingDelete = food }, onEditIcon = { pendingIconEdit = food })
                 }
             }
             if (showMeals) {
@@ -173,16 +176,31 @@ fun LibraryScreen(
             dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text("Cancel") } }
         )
     }
+
+    val toEditIcon = pendingIconEdit
+    if (toEditIcon != null) {
+        EmojiPickerDialog(
+            title = "Choose an icon",
+            current = toEditIcon.emoji ?: "",
+            choices = FOOD_EMOJIS,
+            onPick = { viewModel.setEmoji(toEditIcon.id, it); pendingIconEdit = null },
+            onDismiss = { pendingIconEdit = null }
+        )
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FoodRow(food: FoodItem, onOpen: () -> Unit, onLongPress: () -> Unit) {
+private fun FoodRow(food: FoodItem, onOpen: () -> Unit, onLongPress: () -> Unit, onEditIcon: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().combinedClickable(onClick = onOpen, onLongClick = onLongPress).padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(foodEmoji(food.name), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
+        Text(
+            foodIcon(food.emoji, food.name),
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.clickable { onEditIcon() }.padding(end = 12.dp)
+        )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(food.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -27,5 +27,9 @@ data class FoodItem(
     val servingUnit: String = "serving",
     // Whether the user has hearted this food. Stored as INTEGER 0/1; the migration's DEFAULT 0
     // must match this @ColumnInfo(defaultValue) or Room's startup validation throws.
-    @ColumnInfo(defaultValue = "0") val favorite: Boolean = false
+    @ColumnInfo(defaultValue = "0") val favorite: Boolean = false,
+    // Optional user-chosen icon (overrides the name-derived emoji) and scanned barcode.
+    // Both nullable, so the migration adds them without a DEFAULT and no @ColumnInfo is needed.
+    val emoji: String? = null,
+    val barcode: String? = null
 )

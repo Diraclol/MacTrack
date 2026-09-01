@@ -44,8 +44,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.clickable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.food.foodEmoji
+import com.dirac.mactrack.ui.common.EmojiPickerDialog
+import com.dirac.mactrack.ui.common.FOOD_EMOJIS
 import kotlin.math.roundToInt
 
 private val ProteinColor = Color(0xFFE91E63)
@@ -77,6 +80,9 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
     var servingSize by remember { mutableStateOf("1") }
     var servingUnit by remember { mutableStateOf("serving") }
     var showMicros by remember { mutableStateOf(false) }
+    var emoji by remember { mutableStateOf<String?>(null) }
+    var barcode by remember { mutableStateOf("") }
+    var showIconPicker by remember { mutableStateOf(false) }
 
     val p = protein.toDoubleOrNull() ?: 0.0
     val c = carb.toDoubleOrNull() ?: 0.0
@@ -100,7 +106,9 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
             caffeineMg = caffeine.toDoubleOrNull() ?: 0.0,
             servingSize = servingSize.toDoubleOrNull() ?: 1.0,
             servingUnit = servingUnit,
-            brand = brand.ifBlank { null }
+            brand = brand.ifBlank { null },
+            emoji = emoji,
+            barcode = barcode.ifBlank { null }
         )
         onSaved()
     }
@@ -124,18 +132,26 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Emoji avatar (follows the typed name).
+            // Icon avatar: the chosen emoji, or one derived from the name until you pick. Tap to change.
             item {
-                Box(
+                Column(
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    contentAlignment = Alignment.Center
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Box(
-                        modifier = Modifier.size(72.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
+                        modifier = Modifier.size(72.dp).clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable { showIconPicker = true },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(foodEmoji(name.ifBlank { "food" }), style = MaterialTheme.typography.headlineMedium)
+                        Text(emoji ?: foodEmoji(name.ifBlank { "food" }), style = MaterialTheme.typography.headlineMedium)
                     }
+                    Text(
+                        "Tap to choose an icon",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
 
@@ -145,6 +161,7 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
                     Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         IdentityField("Food", name, { name = it }, "Name")
                         IdentityField("Brand", brand, { brand = it }, "Optional")
+                        IdentityField("Barcode", barcode, { barcode = it }, "Optional")
                     }
                 }
             }
@@ -223,6 +240,16 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
 
             item { Box(Modifier.size(8.dp)) }
         }
+    }
+
+    if (showIconPicker) {
+        EmojiPickerDialog(
+            title = "Choose an icon",
+            current = emoji ?: "",
+            choices = FOOD_EMOJIS,
+            onPick = { emoji = it; showIconPicker = false },
+            onDismiss = { showIconPicker = false }
+        )
     }
 }
 
