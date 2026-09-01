@@ -14,6 +14,7 @@ import com.dirac.mactrack.data.repository.ThemeRepository
 import com.dirac.mactrack.data.backup.BackupManager
 import com.dirac.mactrack.data.cnf.CnfRepository
 import com.dirac.mactrack.data.cart.CartRepository
+import com.dirac.mactrack.data.builder.IngredientBuilderRepository
 import com.dirac.mactrack.data.off.OpenFoodFactsRepository
 import com.dirac.mactrack.data.session.LogDateStore
 import com.dirac.mactrack.data.MIGRATION_1_2
@@ -63,6 +64,12 @@ class MacTrackApplication : Application() {
 
     val cartRepository: CartRepository by lazy {
         CartRepository()
+    }
+
+    // Shared in-memory draft used while building a meal or recipe, so the food-search screen (reused
+    // as an ingredient picker) and the Create screen operate on the same list across navigation.
+    val ingredientBuilder: IngredientBuilderRepository by lazy {
+        IngredientBuilderRepository()
     }
 
     val openFoodFactsRepository: OpenFoodFactsRepository by lazy {

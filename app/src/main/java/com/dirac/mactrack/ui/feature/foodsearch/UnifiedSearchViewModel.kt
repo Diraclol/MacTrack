@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dirac.mactrack.MacTrackApplication
+import com.dirac.mactrack.data.builder.IngredientBuilderRepository
 import com.dirac.mactrack.data.cart.CartItem
 import com.dirac.mactrack.data.cart.CartRepository
 import com.dirac.mactrack.data.cnf.CnfFood
@@ -14,6 +15,7 @@ import com.dirac.mactrack.data.cnf.CnfRepository
 import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.entity.MealEntry
 import com.dirac.mactrack.data.entity.MealTemplate
+import com.dirac.mactrack.data.food.asFoodItem
 import com.dirac.mactrack.data.food.cnfFoodDetail
 import com.dirac.mactrack.data.food.foodItemDetail
 import com.dirac.mactrack.data.food.stagePortion
@@ -40,6 +42,7 @@ class UnifiedSearchViewModel(
     private val cartRepository: CartRepository,
     private val mealEntryRepository: MealEntryRepository,
     private val mealTemplateRepository: MealTemplateRepository,
+    private val ingredientBuilder: IngredientBuilderRepository,
     private val logDateStore: LogDateStore
 ) : ViewModel() {
 
@@ -74,6 +77,11 @@ class UnifiedSearchViewModel(
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
+    // How many ingredients are in the shared draft, for the picker-mode "Done (N)" button.
+    val builderCount: StateFlow<Int> = ingredientBuilder.items
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     // Recently logged foods that can be reopened (have provenance), for the empty-query view.
     val recent: StateFlow<List<MealEntry>> = mealEntryRepository.getRecentDistinct(20)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -104,6 +112,26 @@ class UnifiedSearchViewModel(
                 ?: detail.units.firstOrNull() ?: return@launch
             val staged = stagePortion(detail.defaultAmount, unit)
             cartRepository.add(CartItem(name = detail.name, quantity = staged.quantity, amount = detail.defaultAmount, unit = staged.unit, nutrients = staged.nutrients, sourceType = source, sourceId = id, unitLabel = unit.label))
+        }
+    }
+
+    // Picker mode: add a searched food to the shared meal/recipe draft as one serving. Meal and
+    // recipe ingredients reference food_items rows, so a Common (CNF) food is first imported into
+    // food_items (idempotent upsert keyed by its deterministic "cnf_<code>" id, same as food search
+    // does). Branded/other sources aren't supported as ingredients yet and are ignored.
+    fun addIngredient(source: String, id: String, name: String) {
+        viewModelScope.launch {
+            val foodId = when (source) {
+                "custom" -> id
+                "cnf" -> {
+                    val cnf = withContext(Dispatchers.IO) { cnfRepository.getFood(id.toIntOrNull() ?: -1) }
+                        ?: return@launch
+                    foodRepository.addFood(cnf.asFoodItem())
+                    "cnf_${cnf.code}"
+                }
+                else -> return@launch
+            }
+            ingredientBuilder.add(foodId, name)
         }
     }
 
@@ -177,7 +205,7 @@ class UnifiedSearchViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                UnifiedSearchViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository, app.mealTemplateRepository, app.logDateStore)
+                UnifiedSearchViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository, app.mealTemplateRepository, app.ingredientBuilder, app.logDateStore)
             }
         }
     }

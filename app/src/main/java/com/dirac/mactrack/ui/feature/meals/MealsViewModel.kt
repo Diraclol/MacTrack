@@ -7,105 +7,51 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dirac.mactrack.MacTrackApplication
-import com.dirac.mactrack.data.cnf.CnfFood
-import com.dirac.mactrack.data.food.asFoodItem
+import com.dirac.mactrack.data.builder.DraftIngredient
+import com.dirac.mactrack.data.builder.IngredientBuilderRepository
 import com.dirac.mactrack.data.entity.FoodItem
-import com.dirac.mactrack.data.entity.MealEntry
-import com.dirac.mactrack.data.entity.MealTemplate
-import com.dirac.mactrack.data.cnf.CnfRepository
 import com.dirac.mactrack.data.repository.FoodRepository
-import com.dirac.mactrack.data.repository.MealEntryRepository
 import com.dirac.mactrack.data.repository.MealTemplateRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.time.LocalDate
-import java.time.LocalTime
 
+// Backs the redesigned Create Meal screen. A meal is a labeled batch of foods logged together in one
+// tap; ingredients are picked on the reused food-search screen, which appends to the shared
+// IngredientBuilder. This ViewModel just reads that draft, lets the screen adjust servings/remove,
+// and saves it as a MealTemplate. Cleared on open (init) so each new meal starts empty.
 class MealsViewModel(
     private val foodRepository: FoodRepository,
     private val mealTemplateRepository: MealTemplateRepository,
-    private val mealEntryRepository: MealEntryRepository,
-    private val cnfRepository: CnfRepository
+    private val ingredientBuilder: IngredientBuilderRepository
 ) : ViewModel() {
 
-    private val today: String = LocalDate.now().toString()
+    init {
+        // Fresh draft every time the Create Meal screen is opened. Returning from the picker keeps
+        // the same back-stack entry (and this ViewModel), so this does not wipe picked foods.
+        ingredientBuilder.clear()
+    }
 
+    // All saved foods, so the screen can resolve each draft ingredient's macros for the live totals.
     val foods: StateFlow<List<FoodItem>> = foodRepository.getAllFoods()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Ingredient search over the whole catalog: custom foods are filtered in the picker; Common
-    // (CNF) foods are searched here. Adding a CNF food imports it into food_items (deduped by code).
-    private val _query = MutableStateFlow("")
-    val query: StateFlow<String> = _query.asStateFlow()
-
-    private val _cnfMatches = MutableStateFlow<List<CnfFood>>(emptyList())
-    val cnfMatches: StateFlow<List<CnfFood>> = _cnfMatches.asStateFlow()
-
-    fun onQueryChange(q: String) {
-        _query.value = q
-        viewModelScope.launch {
-            val r = if (q.isBlank()) emptyList() else withContext(Dispatchers.IO) { cnfRepository.search(q) }
-            if (_query.value == q) _cnfMatches.value = r
-        }
-    }
-
-    fun importCnf(cnf: CnfFood) {
-        viewModelScope.launch { foodRepository.addFood(cnf.asFoodItem()) }
-    }
-
-    val templates: StateFlow<List<MealTemplate>> = mealTemplateRepository.getTemplates()
+    // The ingredients picked so far (from the shared builder).
+    val ingredients: StateFlow<List<DraftIngredient>> = ingredientBuilder.items
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun saveTemplate(name: String, items: List<Pair<String, Double>>) {
+    fun setServings(foodId: String, servings: Double) = ingredientBuilder.setServings(foodId, servings)
+
+    fun removeIngredient(foodId: String) = ingredientBuilder.remove(foodId)
+
+    // Persist the meal as a template (name + foodId->servings pairs), then clear the draft.
+    fun saveMeal(name: String, items: List<Pair<String, Double>>, onDone: () -> Unit) {
         if (name.isBlank() || items.isEmpty()) return
-        viewModelScope.launch { mealTemplateRepository.saveTemplate(name.trim(), items) }
-    }
-
-    fun deleteTemplate(template: MealTemplate) {
-        viewModelScope.launch { mealTemplateRepository.deleteTemplate(template) }
-    }
-
-    // Log every food in the saved meal at the current time.
-    fun logTemplate(template: MealTemplate) {
         viewModelScope.launch {
-            val now = LocalTime.now()
-            val timeMinutes = now.hour * 60 + now.minute
-            val items = mealTemplateRepository.getItems(template.id)
-            val foodsById = foods.value.associateBy { it.id }
-            items.forEach { item ->
-                val food = foodsById[item.foodId] ?: return@forEach
-                val a = item.amount
-                mealEntryRepository.logEntry(
-                    MealEntry(
-                        date = today,
-                        timeMinutes = timeMinutes,
-                        foodName = food.name,
-                        amount = a,
-                        quantity = a * food.servingSize,
-                        unit = food.servingUnit,
-                        calories = food.calories * a,
-                        proteinG = food.proteinG * a,
-                        carbG = food.carbG * a,
-                        fatG = food.fatG * a,
-                        fiberG = food.fiberG * a,
-                        sugarG = food.sugarG * a,
-                        satFatG = food.satFatG * a,
-                        sodiumMg = food.sodiumMg * a,
-                        potassiumMg = food.potassiumMg * a,
-                        cholesterolMg = food.cholesterolMg * a,
-                        sourceType = "custom",
-                        sourceId = food.id,
-                        unitLabel = "serving",
-                        updatedAt = System.currentTimeMillis()
-                    )
-                )
-            }
+            mealTemplateRepository.saveTemplate(name.trim(), items)
+            ingredientBuilder.clear()
+            onDone()
         }
     }
 
@@ -113,7 +59,7 @@ class MealsViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                MealsViewModel(app.foodRepository, app.mealTemplateRepository, app.mealEntryRepository, app.cnfRepository)
+                MealsViewModel(app.foodRepository, app.mealTemplateRepository, app.ingredientBuilder)
             }
         }
     }

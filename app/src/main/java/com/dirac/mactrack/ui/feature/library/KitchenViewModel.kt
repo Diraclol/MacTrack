@@ -113,6 +113,10 @@ class KitchenViewModel(
         viewModelScope.launch { recipeRepository.deleteRecipe(recipe) }
     }
 
+    fun deleteMeal(template: MealTemplate) {
+        viewModelScope.launch { mealTemplateRepository.deleteTemplate(template) }
+    }
+
     fun setEmoji(id: String, emoji: String?) {
         viewModelScope.launch { foodRepository.setEmoji(id, emoji) }
     }

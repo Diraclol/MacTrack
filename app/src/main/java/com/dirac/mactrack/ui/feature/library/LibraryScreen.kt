@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.FoodItem
+import com.dirac.mactrack.data.entity.MealTemplate
 import com.dirac.mactrack.data.entity.Recipe
 import com.dirac.mactrack.data.food.foodIcon
 import com.dirac.mactrack.ui.common.BackBar
@@ -90,6 +91,7 @@ fun LibraryScreen(
     var pendingDelete by remember { mutableStateOf<FoodItem?>(null) }
     var pendingIconEdit by remember { mutableStateOf<FoodItem?>(null) }
     var pendingRecipeDelete by remember { mutableStateOf<Recipe?>(null) }
+    var pendingMealDelete by remember { mutableStateOf<MealTemplate?>(null) }
 
     val showFoods = tab == 0 || tab == 3
     val showMeals = tab == 0 || tab == 2
@@ -130,7 +132,7 @@ fun LibraryScreen(
             }
             if (showMeals) {
                 items(items = meals, key = { "m_" + it.template.id }) { summary ->
-                    MealRow(summary)
+                    MealRow(summary, onLongPress = { pendingMealDelete = summary.template })
                 }
             }
             when (tab) {
@@ -210,6 +212,19 @@ fun LibraryScreen(
             dismissButton = { TextButton(onClick = { pendingRecipeDelete = null }) { Text("Cancel") } }
         )
     }
+
+    val toDeleteMeal = pendingMealDelete
+    if (toDeleteMeal != null) {
+        AlertDialog(
+            onDismissRequest = { pendingMealDelete = null },
+            title = { Text("Delete meal?") },
+            text = { Text("Remove \"${toDeleteMeal.name}\" from your meals? Past logs of it are kept.") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.deleteMeal(toDeleteMeal); pendingMealDelete = null }) { Text("Delete") }
+            },
+            dismissButton = { TextButton(onClick = { pendingMealDelete = null }) { Text("Cancel") } }
+        )
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -267,9 +282,13 @@ private fun RecipeRow(summary: RecipeSummary, onOpen: () -> Unit, onLongPress: (
     HorizontalDivider()
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MealRow(summary: MealSummary) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun MealRow(summary: MealSummary, onLongPress: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = onLongPress).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Text("🍱", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(summary.template.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)

@@ -181,15 +181,15 @@ fun MacTrackApp() {
             composable("create_meal") {
                 MealsScreen(
                     onBack = { navController.popBackStack() },
-                    onCreateFood = { navController.navigate("create_food") },
-                    showBar = true
+                    onAddFoods = { navController.navigate("food_search?picker=meal") },
+                    onSaved = { navController.popBackStack() }
                 )
             }
             composable("create_recipe") {
                 RecipesScreen(
                     onBack = { navController.popBackStack() },
-                    onCreateFood = { navController.navigate("create_food") },
-                    showBar = true
+                    onAddIngredients = { navController.navigate("food_search?picker=recipe") },
+                    onSaved = { navController.popBackStack() }
                 )
             }
             composable("goals") {
@@ -205,11 +205,17 @@ fun MacTrackApp() {
                     onReassessGoals = { navController.navigate("reassess_goals") }
                 )
             }
-            composable("food_search") {
+            composable(
+                "food_search?picker={picker}",
+                arguments = listOf(navArgument("picker") { type = NavType.StringType; defaultValue = "" })
+            ) { backStackEntry ->
+                val picker = backStackEntry.arguments?.getString("picker") ?: ""
                 UnifiedSearchScreen(
                     onOpenFood = { source, id -> navController.navigate("food_detail/$source/$id") },
                     onLoggedCart = { navController.popBackStack() },
                     onBack = { navController.popBackStack() },
+                    picker = picker,
+                    onDonePicking = { navController.popBackStack() },
                     onCreateFood = { navController.navigate("create_food") },
                     onCreateMeal = { navController.navigate("create_meal") },
                     onCreateRecipe = { navController.navigate("create_recipe") }

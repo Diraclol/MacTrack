@@ -73,6 +73,8 @@ fun UnifiedSearchScreen(
     onOpenFood: (String, String) -> Unit,
     onLoggedCart: () -> Unit,
     onBack: () -> Unit,
+    picker: String = "",
+    onDonePicking: () -> Unit = {},
     onCreateFood: () -> Unit = {},
     onCreateMeal: () -> Unit = {},
     onCreateRecipe: () -> Unit = {},
@@ -83,24 +85,33 @@ fun UnifiedSearchScreen(
     val custom by viewModel.custom.collectAsState()
     val common by viewModel.common.collectAsState()
     val cartCount by viewModel.cartCount.collectAsState()
+    val builderCount by viewModel.builderCount.collectAsState()
     val recent by viewModel.recent.collectAsState()
     val savedFoods by viewModel.savedFoods.collectAsState()
     val templates by viewModel.templates.collectAsState()
     val focusManager = LocalFocusManager.current
+
+    // Picker mode: the screen is reused to pick ingredients for a meal/recipe. It adds picked foods
+    // to the shared draft instead of the cart, drops the Meals/Quick tabs and barcode, and swaps the
+    // "Log" action for "Done". `picker` is "meal" or "recipe" (blank = normal log-to-today mode).
+    val isPicker = picker.isNotBlank()
+    val tabs = if (isPicker) listOf("All", "Foods") else TABS
 
     var tab by remember { mutableStateOf(0) }
     var showDiscardDialog by remember { mutableStateOf(false) }
     var showBarcodeDialog by remember { mutableStateOf(false) }
     var showCreate by remember { mutableStateOf(false) }
 
-    // back should guard when the cart has items
+    // back returns to the Create screen in picker mode; otherwise it guards a non-empty cart.
     fun attemptBack() {
-        if (cartCount > 0) showDiscardDialog = true else onBack()
+        if (isPicker) onDonePicking()
+        else if (cartCount > 0) showDiscardDialog = true
+        else onBack()
     }
     BackHandler(enabled = true) { attemptBack() }
 
     // The search field shows on the browsing tabs (All, Foods, Meals). Quick add has its own form.
-    val showSearchBar = tab == 0 || tab == 1 || tab == 2
+    val showSearchBar = if (isPicker) true else (tab == 0 || tab == 1 || tab == 2)
 
     // imePadding lifts the docked bottom bar above the keyboard when it opens.
     Column(modifier = modifier.fillMaxSize().imePadding()) {
@@ -112,9 +123,19 @@ fun UnifiedSearchScreen(
             IconButton(onClick = { attemptBack() }) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
-            Text("Add food", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            Button(onClick = { viewModel.logCart(onLoggedCart) }, enabled = cartCount > 0) {
-                Text(if (cartCount > 0) "Log $cartCount" else "Log")
+            Text(
+                if (isPicker && picker == "recipe") "Add ingredient" else "Add food",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.weight(1f)
+            )
+            if (isPicker) {
+                Button(onClick = onDonePicking) {
+                    Text(if (builderCount > 0) "Done ($builderCount)" else "Done")
+                }
+            } else {
+                Button(onClick = { viewModel.logCart(onLoggedCart) }, enabled = cartCount > 0) {
+                    Text(if (cartCount > 0) "Log $cartCount" else "Log")
+                }
             }
         }
 
@@ -122,7 +143,7 @@ fun UnifiedSearchScreen(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            TABS.forEachIndexed { i, title ->
+            tabs.forEachIndexed { i, title ->
                 FilterChip(
                     selected = tab == i,
                     onClick = { tab = i },
@@ -134,8 +155,8 @@ fun UnifiedSearchScreen(
 
         Column(modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp)) {
             when (tab) {
-                0 -> AllTab(query, recent, custom, common, onOpenFood, viewModel)
-                1 -> FoodsTab(savedFoods, onOpenFood, viewModel)
+                0 -> AllTab(query, recent, custom, common, onOpenFood, viewModel, isPicker)
+                1 -> FoodsTab(savedFoods, onOpenFood, viewModel, isPicker)
                 2 -> MealsTab(query, templates, viewModel)
                 else -> QuickAddTab(viewModel, onLoggedCart)
             }
@@ -149,16 +170,21 @@ fun UnifiedSearchScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (showSearchBar) {
+                // No barcode lookup in picker mode: branded/OFF products can't be meal/recipe
+                // ingredients yet (no food_items row), so hide it to avoid a dead end.
+                val trailing: (@Composable () -> Unit)? = if (isPicker) null else {
+                    {
+                        IconButton(onClick = { showBarcodeDialog = true }) {
+                            Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan or enter a barcode")
+                        }
+                    }
+                }
                 OutlinedTextField(
                     value = query,
                     onValueChange = { viewModel.onQueryChange(it) },
                     placeholder = { Text("Search for a food") },
                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    trailingIcon = {
-                        IconButton(onClick = { showBarcodeDialog = true }) {
-                            Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan or enter a barcode")
-                        }
-                    },
+                    trailingIcon = trailing,
                     shape = RoundedCornerShape(28.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
@@ -172,7 +198,9 @@ fun UnifiedSearchScreen(
             } else {
                 Spacer(Modifier.weight(1f))
             }
-            FloatingActionButton(onClick = { showCreate = true }) {
+            // In picker mode the only sensible create is a new food (to then add it); go straight
+            // there instead of offering the Create Meal/Recipe menu (which would nest).
+            FloatingActionButton(onClick = { if (isPicker) onCreateFood() else showCreate = true }) {
                 Icon(Icons.Filled.Add, contentDescription = "Create")
             }
         }
@@ -226,7 +254,8 @@ private fun AllTab(
     custom: List<com.dirac.mactrack.data.entity.FoodItem>,
     common: List<com.dirac.mactrack.data.cnf.CnfFood>,
     onOpenFood: (String, String) -> Unit,
-    viewModel: UnifiedSearchViewModel
+    viewModel: UnifiedSearchViewModel,
+    isPicker: Boolean
 ) {
     val favorites by viewModel.favorites.collectAsState()
     LazyColumn(
@@ -240,8 +269,8 @@ private fun AllTab(
                     FoodRow(
                         name = entry.foodName,
                         line = "${entry.calories.roundToInt()} cal · ${entry.proteinG.roundToInt()}P ${entry.carbG.roundToInt()}C ${entry.fatG.roundToInt()}F · last ${servingText(entry.amount)} ${entry.unitLabel ?: entry.unit}",
-                        onOpen = { entry.sourceId?.let { onOpenFood(entry.sourceType, it) } },
-                        onAdd = { entry.sourceId?.let { viewModel.addToCart(entry.sourceType, it) } }
+                        onOpen = { entry.sourceId?.let { if (isPicker) viewModel.addIngredient(entry.sourceType, it, entry.foodName) else onOpenFood(entry.sourceType, it) } },
+                        onAdd = { entry.sourceId?.let { if (isPicker) viewModel.addIngredient(entry.sourceType, it, entry.foodName) else viewModel.addToCart(entry.sourceType, it) } }
                     )
                 }
             }
@@ -252,8 +281,8 @@ private fun AllTab(
                     FoodRow(
                         name = food.name,
                         line = "${food.calories.roundToInt()} cal · ${food.proteinG.roundToInt()}P ${food.carbG.roundToInt()}C ${food.fatG.roundToInt()}F · per ${servingText(food.servingSize)} ${food.servingUnit}",
-                        onOpen = { onOpenFood("custom", food.id) },
-                        onAdd = { viewModel.addToCart("custom", food.id) },
+                        onOpen = { if (isPicker) viewModel.addIngredient("custom", food.id, food.name) else onOpenFood("custom", food.id) },
+                        onAdd = { if (isPicker) viewModel.addIngredient("custom", food.id, food.name) else viewModel.addToCart("custom", food.id) },
                         favorite = food.favorite,
                         onToggleFavorite = { viewModel.toggleFavorite(food) },
                         emojiOverride = food.emoji
@@ -270,8 +299,8 @@ private fun AllTab(
                     FoodRow(
                         name = food.name,
                         line = "${food.calories.roundToInt()} cal · ${food.proteinG.roundToInt()}P ${food.carbG.roundToInt()}C ${food.fatG.roundToInt()}F · per ${servingText(food.servingSize)} ${food.servingUnit}",
-                        onOpen = { onOpenFood("custom", food.id) },
-                        onAdd = { viewModel.addToCart("custom", food.id) },
+                        onOpen = { if (isPicker) viewModel.addIngredient("custom", food.id, food.name) else onOpenFood("custom", food.id) },
+                        onAdd = { if (isPicker) viewModel.addIngredient("custom", food.id, food.name) else viewModel.addToCart("custom", food.id) },
                         favorite = food.favorite,
                         onToggleFavorite = { viewModel.toggleFavorite(food) },
                         emojiOverride = food.emoji
@@ -284,8 +313,8 @@ private fun AllTab(
                     FoodRow(
                         name = food.name,
                         line = "${food.kcal.roundToInt()} cal · ${food.protein.roundToInt()}P ${food.carb.roundToInt()}C ${food.fat.roundToInt()}F · per 100 g",
-                        onOpen = { onOpenFood("cnf", food.code.toString()) },
-                        onAdd = { viewModel.addToCart("cnf", food.code.toString()) }
+                        onOpen = { if (isPicker) viewModel.addIngredient("cnf", food.code.toString(), food.name) else onOpenFood("cnf", food.code.toString()) },
+                        onAdd = { if (isPicker) viewModel.addIngredient("cnf", food.code.toString(), food.name) else viewModel.addToCart("cnf", food.code.toString()) }
                     )
                 }
             }
@@ -297,7 +326,8 @@ private fun AllTab(
 private fun FoodsTab(
     savedFoods: List<com.dirac.mactrack.data.entity.FoodItem>,
     onOpenFood: (String, String) -> Unit,
-    viewModel: UnifiedSearchViewModel
+    viewModel: UnifiedSearchViewModel,
+    isPicker: Boolean
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -310,8 +340,8 @@ private fun FoodsTab(
             FoodRow(
                 name = food.name,
                 line = "${food.calories.roundToInt()} cal · ${food.proteinG.roundToInt()}P ${food.carbG.roundToInt()}C ${food.fatG.roundToInt()}F · per ${servingText(food.servingSize)} ${food.servingUnit}",
-                onOpen = { onOpenFood("custom", food.id) },
-                onAdd = { viewModel.addToCart("custom", food.id) },
+                onOpen = { if (isPicker) viewModel.addIngredient("custom", food.id, food.name) else onOpenFood("custom", food.id) },
+                onAdd = { if (isPicker) viewModel.addIngredient("custom", food.id, food.name) else viewModel.addToCart("custom", food.id) },
                 favorite = food.favorite,
                 onToggleFavorite = { viewModel.toggleFavorite(food) },
                 emojiOverride = food.emoji

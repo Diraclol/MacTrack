@@ -8,121 +8,168 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.dirac.mactrack.ui.common.BackBar
-import com.dirac.mactrack.ui.common.IngredientPicker
+import com.dirac.mactrack.ui.common.BuilderEmptyState
+import com.dirac.mactrack.ui.common.CreateTopBar
+import com.dirac.mactrack.ui.common.IngredientEditRow
+import com.dirac.mactrack.ui.common.InlineValueField
+import com.dirac.mactrack.ui.common.LabeledFieldRow
+import com.dirac.mactrack.ui.common.SectionCardHeader
+import kotlin.math.roundToInt
 
+private fun servingText(x: Double): String =
+    if (x % 1.0 == 0.0) x.toInt().toString() else x.toString()
+
+// Create Recipe: name, how many servings it makes, an optional finished (cooked) weight, and an
+// ingredient list. The "+" / "Add ingredient" buttons open the food-search screen in picker mode
+// (onAddIngredients); picks land in the shared draft and show up here as editable rows. Recipe
+// macros are computed per-serving from the ingredients at display/log time, not stored here.
 @Composable
 fun RecipesScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
-    onCreateFood: () -> Unit = {},
-    showBar: Boolean = true
+    onAddIngredients: () -> Unit = {},
+    onSaved: () -> Unit = {}
 ) {
     val viewModel: RecipesViewModel = viewModel(factory = RecipesViewModel.Factory)
     val foods by viewModel.foods.collectAsState()
-    val query by viewModel.query.collectAsState()
-    val cnfMatches by viewModel.cnfMatches.collectAsState()
+    val ingredients by viewModel.ingredients.collectAsState()
 
-    var name by remember { mutableStateOf("") }
-    var makes by remember { mutableStateOf("1") }
-    var cooked by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf("") }
+    var makes by rememberSaveable { mutableStateOf("1") }
+    var cooked by rememberSaveable { mutableStateOf("") }
     val amounts = remember { mutableStateMapOf<String, String>() }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        if (showBar) item { BackBar("Recipes", onBack) }
+    LaunchedEffect(ingredients) {
+        val ids = ingredients.map { it.foodId }.toSet()
+        amounts.keys.filter { it !in ids }.forEach { amounts.remove(it) }
+        ingredients.forEach { if (it.foodId !in amounts) amounts[it.foodId] = servingText(it.servings) }
+    }
 
-        item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Recipe name") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = makes,
-                        onValueChange = { makes = it },
-                        label = { Text("Makes how many servings") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = cooked,
-                        onValueChange = { cooked = it },
-                        label = { Text("Cooked weight in grams (optional)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        "For each ingredient, enter how many servings of it the whole recipe uses. " +
-                            "A cooked weight lets you later log by grams of the finished dish.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
+    val foodsById = foods.associateBy { it.id }
+    val canSave = name.isNotBlank() && (makes.toDoubleOrNull() ?: 0.0) > 0.0 && ingredients.isNotEmpty()
+
+    Column(modifier = modifier.fillMaxSize()) {
+        CreateTopBar(
+            title = "Create Recipe",
+            onBack = onBack,
+            saveEnabled = canSave,
+            onSave = {
+                val items = ingredients.mapNotNull { ing ->
+                    val v = amounts[ing.foodId]?.toDoubleOrNull() ?: ing.servings
+                    if (v > 0.0) ing.foodId to v else null
+                }
+                viewModel.saveRecipe(
+                    name = name,
+                    makesServings = makes.toDoubleOrNull() ?: 1.0,
+                    cookedWeightG = cooked.toDoubleOrNull(),
+                    emoji = null,
+                    ingredients = items,
+                    onDone = onSaved
+                )
+            }
+        )
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column {
+                        LabeledFieldRow(label = "Name") {
+                            InlineValueField(
+                                value = name,
+                                onValueChange = { name = it },
+                                placeholder = "Name",
+                                modifier = Modifier.fillMaxWidth(0.6f)
+                            )
+                        }
+                        HorizontalDivider()
+                        LabeledFieldRow(label = "Total Servings", subtitle = "A number and unit e.g. 12 cookies") {
+                            InlineValueField(
+                                value = makes,
+                                onValueChange = { makes = it },
+                                placeholder = "1",
+                                numeric = true,
+                                modifier = Modifier.width(56.dp)
+                            )
+                        }
+                        HorizontalDivider()
+                        LabeledFieldRow(label = "Total Weight After Cooking", subtitle = "Optionally add a weight measurement") {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                InlineValueField(
+                                    value = cooked,
+                                    onValueChange = { cooked = it },
+                                    placeholder = "0",
+                                    numeric = true,
+                                    modifier = Modifier.width(56.dp)
+                                )
+                                Text(" g", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
                 }
             }
-        }
 
-        item { Text("Ingredients", style = MaterialTheme.typography.titleMedium) }
-
-        item {
-            IngredientPicker(
-                foods = foods,
-                cnfMatches = cnfMatches,
-                query = query,
-                onQueryChange = { viewModel.onQueryChange(it) },
-                amounts = amounts,
-                onAddCnf = { cnf -> viewModel.importCnf(cnf); amounts["cnf_${cnf.code}"] = "1" },
-                onCreateFood = onCreateFood,
-                amountUnit = "servings"
-            )
-        }
-
-        item {
-            Button(
-                onClick = {
-                    val ingredients = amounts
-                        .mapNotNull { (id, txt) ->
-                            val v = txt.toDoubleOrNull()
-                            if (v != null && v > 0.0) id to v else null
+            item {
+                Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        SectionCardHeader("Ingredients", onAddIngredients)
+                        if (ingredients.isEmpty()) {
+                            BuilderEmptyState("Add ingredients to start building your recipe", "Add ingredient", onAddIngredients)
+                        } else {
+                            ingredients.forEach { ing ->
+                                val cals = ((foodsById[ing.foodId]?.calories ?: 0.0) * ing.servings).roundToInt()
+                                IngredientEditRow(
+                                    name = ing.name,
+                                    subtitle = "$cals cal",
+                                    amount = amounts[ing.foodId] ?: servingText(ing.servings),
+                                    onAmountChange = { txt ->
+                                        amounts[ing.foodId] = txt
+                                        txt.toDoubleOrNull()?.let { if (it > 0.0) viewModel.setServings(ing.foodId, it) }
+                                    },
+                                    onRemove = { viewModel.removeIngredient(ing.foodId) }
+                                )
+                            }
+                            val totalCals = ingredients.sumOf { (foodsById[it.foodId]?.calories ?: 0.0) * it.servings }.roundToInt()
+                            val makesN = makes.toDoubleOrNull() ?: 1.0
+                            val perServing = if (makesN > 0) (totalCals / makesN).roundToInt() else totalCals
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                Text("Per serving", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                Text("$perServing cal", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            }
                         }
-                        .toMap()
-                    viewModel.saveRecipe(
-                        name = name,
-                        makesServings = makes.toDoubleOrNull() ?: 1.0,
-                        cookedWeightG = cooked.toDoubleOrNull(),
-                        emoji = null,
-                        ingredients = ingredients
-                    )
-                    name = ""
-                    makes = "1"
-                    cooked = ""
-                    amounts.clear()
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Save recipe")
+                    }
+                }
+            }
+
+            item {
+                Text(
+                    "For each ingredient, enter how many servings of it the whole recipe uses. A cooked " +
+                        "weight lets you later log by grams of the finished dish.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
