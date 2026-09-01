@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -58,7 +61,10 @@ fun MacTrackApp() {
     val currentRoute = backStackEntry?.destination?.route
 
     val tabRoutes = Destination.entries.map { it.route }
-    val showBottomBar = currentRoute in tabRoutes
+    // Hide the floating nav while the keyboard is open (e.g. the AI chat input) so the input docks
+    // right onto the keyboard instead of floating a nav-height above it.
+    val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val showBottomBar = currentRoute in tabRoutes && !keyboardOpen
 
     // Which tab the app opens on (a setting). Read once so it only applies at launch.
     val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)

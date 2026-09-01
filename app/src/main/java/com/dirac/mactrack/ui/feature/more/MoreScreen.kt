@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -122,7 +123,9 @@ fun MoreScreen(
     }
 
     LazyColumn(
-        modifier = modifier.fillMaxSize().padding(16.dp),
+        modifier = modifier.fillMaxSize().padding(horizontal = 16.dp),
+        // Extra bottom space so the last row (the version line) scrolls clear of the floating nav pill.
+        contentPadding = PaddingValues(top = 16.dp, bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Profile header (tap to open the full profile)

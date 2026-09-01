@@ -48,15 +48,17 @@ import com.dirac.mactrack.ui.common.BackBar
 private val FieldShape = RoundedCornerShape(16.dp)
 
 // Suggested Gemini model endpoints, cheapest/fastest first. gemini-3.5-flash-lite is the app default
-// (main); gemini-2.5-flash is a solid higher-quality fallback. The field stays editable, so a homelab
-// model name (e.g. "qwen2.5-vl") can be typed in when the base URL points at a local server.
+// (main); gemini-3.1-flash-lite is the backup -- same tier, but a SEPARATE per-model daily bucket, so
+// the two together give ~1,000 req/day of headroom. (gemini-2.5-flash is intentionally omitted: it
+// 404s for new accounts.) The field stays editable, so a homelab model name (e.g. "qwen2.5-vl") can be
+// typed in when the base URL points at a local server.
 private val SUGGESTED_MODELS = listOf(
     "gemini-3.5-flash-lite",
-    "gemini-2.5-flash",
+    "gemini-3.1-flash-lite",
     "gemini-3.5-flash",
+    "gemini-3.6-flash",
     "gemini-3.7-flash",
-    "gemini-2.5-flash-lite",
-    "gemini-2.5-pro"
+    "gemini-3.1-pro-preview"
 )
 
 // AI connection settings: base URL, model, and the API key (stored encrypted via the Keystore).

@@ -149,17 +149,20 @@ This whole track is scheduled **last**.
       **Remaining:** Slice 2 = image attach (downscale ~1024 px → base64 data URL) for photo → macros;
       Slice 3 = a "Log this" action turning an estimate into a review-before-save food/log entry.
       Later: chat persistence (Room), a "local server" preset button.
-      **Model designation (dev note).** Main = `gemini-3.5-flash-lite` (app default; fastest/cheapest
-      multimodal 3.5, verified ~15 RPM / 500 RPD). Backup = `gemini-2.5-flash` (stronger multimodal for
-      hard vision cases or when the main's daily bucket is spent; a different model = a separate per-model
-      daily bucket). The Model field is an editable dropdown of these, so switching is one tap. We ride
-      the **OpenAI-compat endpoint** (`/v1beta/openai/…`), which sits on the now-"legacy"-but-supported
-      `generateContent` API — fine for now; if it's ever retired we'd move to the Interactions API.
-      **Quota coordination.** Free-tier daily request quotas pool at the Google Cloud PROJECT level, so
-      if the app and Dirac's homelab chatting share one project they draw down the same daily buckets.
-      To avoid contention: put MacTrack in its OWN project (separate key → fully separate quota), or keep
-      homelab chatting on a DIFFERENT model tier (e.g. `gemini-3.7-flash` / a Pro tier) so per-model daily
-      limits don't collide with the app's flash-lite/2.5-flash. The app is deliberately the light one.
+      **Model designation (dev note, corrected by homelab 2026-09-01).** Main = `gemini-3.5-flash-lite`
+      (app default; fastest/cheapest multimodal, verified ~15 RPM / 500 RPD). Backup =
+      **`gemini-3.1-flash-lite`** — same tier, SEPARATE per-model daily bucket, so main+backup ≈ 1,000
+      req/day of headroom. NOTE: the earlier pick `gemini-2.5-flash` is **retired for new accounts (404,
+      verified 2026-08-29)** — do not use it. The Model field is an editable dropdown; the client retries
+      429/503 with exponential backoff (1/2/4 s). We ride the **OpenAI-compat endpoint**
+      (`/v1beta/openai/…`), which sits on the now-"legacy"-but-supported `generateContent` API — fine for
+      now; if retired we'd move to the Interactions API.
+      **Quota decision (LOCKED): separate Google Cloud project.** Free-tier daily quotas pool at the
+      PROJECT level, so MacTrack gets its OWN project (AI Studio → Create API key → "in new project",
+      name it `mactrack`) → fully separate, independently-revocable quota. Leave **billing disabled** on
+      that project so the free tier is a hard circuit breaker (a retry-loop bug hits 429, not a card).
+      Model separation was rejected (it's forgettable and would push Dirac's own study chats to a 20/day
+      tier). BYO-key means this generalizes: every MacTrack user brings their own project + quota.
 
 ---
 
