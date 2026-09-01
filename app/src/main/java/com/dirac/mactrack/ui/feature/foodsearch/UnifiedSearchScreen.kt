@@ -22,6 +22,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -226,6 +228,7 @@ private fun AllTab(
     onOpenFood: (String, String) -> Unit,
     viewModel: UnifiedSearchViewModel
 ) {
+    val favorites by viewModel.favorites.collectAsState()
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -241,7 +244,22 @@ private fun AllTab(
                         onAdd = { entry.sourceId?.let { viewModel.addToCart(entry.sourceType, it) } }
                     )
                 }
-            } else {
+            }
+            // Favorites sit after Recent, before anything else.
+            if (favorites.isNotEmpty()) {
+                item { SectionLabel("Favorites") }
+                items(items = favorites, key = { "f_" + it.id }) { food ->
+                    FoodRow(
+                        name = food.name,
+                        line = "${food.calories.roundToInt()} cal · ${food.proteinG.roundToInt()}P ${food.carbG.roundToInt()}C ${food.fatG.roundToInt()}F · per ${servingText(food.servingSize)} ${food.servingUnit}",
+                        onOpen = { onOpenFood("custom", food.id) },
+                        onAdd = { viewModel.addToCart("custom", food.id) },
+                        favorite = food.favorite,
+                        onToggleFavorite = { viewModel.toggleFavorite(food) }
+                    )
+                }
+            }
+            if (recent.isEmpty() && favorites.isEmpty()) {
                 item { EmptyHint("Search for a food below, or add one from your saved Foods and Meals.") }
             }
         } else {
@@ -252,7 +270,9 @@ private fun AllTab(
                         name = food.name,
                         line = "${food.calories.roundToInt()} cal · ${food.proteinG.roundToInt()}P ${food.carbG.roundToInt()}C ${food.fatG.roundToInt()}F · per ${servingText(food.servingSize)} ${food.servingUnit}",
                         onOpen = { onOpenFood("custom", food.id) },
-                        onAdd = { viewModel.addToCart("custom", food.id) }
+                        onAdd = { viewModel.addToCart("custom", food.id) },
+                        favorite = food.favorite,
+                        onToggleFavorite = { viewModel.toggleFavorite(food) }
                     )
                 }
             }
@@ -289,7 +309,9 @@ private fun FoodsTab(
                 name = food.name,
                 line = "${food.calories.roundToInt()} cal · ${food.proteinG.roundToInt()}P ${food.carbG.roundToInt()}C ${food.fatG.roundToInt()}F · per ${servingText(food.servingSize)} ${food.servingUnit}",
                 onOpen = { onOpenFood("custom", food.id) },
-                onAdd = { viewModel.addToCart("custom", food.id) }
+                onAdd = { viewModel.addToCart("custom", food.id) },
+                favorite = food.favorite,
+                onToggleFavorite = { viewModel.toggleFavorite(food) }
             )
         }
     }
@@ -396,7 +418,14 @@ private fun EmptyHint(text: String) {
 }
 
 @Composable
-private fun FoodRow(name: String, line: String, onOpen: () -> Unit, onAdd: () -> Unit) {
+private fun FoodRow(
+    name: String,
+    line: String,
+    onOpen: () -> Unit,
+    onAdd: () -> Unit,
+    favorite: Boolean? = null,
+    onToggleFavorite: () -> Unit = {}
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().clickable { onOpen() }.padding(horizontal = 12.dp, vertical = 10.dp),
@@ -406,6 +435,16 @@ private fun FoodRow(name: String, line: String, onOpen: () -> Unit, onAdd: () ->
             Column(modifier = Modifier.weight(1f)) {
                 Text(name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            // Heart only shows for saved (custom) foods; recent/common rows pass favorite = null.
+            if (favorite != null) {
+                IconButton(onClick = onToggleFavorite) {
+                    Icon(
+                        if (favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = if (favorite) "Remove $name from favorites" else "Add $name to favorites",
+                        tint = if (favorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             IconButton(onClick = onAdd) {
                 Icon(Icons.Filled.Add, contentDescription = "Add $name to cart")

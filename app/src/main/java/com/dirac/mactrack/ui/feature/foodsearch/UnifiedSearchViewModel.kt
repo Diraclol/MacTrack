@@ -59,6 +59,10 @@ class UnifiedSearchViewModel(
         if (q.isBlank()) foods else foods.filter { it.name.contains(q, ignoreCase = true) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // Favorited (hearted) saved foods, for the Favorites section in the All tab.
+    val favorites: StateFlow<List<FoodItem>> = foodRepository.getFavorites()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     // Saved meals (repeatable sets of foods) for the Meals tab.
     val templates: StateFlow<List<MealTemplate>> = mealTemplateRepository.getTemplates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -80,6 +84,11 @@ class UnifiedSearchViewModel(
             val r = withContext(Dispatchers.IO) { cnfRepository.search(q) }
             if (_query.value == q) _common.value = r
         }
+    }
+
+    // Toggle a saved food's heart. Custom foods only (favorite is a food_items column).
+    fun toggleFavorite(food: FoodItem) {
+        viewModelScope.launch { foodRepository.setFavorite(food.id, !food.favorite) }
     }
 
     fun addToCart(source: String, id: String) {

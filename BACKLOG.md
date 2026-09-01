@@ -19,10 +19,11 @@ device build so KSP regenerates `app/schemas/.../N.json` (currently at **v2**) â
 committed. Do these **one migration at a time**, building after each, per the migration rules in
 ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
 
-- [ ] **SCHEMA-1: Favorites / heart foods.** No way to mark a food as a favorite today. Add either a
-      `favorite_foods` table or a `FoodItem.favorite` boolean, then a **Favorites** section in the
-      unified search list *after* Recent and *before* Common (`ui/feature/foodsearch/UnifiedSearchScreen.kt`,
-      `AllTab`). Done = a heart toggle on foods and a populated Favorites section.
+- [x] **SCHEMA-1: Favorites / heart foods.** SHIPPED (DB v3). `FoodItem.favorite` boolean +
+      `MIGRATION_2_3`; heart toggle on saved-food rows and a **Favorites** section in the unified
+      search list after Recent (`ui/feature/foodsearch/UnifiedSearchScreen.kt`, `AllTab`). Note:
+      only custom foods are favoritable (the column is on `food_items`); favoriting a CNF/branded
+      food would need a separate provenance-keyed table.
 - [ ] **SCHEMA-2: Caffeine tracking.** The food-log micronutrient box shows Caffeine hardcoded to
       `0.0` (`TodayScreen.kt`, `totalCaffeine`) because there is no column. Add `caffeineMg` to
       `MealEntry` (and `FoodItem`, flowing through `data/food/FoodModels.kt`). Done = real caffeine
