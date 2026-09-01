@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.data.entity.Goal
 import com.dirac.mactrack.ui.theme.ThemeViewModel
 import java.time.LocalDate
 import kotlin.math.roundToInt
@@ -44,18 +45,13 @@ private val FatColor = Color(0xFF4CAF50)
 private val CalorieColor = Color(0xFFFF9800)
 
 @Composable
-fun DashboardScreen(modifier: Modifier = Modifier, onOpenProfile: () -> Unit = {}) {
+fun DashboardScreen(modifier: Modifier = Modifier, onOpenProfile: () -> Unit = {}, onOpenTrends: () -> Unit = {}) {
     val viewModel: DashboardViewModel = viewModel(factory = DashboardViewModel.Factory)
     val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
     val goal by viewModel.goal.collectAsState()
     val avatar by themeViewModel.avatar.collectAsState()
-    val entries by viewModel.todayEntries.collectAsState()
+    val weeklyAvg by viewModel.weeklyAvg.collectAsState()
     val loggedDates by viewModel.loggedDates.collectAsState()
-
-    val totalCal = entries.sumOf { it.calories }
-    val totalP = entries.sumOf { it.proteinG }
-    val totalC = entries.sumOf { it.carbG }
-    val totalF = entries.sumOf { it.fatG }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(16.dp),
@@ -84,14 +80,7 @@ fun DashboardScreen(modifier: Modifier = Modifier, onOpenProfile: () -> Unit = {
                 }
             }
         }
-        item {
-            MacroCard(
-                cal = totalCal, calGoal = goal?.calorieGoal ?: 0.0,
-                p = totalP, pGoal = goal?.proteinGoalG ?: 0.0,
-                f = totalF, fGoal = goal?.fatGoalG ?: 0.0,
-                c = totalC, cGoal = goal?.carbGoalG ?: 0.0
-            )
-        }
+        item { MacroCard(avg = weeklyAvg, goal = goal, onClick = onOpenTrends) }
         item { FoodStreakCard(loggedDates = loggedDates.toSet()) }
     }
 }
@@ -148,17 +137,31 @@ private fun CalorieRing(consumed: Double, target: Double) {
 }
 
 @Composable
-private fun MacroCard(cal: Double, calGoal: Double, p: Double, pGoal: Double, f: Double, fGoal: Double, c: Double, cGoal: Double) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun MacroCard(avg: WeeklyAvg, goal: Goal?, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Cals + Macros", style = MaterialTheme.typography.titleMedium)
-            MacroBar("Calories", cal, calGoal, CalorieColor, unit = "cal")
-            MacroBar("Protein", p, pGoal, ProteinColor)
-            MacroBar("Fat", f, fGoal, FatColor)
-            MacroBar("Carbs", c, cGoal, CarbColor)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Cals + Macros", style = MaterialTheme.typography.titleMedium)
+                Text("7-day avg ›", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            }
+            MacroBar("Calories", avg.cal, goal?.calorieGoal ?: 0.0, CalorieColor, unit = "cal")
+            MacroBar("Protein", avg.p, goal?.proteinGoalG ?: 0.0, ProteinColor)
+            MacroBar("Fat", avg.f, goal?.fatGoalG ?: 0.0, FatColor)
+            MacroBar("Carbs", avg.c, goal?.carbGoalG ?: 0.0, CarbColor)
+            if (avg.days == 0) {
+                Text(
+                    "Log food to see your weekly average.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

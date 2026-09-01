@@ -46,6 +46,7 @@ import androidx.navigation.navArgument
 import com.dirac.mactrack.ui.feature.foodsearch.UnifiedSearchScreen
 import com.dirac.mactrack.ui.feature.foodsearch.FoodDetailScreen
 import com.dirac.mactrack.ui.feature.weight.WeightScreen
+import com.dirac.mactrack.ui.feature.trends.TrendsScreen
 
 @Composable
 fun MacTrackApp() {
@@ -127,7 +128,13 @@ fun MacTrackApp() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Destination.DASHBOARD.route) {
-                DashboardScreen(onOpenProfile = { navController.navigate("profile") })
+                DashboardScreen(
+                    onOpenProfile = { navController.navigate("profile") },
+                    onOpenTrends = { navController.navigate("trends") }
+                )
+            }
+            composable("trends") {
+                TrendsScreen(onBack = { navController.popBackStack() })
             }
             composable(Destination.FOOD_LOG.route) {
                 TodayScreen(

@@ -8,6 +8,16 @@ import androidx.room.Query
 import com.dirac.mactrack.data.entity.MealEntry
 import kotlinx.coroutines.flow.Flow
 
+// Per-day summed macros (a day is a query, not a stored total). Column names must match the
+// SELECT aliases in getDailyTotals so Room can map the rows.
+data class DailyTotals(
+    val date: String,
+    val calories: Double,
+    val proteinG: Double,
+    val carbG: Double,
+    val fatG: Double
+)
+
 @Dao
 interface MealEntryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -18,6 +28,13 @@ interface MealEntryDao {
 
     @Query("SELECT DISTINCT date FROM meal_entries WHERE date >= :since")
     fun getLoggedDates(since: String): Flow<List<String>>
+
+    @Query(
+        "SELECT date, SUM(calories) AS calories, SUM(proteinG) AS proteinG, " +
+            "SUM(carbG) AS carbG, SUM(fatG) AS fatG FROM meal_entries " +
+            "WHERE date >= :since GROUP BY date ORDER BY date"
+    )
+    fun getDailyTotals(since: String): Flow<List<DailyTotals>>
 
     @Query("SELECT * FROM meal_entries WHERE id = :id")
     suspend fun getById(id: String): MealEntry?
