@@ -34,9 +34,9 @@ class MealsViewModel(
     val templates: StateFlow<List<MealTemplate>> = mealTemplateRepository.getTemplates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun saveTemplate(name: String, items: List<Pair<String, Double>>) {
+    fun saveTemplate(name: String, mealType: String?, items: List<Pair<String, Double>>) {
         if (name.isBlank() || items.isEmpty()) return
-        viewModelScope.launch { mealTemplateRepository.saveTemplate(name.trim(), items) }
+        viewModelScope.launch { mealTemplateRepository.saveTemplate(name.trim(), mealType, items) }
     }
 
     fun deleteTemplate(template: MealTemplate) {

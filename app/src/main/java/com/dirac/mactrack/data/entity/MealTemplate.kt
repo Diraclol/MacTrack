@@ -9,7 +9,10 @@ import java.util.UUID
 data class MealTemplate(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val name: String,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    // Optional meal type (Breakfast / Lunch / Dinner / Snack). Nullable, so the migration adds it
+    // without a DEFAULT and no @ColumnInfo is needed.
+    val mealType: String? = null
 )
 
 // One food inside a saved meal, with how much of it.

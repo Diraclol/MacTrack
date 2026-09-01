@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.ui.common.BackBar
 
+private val MEAL_TYPES = listOf("Breakfast", "Lunch", "Dinner", "Snack")
+
 @Composable
 fun MealsScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBar: Boolean = true) {
     val viewModel: MealsViewModel = viewModel(factory = MealsViewModel.Factory)
@@ -38,6 +40,7 @@ fun MealsScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBar:
     val templates by viewModel.templates.collectAsState()
 
     var mealName by remember { mutableStateOf("") }
+    var mealType by remember { mutableStateOf<String?>(null) }
     val selected = remember { mutableStateMapOf<String, Boolean>() }
 
     LazyColumn(
@@ -50,7 +53,12 @@ fun MealsScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBar:
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(template.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(template.name, style = MaterialTheme.typography.titleMedium)
+                            template.mealType?.let {
+                                Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                         IconButton(onClick = { viewModel.deleteTemplate(template) }) {
                             Icon(Icons.Filled.Delete, contentDescription = "Delete ${template.name}")
                         }
@@ -72,6 +80,16 @@ fun MealsScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBar:
                         label = { Text("Meal name") },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Text("Meal type (optional):", style = MaterialTheme.typography.bodySmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        MEAL_TYPES.forEach { type ->
+                            FilterChip(
+                                selected = mealType == type,
+                                onClick = { mealType = if (mealType == type) null else type },
+                                label = { Text(type) }
+                            )
+                        }
+                    }
                     Text("Pick foods (1 serving each):", style = MaterialTheme.typography.bodySmall)
                     foods.forEach { food ->
                         FilterChip(
@@ -83,8 +101,9 @@ fun MealsScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBar:
                     Button(
                         onClick = {
                             val items = selected.filterValues { it }.keys.map { it to 1.0 }
-                            viewModel.saveTemplate(mealName, items)
+                            viewModel.saveTemplate(mealName, mealType, items)
                             mealName = ""
+                            mealType = null
                             selected.clear()
                         },
                         modifier = Modifier.fillMaxWidth()
