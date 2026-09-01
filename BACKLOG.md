@@ -24,10 +24,10 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
       search list after Recent (`ui/feature/foodsearch/UnifiedSearchScreen.kt`, `AllTab`). Note:
       only custom foods are favoritable (the column is on `food_items`); favoriting a CNF/branded
       food would need a separate provenance-keyed table.
-- [ ] **SCHEMA-2: Caffeine tracking.** The food-log micronutrient box shows Caffeine hardcoded to
-      `0.0` (`TodayScreen.kt`, `totalCaffeine`) because there is no column. Add `caffeineMg` to
-      `MealEntry` (and `FoodItem`, flowing through `data/food/FoodModels.kt`). Done = real caffeine
-      totals in the NutrientBox.
+- [x] **SCHEMA-2: Caffeine tracking.** SHIPPED (DB v4). `caffeineMg` on `MealEntry` and `FoodItem`
+      via `MIGRATION_3_4`, flowing through `Nutrients` (defaulted, so CNF/OFF sources need no change),
+      the food-log Caffeine total, a Create Food "Caffeine (mg)" input, and the food-detail Caffeine
+      row. CNF/branded foods carry no caffeine data, so custom foods are the source.
 - [ ] **SCHEMA-3: Custom-food barcode + emoji/icon.** Create Food wants an icon picker and an
       optional barcode section, but `FoodItem` has neither field. Add `FoodItem.barcode` and
       `FoodItem.emoji`. Done = a saved food carries a chosen icon and (optionally) a barcode that
