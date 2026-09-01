@@ -50,7 +50,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.FoodItem
-import com.dirac.mactrack.data.entity.MealTemplate
 import com.dirac.mactrack.data.food.foodEmoji
 import com.dirac.mactrack.ui.common.BackBar
 import kotlin.math.roundToInt
@@ -117,8 +116,8 @@ fun LibraryScreen(
                 }
             }
             if (showMeals) {
-                items(items = meals, key = { "m_" + it.id }) { meal ->
-                    MealRow(meal)
+                items(items = meals, key = { "m_" + it.template.id }) { summary ->
+                    MealRow(summary)
                 }
             }
             when (tab) {
@@ -202,12 +201,21 @@ private fun FoodRow(food: FoodItem, onOpen: () -> Unit, onLongPress: () -> Unit)
 }
 
 @Composable
-private fun MealRow(meal: MealTemplate) {
+private fun MealRow(summary: MealSummary) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Text("🍱", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(meal.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("Meal", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(summary.template.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Meal", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("P${summary.proteinG.roundToInt()}", style = MaterialTheme.typography.labelMedium, color = ProteinColor)
+                Text("C${summary.carbG.roundToInt()}", style = MaterialTheme.typography.labelMedium, color = CarbColor)
+                Text("F${summary.fatG.roundToInt()}", style = MaterialTheme.typography.labelMedium, color = FatColor)
+            }
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text("${summary.calories.roundToInt()}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("cal", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
     HorizontalDivider()
