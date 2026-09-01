@@ -6,8 +6,10 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,18 +22,25 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -53,11 +63,15 @@ private fun servingText(amount: Double): String =
 
 private val TABS = listOf("All", "Foods", "Meals", "Quick")
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UnifiedSearchScreen(
     onOpenFood: (String, String) -> Unit,
     onLoggedCart: () -> Unit,
     onBack: () -> Unit,
+    onCreateFood: () -> Unit = {},
+    onCreateMeal: () -> Unit = {},
+    onCreateRecipe: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val viewModel: UnifiedSearchViewModel = viewModel(factory = UnifiedSearchViewModel.Factory)
@@ -73,6 +87,7 @@ fun UnifiedSearchScreen(
     var tab by remember { mutableStateOf(0) }
     var showDiscardDialog by remember { mutableStateOf(false) }
     var showBarcodeDialog by remember { mutableStateOf(false) }
+    var showCreate by remember { mutableStateOf(false) }
 
     // back should guard when the cart has items
     fun attemptBack() {
@@ -122,25 +137,48 @@ fun UnifiedSearchScreen(
             }
         }
 
-        // Docked search field with a barcode-scan icon, pinned to the bottom (it rises with the
-        // keyboard via imePadding above). Hidden on tabs where searching does not apply.
-        if (showSearchBar) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { viewModel.onQueryChange(it) },
-                placeholder = { Text("Search for a food") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                trailingIcon = {
-                    IconButton(onClick = { showBarcodeDialog = true }) {
-                        Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan or enter a barcode")
-                    }
-                },
-                shape = RoundedCornerShape(28.dp),
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
-            )
+        // Docked bottom bar: the search field (with a barcode-scan icon) on browsing tabs, plus a
+        // create "+" that opens the same Create menu as the Kitchen. Rises with the keyboard.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (showSearchBar) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { viewModel.onQueryChange(it) },
+                    placeholder = { Text("Search for a food") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    trailingIcon = {
+                        IconButton(onClick = { showBarcodeDialog = true }) {
+                            Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan or enter a barcode")
+                        }
+                    },
+                    shape = RoundedCornerShape(28.dp),
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
+                )
+            } else {
+                Spacer(Modifier.weight(1f))
+            }
+            FloatingActionButton(onClick = { showCreate = true }) {
+                Icon(Icons.Filled.Add, contentDescription = "Create")
+            }
+        }
+    }
+
+    if (showCreate) {
+        ModalBottomSheet(
+            onDismissRequest = { showCreate = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            CreateMenuItem(Icons.Filled.Fastfood, "Create Food") { showCreate = false; onCreateFood() }
+            CreateMenuItem(Icons.Filled.Restaurant, "Create Meal") { showCreate = false; onCreateMeal() }
+            CreateMenuItem(Icons.Filled.MenuBook, "Create Recipe") { showCreate = false; onCreateRecipe() }
+            Spacer(Modifier.height(24.dp))
         }
     }
 
@@ -264,14 +302,18 @@ private fun MealsTab(
             item { EmptyHint("No saved meals yet. Create repeatable meals from the More screen.") }
         }
         items(items = templates, key = { it.id }) { template ->
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("🍱", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
-                Text(template.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                IconButton(onClick = { viewModel.addTemplateToCart(template.id) }) {
-                    Icon(Icons.Filled.Add, contentDescription = "Add ${template.name} to cart")
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("🍱", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
+                    Text(template.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { viewModel.addTemplateToCart(template.id) }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Add ${template.name} to cart")
+                    }
                 }
             }
-            HorizontalDivider()
         }
     }
 }
@@ -339,17 +381,32 @@ private fun EmptyHint(text: String) {
 
 @Composable
 private fun FoodRow(name: String, line: String, onOpen: () -> Unit, onAdd: () -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(foodEmoji(name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
-        Column(modifier = Modifier.weight(1f).clickable { onOpen() }) {
-            Text(name, style = MaterialTheme.typography.bodyLarge)
-            Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        IconButton(onClick = onAdd) {
-            Icon(Icons.Filled.Add, contentDescription = "Add $name to cart")
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable { onOpen() }.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(foodEmoji(name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            IconButton(onClick = onAdd) {
+                Icon(Icons.Filled.Add, contentDescription = "Add $name to cart")
+            }
         }
     }
-    HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+}
+
+@Composable
+private fun CreateMenuItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 24.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, modifier = Modifier.padding(end = 20.dp))
+        Text(label, style = MaterialTheme.typography.titleMedium)
+    }
 }
 
 @Composable

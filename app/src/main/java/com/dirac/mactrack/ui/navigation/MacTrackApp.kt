@@ -143,7 +143,10 @@ fun MacTrackApp() {
                 UnifiedSearchScreen(
                     onOpenFood = { source, id -> navController.navigate("food_detail/$source/$id") },
                     onLoggedCart = { navController.popBackStack() },
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onCreateFood = { navController.navigate("create_food") },
+                    onCreateMeal = { navController.navigate("create_meal") },
+                    onCreateRecipe = { navController.navigate("create_recipe") }
                 )
             }
             composable(
