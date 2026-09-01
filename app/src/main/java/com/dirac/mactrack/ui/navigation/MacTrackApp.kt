@@ -63,6 +63,7 @@ fun MacTrackApp() {
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         bottomBar = {
             if (showBottomBar) {
                 Surface(
