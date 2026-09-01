@@ -69,8 +69,11 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
       dashboard "Cals + Macros" card shows the rolling 7-day average and taps through to Trends.
 - [x] **UI-4: Weight redesign.** SHIPPED. Dedicated Weight screen (nav card in More): current weight +
       change, Log-weight dialog, 1M/3M/1Y/All range chips, a Canvas trend graph, history with delete.
-- [ ] **UI-5: Log-reminder notifications.** Opt-in reminder to log food, **off by default**, toggle in
-      More. Needs `POST_NOTIFICATIONS` (Android 13+) + a WorkManager scheduler. A pref, no schema.
+- [x] **UI-5: Log-reminder notifications.** SHIPPED (off by default). A "Log reminder" switch in More →
+      Preferences schedules a daily 8 PM nudge via `AlarmManager` + a `ReminderReceiver` (no WorkManager
+      dep needed). Requests `POST_NOTIFICATIONS` at toggle time on Android 13+. Fixed 8 PM time for now
+      (a time picker is a follow-up). NOTE: the actual alarm/notification firing is device-behavior
+      dependent — confirm on the Pixel.
 - [ ] **UI-6: Drag-to-reorder log items between time blocks.** Hold + drag a logged row up/down to
       move it to another hour block. Gesture-heavy (device testing) AND moving between blocks means
       rewriting the row's `timeMinutes` — decide that data behavior before building.

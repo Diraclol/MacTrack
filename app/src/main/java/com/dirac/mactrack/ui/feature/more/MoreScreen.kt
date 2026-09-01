@@ -1,8 +1,12 @@
 package com.dirac.mactrack.ui.feature.more
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.notifications.ReminderScheduler
 import com.dirac.mactrack.ui.feature.profile.ProfileViewModel
 import com.dirac.mactrack.ui.theme.StartScreen
 import com.dirac.mactrack.ui.theme.ThemeMode
@@ -87,6 +93,31 @@ fun MoreScreen(
         backupMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             backupViewModel.clearMessage()
+        }
+    }
+
+    val reminderEnabled by themeViewModel.reminderEnabled.collectAsState()
+    val notifPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            ReminderScheduler.schedule(context)
+            themeViewModel.setReminderEnabled(true)
+        }
+    }
+    fun setReminder(on: Boolean) {
+        if (!on) {
+            ReminderScheduler.cancel(context)
+            themeViewModel.setReminderEnabled(false)
+            return
+        }
+        val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        if (needsPermission) {
+            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            ReminderScheduler.schedule(context)
+            themeViewModel.setReminderEnabled(true)
         }
     }
 
@@ -173,6 +204,21 @@ fun MoreScreen(
                                 label = { Text(if (s == StartScreen.DASHBOARD) "Dashboard" else "Food log") }
                             )
                         }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Log reminder", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "A daily 8 PM nudge to log your food",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(checked = reminderEnabled, onCheckedChange = { setReminder(it) })
                     }
                 }
             }

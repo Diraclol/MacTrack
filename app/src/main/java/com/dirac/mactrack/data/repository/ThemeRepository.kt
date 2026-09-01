@@ -23,6 +23,15 @@ class ThemeRepository(context: Context) {
     private val _nutrientOrder = MutableStateFlow(loadNutrientOrder())
     val nutrientOrder: StateFlow<List<String>> = _nutrientOrder.asStateFlow()
 
+    // Daily "log your food" reminder. Off by default.
+    private val _reminderEnabled = MutableStateFlow(prefs.getBoolean("reminder_enabled", false))
+    val reminderEnabled: StateFlow<Boolean> = _reminderEnabled.asStateFlow()
+
+    fun setReminderEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("reminder_enabled", enabled).apply()
+        _reminderEnabled.value = enabled
+    }
+
     private fun load(): ThemeMode =
         runCatching {
             ThemeMode.valueOf(prefs.getString("theme_mode", ThemeMode.SYSTEM.name) ?: ThemeMode.SYSTEM.name)
