@@ -96,6 +96,16 @@ private fun oneDecimal(x: Double): String = String.format(Locale.US, "%.1f", x)
 private fun servings(amount: Double): String =
     if (amount % 1.0 == 0.0) amount.toInt().toString() else amount.toString()
 
+// How a logged portion reads. If the unit label leads with a number (e.g. "15ml", "1 slice"),
+// multiply that number by the amount and keep the rest: 2 x "15ml" -> "30ml", 2 x "1 slice" ->
+// "2 slice". Otherwise fall back to "amount label" (e.g. "2 serving", "150 g").
+private fun displayQuantity(amount: Double, label: String): String {
+    val m = Regex("""^(\d+(?:\.\d+)?)(.*)$""").find(label.trim())
+    val base = m?.groupValues?.get(1)?.toDoubleOrNull()
+    return if (m != null && base != null) servings(base * amount) + m.groupValues[2]
+    else "${servings(amount)} $label"
+}
+
 private fun hourLabel(hour: Int): String {
     val h12 = if (hour % 12 == 0) 12 else hour % 12
     val ampm = if (hour < 12) "AM" else "PM"
@@ -261,10 +271,12 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("${(live?.kcal ?: 0.0).roundToInt()} cal", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("${amount.ifEmpty { "0" }} $selectedUnit", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                Text(
+                    "${(live?.kcal ?: 0.0).roundToInt()} cal",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
                 Text("${(live?.protein ?: 0.0).roundToInt()}P", style = MaterialTheme.typography.bodyMedium, color = ProteinColor)
                 Text("${(live?.carb ?: 0.0).roundToInt()}C", style = MaterialTheme.typography.bodyMedium, color = CarbColor)
                 Text("${(live?.fat ?: 0.0).roundToInt()}F", style = MaterialTheme.typography.bodyMedium, color = FatColor)
@@ -541,7 +553,7 @@ private fun FoodCard(entry: MealEntry, onClick: () -> Unit, onDelete: () -> Unit
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        "${entry.proteinG.roundToInt()}P ${entry.fatG.roundToInt()}F ${entry.carbG.roundToInt()}C · ${servings(entry.amount)} ${entry.unitLabel ?: entry.unit}",
+                        "${entry.proteinG.roundToInt()}P ${entry.fatG.roundToInt()}F ${entry.carbG.roundToInt()}C · ${displayQuantity(entry.amount, entry.unitLabel ?: entry.unit)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
