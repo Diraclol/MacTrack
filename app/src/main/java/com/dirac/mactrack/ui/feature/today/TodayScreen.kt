@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -64,12 +64,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.MealEntry
 import com.dirac.mactrack.data.food.foodEmoji
 import com.dirac.mactrack.data.food.mealEntryDetail
 import com.dirac.mactrack.ui.common.NumberPad
 import com.dirac.mactrack.ui.common.PadAction
+import com.dirac.mactrack.ui.theme.ThemeViewModel
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
@@ -116,9 +118,11 @@ private fun hourLabel(hour: Int): String {
 @Composable
 fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifier: Modifier = Modifier) {
     val viewModel: MealLogViewModel = viewModel(factory = MealLogViewModel.Factory)
+    val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
     val entries by viewModel.todayEntries.collectAsState()
     val goal by viewModel.goal.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
+    val nutrientOrder by themeViewModel.nutrientOrder.collectAsState()
 
     val totalCal = entries.sumOf { it.calories }
     val totalP = entries.sumOf { it.proteinG }
@@ -172,7 +176,9 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
                     sodiumMg = totalSodium,
                     potassiumMg = totalPotassium,
                     fiberG = totalFiber,
-                    caffeineMg = totalCaffeine
+                    caffeineMg = totalCaffeine,
+                    order = nutrientOrder,
+                    onReorder = { themeViewModel.setNutrientOrder(it) }
                 )
             }
             if (byHour.isEmpty()) {
@@ -350,34 +356,93 @@ private fun TotalStat(modifier: Modifier, label: String, consumed: Double, goal:
     }
 }
 
-// A row of compact micronutrient cards (value + a mini bar vs a reference target).
+private data class NutrientDatum(
+    val key: String, val label: String, val value: String, val fraction: Float, val color: Color
+)
+
+// A row of compact micronutrient cards. Long-press a card and drag it left/right to reorder;
+// the order persists (theme prefs). Each card shows a value + a mini bar vs a soft target.
 @Composable
-private fun NutrientBox(sodiumMg: Double, potassiumMg: Double, fiberG: Double, caffeineMg: Double) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        NutrientCard("Sodium", "${sodiumMg.roundToInt()} mg", (sodiumMg / SodiumTargetMg).coerceIn(0.0, 1.0).toFloat(), SodiumColor)
-        NutrientCard("Potassium", "${potassiumMg.roundToInt()} mg", (potassiumMg / PotassiumTargetMg).coerceIn(0.0, 1.0).toFloat(), PotassiumColor)
-        NutrientCard("Dietary Fiber", "${oneDecimal(fiberG)} g", (fiberG / FiberTargetG).coerceIn(0.0, 1.0).toFloat(), FiberColor)
-        NutrientCard("Caffeine", "${caffeineMg.roundToInt()} mg", (caffeineMg / CaffeineTargetMg).coerceIn(0.0, 1.0).toFloat(), CaffeineColor)
+private fun NutrientBox(
+    sodiumMg: Double,
+    potassiumMg: Double,
+    fiberG: Double,
+    caffeineMg: Double,
+    order: List<String>,
+    onReorder: (List<String>) -> Unit
+) {
+    val data = mapOf(
+        "sodium" to NutrientDatum("sodium", "Sodium", "${sodiumMg.roundToInt()} mg", (sodiumMg / SodiumTargetMg).coerceIn(0.0, 1.0).toFloat(), SodiumColor),
+        "potassium" to NutrientDatum("potassium", "Potassium", "${potassiumMg.roundToInt()} mg", (potassiumMg / PotassiumTargetMg).coerceIn(0.0, 1.0).toFloat(), PotassiumColor),
+        "fiber" to NutrientDatum("fiber", "Dietary Fiber", "${oneDecimal(fiberG)} g", (fiberG / FiberTargetG).coerceIn(0.0, 1.0).toFloat(), FiberColor),
+        "caffeine" to NutrientDatum("caffeine", "Caffeine", "${caffeineMg.roundToInt()} mg", (caffeineMg / CaffeineTargetMg).coerceIn(0.0, 1.0).toFloat(), CaffeineColor)
+    )
+    // Sanitize the incoming order against known keys, then keep a local working copy for the
+    // drag (swaps happen as the dragged card crosses a neighbour); persist on drag end.
+    val safeOrder = order.filter { data.containsKey(it) } + data.keys.filter { it !in order }
+    var working by remember(safeOrder) { mutableStateOf(safeOrder) }
+    var dragKey by remember { mutableStateOf<String?>(null) }
+    var dragDx by remember { mutableStateOf(0f) }
+
+    val spacing = 8.dp
+    val density = LocalDensity.current
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val n = working.size
+        // Center-to-center distance between adjacent equal-width cards.
+        val stepPx = with(density) { ((maxWidth - spacing * (n - 1)) / n + spacing).toPx() }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spacing)) {
+            working.forEach { key ->
+                val d = data[key] ?: return@forEach
+                val dragging = key == dragKey
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .zIndex(if (dragging) 1f else 0f)
+                        .offset { IntOffset(if (dragging) dragDx.roundToInt() else 0, 0) }
+                        .pointerInput(key) {
+                            detectDragGesturesAfterLongPress(
+                                onDragStart = { dragKey = key; dragDx = 0f },
+                                onDragEnd = { dragKey = null; dragDx = 0f; onReorder(working) },
+                                onDragCancel = { dragKey = null; dragDx = 0f },
+                                onDrag = { change, amount ->
+                                    change.consume()
+                                    dragDx += amount.x
+                                    val idx = working.indexOf(key)
+                                    if (dragDx > stepPx / 2f && idx < working.size - 1) {
+                                        working = working.toMutableList().also { it.add(idx + 1, it.removeAt(idx)) }
+                                        dragDx -= stepPx
+                                    } else if (dragDx < -stepPx / 2f && idx > 0) {
+                                        working = working.toMutableList().also { it.add(idx - 1, it.removeAt(idx)) }
+                                        dragDx += stepPx
+                                    }
+                                }
+                            )
+                        }
+                ) {
+                    NutrientCard(d)
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun RowScope.NutrientCard(label: String, value: String, fraction: Float, color: Color) {
-    Card(modifier = Modifier.weight(1f)) {
+private fun NutrientCard(d: NutrientDatum) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
-                label,
+                d.label,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2
             )
-            Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(d.value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1)
             LinearProgressIndicator(
-                progress = { fraction },
-                color = color,
+                progress = { d.fraction },
+                color = d.color,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp))
             )

@@ -19,6 +19,10 @@ class ThemeRepository(context: Context) {
     private val _avatar = MutableStateFlow(prefs.getString("avatar_emoji", "🧑") ?: "🧑")
     val avatar: StateFlow<String> = _avatar.asStateFlow()
 
+    // The order of the food-log micronutrient cards (user-draggable). Stored as CSV keys.
+    private val _nutrientOrder = MutableStateFlow(loadNutrientOrder())
+    val nutrientOrder: StateFlow<List<String>> = _nutrientOrder.asStateFlow()
+
     private fun load(): ThemeMode =
         runCatching {
             ThemeMode.valueOf(prefs.getString("theme_mode", ThemeMode.SYSTEM.name) ?: ThemeMode.SYSTEM.name)
@@ -42,5 +46,24 @@ class ThemeRepository(context: Context) {
     fun setAvatar(emoji: String) {
         prefs.edit().putString("avatar_emoji", emoji).apply()
         _avatar.value = emoji
+    }
+
+    fun setNutrientOrder(order: List<String>) {
+        prefs.edit().putString("nutrient_order", order.joinToString(",")).apply()
+        _nutrientOrder.value = order
+    }
+
+    private fun loadNutrientOrder(): List<String> {
+        val known = DEFAULT_NUTRIENT_ORDER
+        val saved = prefs.getString("nutrient_order", null)
+            ?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }
+        // Keep saved order, drop unknown keys, and append any known key that's missing
+        // (so a nutrient added to the app later still appears).
+        return if (saved.isNullOrEmpty()) known
+        else (saved.filter { it in known } + known.filter { it !in saved }).ifEmpty { known }
+    }
+
+    companion object {
+        val DEFAULT_NUTRIENT_ORDER = listOf("sodium", "potassium", "fiber", "caffeine")
     }
 }

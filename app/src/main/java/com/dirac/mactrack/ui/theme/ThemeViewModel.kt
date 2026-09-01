@@ -19,6 +19,9 @@ class ThemeViewModel(private val repository: ThemeRepository) : ViewModel() {
     val avatar: StateFlow<String> = repository.avatar
     fun setAvatar(emoji: String) = repository.setAvatar(emoji)
 
+    val nutrientOrder: StateFlow<List<String>> = repository.nutrientOrder
+    fun setNutrientOrder(order: List<String>) = repository.setNutrientOrder(order)
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
