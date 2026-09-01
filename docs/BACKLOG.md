@@ -6,9 +6,9 @@ Deferred work, organized by **what blocks it**, not by priority or effort. Three
 roles & AI** (needs a backend and product decisions). A checked **v1 done** list sits at the bottom
 so scope is visible at a glance. Item codes (SCHEMA-n, UI-n, ACCT-n, AI-n) cross-reference commits.
 
-The running narrative log is [docs/MACTRACK_STATE.md](docs/MACTRACK_STATE.md); the architecture is
+The running narrative log is [MACTRACK_STATE.md](MACTRACK_STATE.md); the architecture is
 [ENGINEERING_SUMMARY.md](ENGINEERING_SUMMARY.md); the threat model is
-[docs/SECURITY.md](docs/SECURITY.md).
+[SECURITY.md](SECURITY.md).
 
 ---
 

@@ -1,7 +1,7 @@
 # MacTrack — Engineering Summary
 
 *Last updated: 2026-09-01*
-*Engineering status + the rules and decisions that shape the code. Architecture and "why", not step-by-step how-to. The running work log lives in [docs/MACTRACK_STATE.md](docs/MACTRACK_STATE.md); deferred work in [BACKLOG.md](BACKLOG.md); day-to-day guardrails in [NOTES.md](NOTES.md); threat model in [docs/SECURITY.md](docs/SECURITY.md).*
+*Engineering status + the rules and decisions that shape the code. Architecture and "why", not step-by-step how-to. The running work log lives in [MACTRACK_STATE.md](MACTRACK_STATE.md); deferred work in [BACKLOG.md](BACKLOG.md); day-to-day guardrails in [../NOTES.md](../NOTES.md); threat model in [SECURITY.md](SECURITY.md).*
 
 ---
 
@@ -165,7 +165,7 @@ No instrumented UI tests                          → known gap; UI-10 in BACKLO
 | File | What it is |
 |------|------------|
 | [BACKLOG.md](BACKLOG.md) | Deferred work, bucketed by what blocks it. The task queue. |
-| [docs/MACTRACK_STATE.md](docs/MACTRACK_STATE.md) | Running narrative log — what shipped each session, and why. |
-| [docs/SECURITY.md](docs/SECURITY.md) | Threat model + current posture; the plan for accounts/roles/AI. |
-| [docs/MACROFACTOR_REFERENCE.md](docs/MACROFACTOR_REFERENCE.md) | The visual/interaction target the UI is chasing. |
-| [NOTES.md](NOTES.md) | Day-to-day working rules and the hard constraints, restated for contributors. |
+| [MACTRACK_STATE.md](MACTRACK_STATE.md) | Running narrative log — what shipped each session, and why. |
+| [SECURITY.md](SECURITY.md) | Threat model + current posture; the plan for accounts/roles/AI. |
+| [MACROFACTOR_REFERENCE.md](MACROFACTOR_REFERENCE.md) | The visual/interaction target the UI is chasing. |
+| [../NOTES.md](../NOTES.md) | Day-to-day working rules and the hard constraints, restated for contributors. |
