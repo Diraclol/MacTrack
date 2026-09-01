@@ -21,11 +21,12 @@ import com.dirac.mactrack.data.MIGRATION_3_4
 import com.dirac.mactrack.data.MIGRATION_4_5
 import com.dirac.mactrack.data.MIGRATION_5_6
 import com.dirac.mactrack.data.MIGRATION_6_7
+import com.dirac.mactrack.data.MIGRATION_7_8
 
 class MacTrackApplication : Application() {
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, "mactrack.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
             .build()
     }
     val foodRepository: FoodRepository by lazy {

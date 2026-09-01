@@ -14,4 +14,10 @@ interface UserProfileDao {
 
     @Query("SELECT * FROM user_profile WHERE id = 0")
     fun getProfile(): Flow<UserProfile?>
+
+    @Query("SELECT * FROM user_profile WHERE id = 0")
+    suspend fun getProfileOnce(): UserProfile?
+
+    @Query("UPDATE user_profile SET bodyFatPct = :pct WHERE id = 0")
+    suspend fun setBodyFat(pct: Double?)
 }

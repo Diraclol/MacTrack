@@ -14,12 +14,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -40,6 +43,37 @@ import com.dirac.mactrack.ui.theme.ThemeViewModel
 
 private fun pretty(name: String) = name.lowercase().replaceFirstChar { it.uppercase() }
 
+private fun trimPct(x: Double): String = if (x % 1.0 == 0.0) x.toInt().toString() else x.toString()
+
+@Composable
+private fun BodyFatDialog(current: Double?, onSet: (Double?) -> Unit, onDismiss: () -> Unit) {
+    var text by remember { mutableStateOf(current?.let { trimPct(it) } ?: "") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Body fat %") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Optional. Leave blank to clear.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text("Body fat (%)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSet(text.toDoubleOrNull()?.takeIf { it in 0.0..100.0 }) }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
 @Composable
 fun ProfileScreen(onBack: () -> Unit = {}, onReassessGoals: () -> Unit = {}, modifier: Modifier = Modifier) {
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
@@ -49,6 +83,7 @@ fun ProfileScreen(onBack: () -> Unit = {}, onReassessGoals: () -> Unit = {}, mod
     val stats by statsViewModel.stats.collectAsState()
     val avatar by themeViewModel.avatar.collectAsState()
     var showAvatarPicker by remember { mutableStateOf(false) }
+    var showBodyFatDialog by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(16.dp),
@@ -104,6 +139,17 @@ fun ProfileScreen(onBack: () -> Unit = {}, onReassessGoals: () -> Unit = {}, mod
                 }
             }
             item {
+                Card(modifier = Modifier.fillMaxWidth().clickable { showBodyFatDialog = true }) {
+                    Column(Modifier.padding(vertical = 4.dp)) {
+                        InfoRow(
+                            "Body fat",
+                            p.bodyFatPct?.let { "${trimPct(it)} %" } ?: "Tap to add (optional)",
+                            last = true
+                        )
+                    }
+                }
+            }
+            item {
                 Card(modifier = Modifier.fillMaxWidth().clickable { onReassessGoals() }) {
                     Column(Modifier.padding(vertical = 4.dp)) {
                         InfoRow("Activity", pretty(p.activityLevel))
@@ -137,6 +183,14 @@ fun ProfileScreen(onBack: () -> Unit = {}, onReassessGoals: () -> Unit = {}, mod
             choices = AVATAR_EMOJIS,
             onPick = { themeViewModel.setAvatar(it); showAvatarPicker = false },
             onDismiss = { showAvatarPicker = false }
+        )
+    }
+
+    if (showBodyFatDialog) {
+        BodyFatDialog(
+            current = profile?.bodyFatPct,
+            onSet = { profileViewModel.setBodyFat(it); showBodyFatDialog = false },
+            onDismiss = { showBodyFatDialog = false }
         )
     }
 }

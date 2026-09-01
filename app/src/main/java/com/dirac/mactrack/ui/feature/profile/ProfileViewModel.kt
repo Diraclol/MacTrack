@@ -19,6 +19,10 @@ class ProfileViewModel(private val repository: UserProfileRepository) : ViewMode
     val profile: StateFlow<UserProfile?> = repository.getProfile()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    fun setBodyFat(pct: Double?) {
+        viewModelScope.launch { repository.setBodyFat(pct) }
+    }
+
     fun saveProfile(
         sex: String,
         age: Int,

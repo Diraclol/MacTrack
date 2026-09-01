@@ -14,5 +14,8 @@ data class UserProfile(
     val goalType: String,
     val proteinLevel: String,
     val fatLevel: String,
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    // Optional body-fat percentage. Nullable, so the migration adds it without a DEFAULT and no
+    // @ColumnInfo is needed. Preserved across saveProfile() (onboarding/reassess don't set it).
+    val bodyFatPct: Double? = null
 )

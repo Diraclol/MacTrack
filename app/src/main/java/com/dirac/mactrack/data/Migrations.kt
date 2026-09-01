@@ -66,3 +66,11 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
         db.execSQL("ALTER TABLE meal_templates ADD COLUMN mealType TEXT")
     }
 }
+
+// 7 -> 8: the profile can store an optional body-fat percentage. Nullable REAL, so no DEFAULT
+// and no @ColumnInfo(defaultValue) on UserProfile.bodyFatPct.
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN bodyFatPct REAL")
+    }
+}
