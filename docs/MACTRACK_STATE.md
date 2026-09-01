@@ -370,7 +370,37 @@ Accounts / roles / AI (all need Firebase + decisions; see SECURITY.md):
 
 Schema-migration batch (do together when Dirac can build after each step): `FoodItem.barcode`,
 `FoodItem.emoji`, `caffeineMg` on FoodItem+MealEntry, `Recipe`+`RecipeIngredient` tables,
-`MealTemplate` meal-type.
+`MealTemplate` meal-type, `UserProfile.bodyFatPct` (optional, for the profile bodyfat box).
+
+## Session notes (2026-08-31, late-night polish pass) — SHIPPED (verified + pushed)
+
+All reviewed by a review and pushed to
+`main`. Dirac had NOT yet built the earlier day-nav batch when these landed, so a device build +
+screenshots is the real gate before more piling on.
+
+- `ffdb52b` Theme: dropped the navy tint — base is now neutral near-black/grey, blue only as the
+  accent ("too much blue" fix). Val names in `Color.kt` unchanged.
+- `86f4688` Food detail: macro rings thicker (stroke 8->14, ring 56->64dp).
+- `6e9691a` Reassess goals: rounder result card (20dp) + rounded custom-target fields.
+- `c27dbc2` Food search: search bar shows on the Meals tab too (filters saved meals by name);
+  transparent search field; rounded quick-add inputs.
+- `20f2add` Food log: **week-block** day strip (HorizontalPager, one week per page, Mon-Sun; today
+  outlined); totals row is one line ("2654 left"), **swipes** to toggle remaining<->eaten/goal, and
+  each bar has a perpendicular **goal tick** (fill runs past it in red when over); rows **swipe-left
+  to delete** (red panel via SwipeToDismissBox), inline trash removed.
+- `3300df2` Fold **Goals + Reassess** into one More entry (Goals screen shows the goal + a single
+  Reassess button); **bottom nav centered** (each tab an equal weighted third — fixes the
+  off-center caused by unequal label widths); **changeable avatar** (emoji picker on Profile, stored
+  in the `settings` pref `avatar_emoji`; Dashboard + More read it).
+
+Still open from this feedback round:
+- **Drag-to-reorder** logged items (hold + drag up/down, move between hour blocks). Deferred on
+  purpose: gesture-heavy (needs device testing) AND moving between blocks means rewriting the row's
+  `timeMinutes` — confirm that data behavior with Dirac first.
+- **Bodyfat box** on Profile — needs `UserProfile.bodyFatPct` (schema batch above).
+- Avatar "photos" (beyond emoji) — would need an image picker + storage; emoji ships first.
+- Visual confirmations needed from a screenshot: the goal-tick behavior, transparent search field,
+  week-strip paging feel, nav centering.
 
 ## Forward plan (Dirac asked to scope these; NOT built yet)
 
