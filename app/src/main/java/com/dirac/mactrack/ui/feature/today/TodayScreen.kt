@@ -167,6 +167,9 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
         val detail = editDetail ?: snapshotDetail
         var amount by remember(e) { mutableStateOf(servings(e.amount)) }
         var selectedUnit by remember(e) { mutableStateOf(e.unitLabel ?: e.unit) }
+        // First key press replaces the prefilled amount instead of appending (matches the
+        // food detail screen's pad).
+        var amountFresh by remember(e) { mutableStateOf(true) }
         LaunchedEffect(e) { viewModel.loadEditDetail(e) }
         ModalBottomSheet(
             onDismissRequest = { editing = null; viewModel.clearEditDetail() },
@@ -179,7 +182,11 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
             )
             NumberPad(
                 value = amount,
-                onValueChange = { amount = it },
+                onValueChange = { new ->
+                    val next = if (amountFresh && new.length > amount.length) new.drop(amount.length) else new
+                    amount = if (next.startsWith(".")) "0$next" else next
+                    amountFresh = false
+                },
                 units = detail.units.map { it.label },
                 selectedUnit = selectedUnit,
                 onUnitSelect = { selectedUnit = it },
