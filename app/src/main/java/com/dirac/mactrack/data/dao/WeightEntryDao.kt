@@ -16,6 +16,9 @@ interface WeightEntryDao {
     @Query("SELECT * FROM weight_entries ORDER BY date")
     fun getAll(): Flow<List<WeightEntry>>
 
+    @Query("SELECT * FROM weight_entries")
+    suspend fun getAllOnce(): List<WeightEntry>
+
     @Delete
     suspend fun delete(entry: WeightEntry)
 }

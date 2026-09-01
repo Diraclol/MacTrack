@@ -23,6 +23,12 @@ interface MealTemplateDao {
     @Query("SELECT * FROM meal_template_items WHERE templateId = :templateId")
     suspend fun getItems(templateId: String): List<MealTemplateItem>
 
+    @Query("SELECT * FROM meal_templates")
+    suspend fun getAllTemplatesOnce(): List<MealTemplate>
+
+    @Query("SELECT * FROM meal_template_items")
+    suspend fun getAllItemsOnce(): List<MealTemplateItem>
+
     @Delete
     suspend fun deleteTemplate(template: MealTemplate)
 

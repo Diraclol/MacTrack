@@ -14,4 +14,7 @@ interface GoalDao {
 
     @Query("SELECT * FROM goals ORDER BY createdAt DESC LIMIT 1")
     fun getLatest(): Flow<Goal?>
+
+    @Query("SELECT * FROM goals")
+    suspend fun getAllOnce(): List<Goal>
 }

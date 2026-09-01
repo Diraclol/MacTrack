@@ -11,6 +11,7 @@ import com.dirac.mactrack.data.repository.UserProfileRepository
 import com.dirac.mactrack.data.repository.MealTemplateRepository
 import com.dirac.mactrack.data.repository.RecipeRepository
 import com.dirac.mactrack.data.repository.ThemeRepository
+import com.dirac.mactrack.data.backup.BackupManager
 import com.dirac.mactrack.data.cnf.CnfRepository
 import com.dirac.mactrack.data.cart.CartRepository
 import com.dirac.mactrack.data.off.OpenFoodFactsRepository
@@ -49,6 +50,9 @@ class MacTrackApplication : Application() {
     }
     val recipeRepository: RecipeRepository by lazy {
         RecipeRepository(database.recipeDao())
+    }
+    val backupManager: BackupManager by lazy {
+        BackupManager(database)
     }
     val themeRepository: ThemeRepository by lazy {
         ThemeRepository(this)

@@ -1,5 +1,8 @@
 package com.dirac.mactrack.ui.feature.more
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,9 +29,11 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,6 +73,21 @@ fun MoreScreen(
     val context = LocalContext.current
     val versionName = remember {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "?"
+    }
+
+    val backupViewModel: BackupViewModel = viewModel(factory = BackupViewModel.Factory)
+    val backupMessage by backupViewModel.message.collectAsState()
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri -> uri?.let { backupViewModel.export(it, context.contentResolver) } }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> uri?.let { backupViewModel.import(it, context.contentResolver) } }
+    LaunchedEffect(backupMessage) {
+        backupMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            backupViewModel.clearMessage()
+        }
     }
 
     LazyColumn(
@@ -153,6 +173,40 @@ fun MoreScreen(
                                 label = { Text(if (s == StartScreen.DASHBOARD) "Dashboard" else "Food log") }
                             )
                         }
+                    }
+                }
+            }
+        }
+        // Data backup
+        item {
+            Text(
+                "DATA",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Backup", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Export writes a JSON file you can save anywhere; import restores from one.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Button(
+                            onClick = { exportLauncher.launch("mactrack-backup.json") },
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Export") }
+                        OutlinedButton(
+                            onClick = { importLauncher.launch(arrayOf("application/json")) },
+                            modifier = Modifier.weight(1f)
+                        ) { Text("Import") }
                     }
                 }
             }
