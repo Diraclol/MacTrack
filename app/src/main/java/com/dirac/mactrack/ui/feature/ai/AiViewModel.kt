@@ -15,12 +15,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// One message in the chat, as shown. `error = true` renders it as an error notice rather than a reply.
+// One message in the chat, as shown. `error = true` renders it as an error notice rather than a reply;
+// `imageDataUrl` is an attached photo on a user turn.
 data class UiMessage(
     val id: Long,
     val role: String,   // "user" | "assistant"
     val text: String,
-    val error: Boolean = false
+    val error: Boolean = false,
+    val imageDataUrl: String? = null
 )
 
 private const val SYSTEM_PROMPT =
@@ -42,6 +44,13 @@ class AiViewModel(
     private val _isStreaming = MutableStateFlow(false)
     val isStreaming: StateFlow<Boolean> = _isStreaming.asStateFlow()
 
+    // A photo attached but not yet sent (a data URL), shown as a thumbnail above the input.
+    private val _pendingImage = MutableStateFlow<String?>(null)
+    val pendingImage: StateFlow<String?> = _pendingImage.asStateFlow()
+
+    fun attachImage(dataUrl: String) { _pendingImage.value = dataUrl }
+    fun clearPendingImage() { _pendingImage.value = null }
+
     val baseUrl: StateFlow<String> = settings.baseUrl
     val model: StateFlow<String> = settings.model
     val hasKey: StateFlow<Boolean> = settings.hasKey
@@ -57,13 +66,18 @@ class AiViewModel(
 
     fun send(text: String) {
         val trimmed = text.trim()
-        if (trimmed.isEmpty() || _isStreaming.value) return
+        val image = _pendingImage.value
+        if ((trimmed.isEmpty() && image == null) || _isStreaming.value) return
 
-        add(UiMessage(nextId++, "user", trimmed))
+        // If only a photo is attached, ask the obvious question for it.
+        val userText = trimmed.ifEmpty { "Estimate the calories and macros of this food." }
+
+        add(UiMessage(nextId++, "user", userText, imageDataUrl = image))
+        _pendingImage.value = null
         // Build the API history from what's shown so far (before the assistant placeholder).
         val history = buildList {
             add(ChatMessage("system", SYSTEM_PROMPT))
-            _messages.value.forEach { add(ChatMessage(it.role, it.text)) }
+            _messages.value.forEach { add(ChatMessage(it.role, it.text, it.imageDataUrl)) }
         }
         val assistantId = add(UiMessage(nextId++, "assistant", ""))
 
