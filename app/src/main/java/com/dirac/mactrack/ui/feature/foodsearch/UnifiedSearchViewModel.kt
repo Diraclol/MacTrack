@@ -13,11 +13,13 @@ import com.dirac.mactrack.data.cnf.CnfFood
 import com.dirac.mactrack.data.cnf.CnfRepository
 import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.entity.MealEntry
+import com.dirac.mactrack.data.entity.MealTemplate
 import com.dirac.mactrack.data.food.cnfFoodDetail
 import com.dirac.mactrack.data.food.foodItemDetail
 import com.dirac.mactrack.data.food.stagePortion
 import com.dirac.mactrack.data.repository.FoodRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
+import com.dirac.mactrack.data.repository.MealTemplateRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,7 +37,8 @@ class UnifiedSearchViewModel(
     private val foodRepository: FoodRepository,
     private val cnfRepository: CnfRepository,
     private val cartRepository: CartRepository,
-    private val mealEntryRepository: MealEntryRepository
+    private val mealEntryRepository: MealEntryRepository,
+    private val mealTemplateRepository: MealTemplateRepository
 ) : ViewModel() {
 
     private val _query = MutableStateFlow("")
@@ -47,6 +50,16 @@ class UnifiedSearchViewModel(
     val custom: StateFlow<List<FoodItem>> = combine(_query, allFoods) { q, foods ->
         if (q.isBlank()) emptyList() else foods.filter { it.name.contains(q, ignoreCase = true) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // The Foods tab browses every saved food (all when the query is blank, filtered when typing),
+    // unlike `custom` above which stays empty until you type (it feeds the All tab).
+    val savedFoods: StateFlow<List<FoodItem>> = combine(_query, allFoods) { q, foods ->
+        if (q.isBlank()) foods else foods.filter { it.name.contains(q, ignoreCase = true) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Saved meals (repeatable sets of foods) for the Meals tab.
+    val templates: StateFlow<List<MealTemplate>> = mealTemplateRepository.getTemplates()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _common = MutableStateFlow<List<CnfFood>>(emptyList())
     val common: StateFlow<List<CnfFood>> = _common.asStateFlow()
@@ -83,6 +96,46 @@ class UnifiedSearchViewModel(
         }
     }
 
+    // Add every food in a saved meal to the cart (each staged at the meal's recorded servings),
+    // so meals flow through the same cart -> Log path as individual foods.
+    fun addTemplateToCart(templateId: String) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val items = mealTemplateRepository.getItems(templateId)
+                items.forEach { item ->
+                    val food = foodRepository.getFood(item.foodId) ?: return@forEach
+                    val detail = foodItemDetail(food)
+                    val unit = detail.units.find { it.label == detail.defaultUnitLabel }
+                        ?: detail.units.firstOrNull() ?: return@forEach
+                    val staged = stagePortion(item.amount, unit)
+                    cartRepository.add(
+                        CartItem(
+                            name = detail.name, quantity = staged.quantity, amount = item.amount,
+                            unit = staged.unit, nutrients = staged.nutrients,
+                            sourceType = "custom", sourceId = food.id, unitLabel = unit.label
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    // One-off macro entry logged straight to today (not saved as a reusable food).
+    fun quickAdd(name: String, calories: Double, protein: Double, carb: Double, fat: Double, onDone: () -> Unit) {
+        viewModelScope.launch {
+            val now = LocalTime.now()
+            mealEntryRepository.logEntry(
+                MealEntry(
+                    date = LocalDate.now().toString(), timeMinutes = now.hour * 60 + now.minute,
+                    foodName = name.ifBlank { "Quick add" }, amount = 1.0, quantity = 1.0, unit = "serving",
+                    calories = calories, proteinG = protein, carbG = carb, fatG = fat,
+                    sourceType = "quick", unitLabel = "serving", updatedAt = System.currentTimeMillis()
+                )
+            )
+            onDone()
+        }
+    }
+
     fun logCart(onDone: () -> Unit) {
         val items = cartRepository.items.value
         if (items.isEmpty()) return
@@ -112,7 +165,7 @@ class UnifiedSearchViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                UnifiedSearchViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository)
+                UnifiedSearchViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository, app.mealTemplateRepository)
             }
         }
     }
