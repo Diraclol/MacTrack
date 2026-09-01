@@ -303,6 +303,12 @@ pre-filled) reached from a saved food.
   -> the styled Create Recipe screen; Recipes tab.
 - A meal-type field on `MealTemplate` -> the Create Meal "Meal" dropdown (Breakfast/Lunch/...).
 
+**Next build-ready item (no schema): dashboard redesign.** Dirac wants the dashboard to become
+the MacroFactor-style rings screen (a weekly day strip of progress rings, the macro rings row
+"of 106 / of 384 / ...", i.e. calories + P/C/F as rings). The micronutrient box has already
+moved off the dashboard to the food log. This is the reference in the session screenshots. It's
+a meaningful redesign of `DashboardScreen` (no data-model change) — do it as its own focused step.
+
 ## Forward plan (Dirac asked to scope these; NOT built yet)
 
 **A. Barcode scanning (camera).** The Open Food Facts *lookup* already works via manual entry.
