@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.ui.theme.ThemeViewModel
 import java.time.LocalDate
 import kotlin.math.roundToInt
 import java.time.format.TextStyle
@@ -45,7 +46,9 @@ private val CalorieColor = Color(0xFFFF9800)
 @Composable
 fun DashboardScreen(modifier: Modifier = Modifier, onOpenProfile: () -> Unit = {}) {
     val viewModel: DashboardViewModel = viewModel(factory = DashboardViewModel.Factory)
+    val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
     val goal by viewModel.goal.collectAsState()
+    val avatar by themeViewModel.avatar.collectAsState()
     val entries by viewModel.todayEntries.collectAsState()
     val loggedDates by viewModel.loggedDates.collectAsState()
 
@@ -77,7 +80,7 @@ fun DashboardScreen(modifier: Modifier = Modifier, onOpenProfile: () -> Unit = {
                         .clickable { onOpenProfile() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("🧑", style = MaterialTheme.typography.titleLarge)
+                    Text(avatar, style = MaterialTheme.typography.titleLarge)
                 }
             }
         }

@@ -16,6 +16,9 @@ class ThemeRepository(context: Context) {
     private val _startScreen = MutableStateFlow(loadStart())
     val startScreen: StateFlow<StartScreen> = _startScreen.asStateFlow()
 
+    private val _avatar = MutableStateFlow(prefs.getString("avatar_emoji", "🧑") ?: "🧑")
+    val avatar: StateFlow<String> = _avatar.asStateFlow()
+
     private fun load(): ThemeMode =
         runCatching {
             ThemeMode.valueOf(prefs.getString("theme_mode", ThemeMode.SYSTEM.name) ?: ThemeMode.SYSTEM.name)
@@ -34,5 +37,10 @@ class ThemeRepository(context: Context) {
     fun setStartScreen(startScreen: StartScreen) {
         prefs.edit().putString("start_screen", startScreen.name).apply()
         _startScreen.value = startScreen
+    }
+
+    fun setAvatar(emoji: String) {
+        prefs.edit().putString("avatar_emoji", emoji).apply()
+        _avatar.value = emoji
     }
 }

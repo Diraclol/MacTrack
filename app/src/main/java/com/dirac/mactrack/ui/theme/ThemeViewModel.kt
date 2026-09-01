@@ -16,6 +16,9 @@ class ThemeViewModel(private val repository: ThemeRepository) : ViewModel() {
     val startScreen: StateFlow<StartScreen> = repository.startScreen
     fun setStartScreen(startScreen: StartScreen) = repository.setStartScreen(startScreen)
 
+    val avatar: StateFlow<String> = repository.avatar
+    fun setAvatar(emoji: String) = repository.setAvatar(emoji)
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

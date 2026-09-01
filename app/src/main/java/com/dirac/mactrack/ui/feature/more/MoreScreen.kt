@@ -54,7 +54,6 @@ fun MoreScreen(
     modifier: Modifier = Modifier,
     onOpenLibrary: () -> Unit = {},
     onOpenGoals: () -> Unit = {},
-    onReassessGoals: () -> Unit = {},
     onOpenProfile: () -> Unit = {},
 ) {
     val weightViewModel: WeightViewModel = viewModel(factory = WeightViewModel.Factory)
@@ -63,6 +62,7 @@ fun MoreScreen(
     val statsViewModel: MoreStatsViewModel = viewModel(factory = MoreStatsViewModel.Factory)
     val themeMode by themeViewModel.mode.collectAsState()
     val startScreen by themeViewModel.startScreen.collectAsState()
+    val avatar by themeViewModel.avatar.collectAsState()
     val weights by weightViewModel.weights.collectAsState()
     val profile by profileViewModel.profile.collectAsState()
     val stats by statsViewModel.stats.collectAsState()
@@ -89,7 +89,7 @@ fun MoreScreen(
                                 .background(MaterialTheme.colorScheme.primaryContainer),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("🧑", style = MaterialTheme.typography.titleLarge)
+                            Text(avatar, style = MaterialTheme.typography.titleLarge)
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -120,7 +120,6 @@ fun MoreScreen(
         // Navigation cards
         item { MoreCard("Saved Foods, Meals & Recipes", onOpenLibrary) }
         item { MoreCard("Goals", onOpenGoals) }
-        item { MoreCard("Reassess goals", onReassessGoals) }
         // Preferences
         item {
             Text(

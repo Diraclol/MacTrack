@@ -3,6 +3,7 @@ package com.dirac.mactrack.ui.navigation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -77,7 +78,6 @@ fun MacTrackApp() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Destination.entries.forEach { destination ->
@@ -87,25 +87,29 @@ fun MacTrackApp() {
                             } else {
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             }
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(2.dp),
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .clickable {
-                                        navController.navigate(destination.route) {
-                                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                            launchSingleTop = true
-                                            restoreState = true
+                            // Each tab gets an equal third and centers its content, so unequal label
+                            // widths (Dashboard vs More) don't push the row off-center.
+                            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .clickable {
+                                            navController.navigate(destination.route) {
+                                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
                                         }
-                                    }
-                                    .background(
-                                        if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
-                                    )
-                                    .padding(horizontal = 20.dp, vertical = 8.dp)
-                            ) {
-                                Icon(destination.icon, contentDescription = destination.label, tint = tint)
-                                Text(destination.label, style = MaterialTheme.typography.labelSmall, color = tint)
+                                        .background(
+                                            if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
+                                        )
+                                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                                ) {
+                                    Icon(destination.icon, contentDescription = destination.label, tint = tint)
+                                    Text(destination.label, style = MaterialTheme.typography.labelSmall, color = tint)
+                                }
                             }
                         }
                     }
@@ -131,7 +135,6 @@ fun MacTrackApp() {
                 MoreScreen(
                     onOpenLibrary = { navController.navigate("library") },
                     onOpenGoals = { navController.navigate("goals") },
-                    onReassessGoals = { navController.navigate("reassess_goals") },
                     onOpenProfile = { navController.navigate("profile") },
                 )
             }
@@ -152,7 +155,12 @@ fun MacTrackApp() {
             }
             composable("create_meal") { MealsScreen(onBack = { navController.popBackStack() }, showBar = true) }
             composable("create_recipe") { RecipesScreen(onBack = { navController.popBackStack() }, showBar = true) }
-            composable("goals") { GoalsScreen(onBack = { navController.popBackStack() }) }
+            composable("goals") {
+                GoalsScreen(
+                    onBack = { navController.popBackStack() },
+                    onReassess = { navController.navigate("reassess_goals") }
+                )
+            }
             composable("reassess_goals") { ReassessGoalsScreen(onBack = { navController.popBackStack() }) }
             composable("profile") {
                 ProfileScreen(
