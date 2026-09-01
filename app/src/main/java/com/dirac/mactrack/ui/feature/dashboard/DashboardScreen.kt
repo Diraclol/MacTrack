@@ -71,6 +71,7 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
         }
         item {
             MacroCard(
+                cal = totalCal, calGoal = goal?.calorieGoal ?: 0.0,
                 p = totalP, pGoal = goal?.proteinGoalG ?: 0.0,
                 f = totalF, fGoal = goal?.fatGoalG ?: 0.0,
                 c = totalC, cGoal = goal?.carbGoalG ?: 0.0
@@ -132,12 +133,14 @@ private fun CalorieRing(consumed: Double, target: Double) {
 }
 
 @Composable
-private fun MacroCard(p: Double, pGoal: Double, f: Double, fGoal: Double, c: Double, cGoal: Double) {
+private fun MacroCard(cal: Double, calGoal: Double, p: Double, pGoal: Double, f: Double, fGoal: Double, c: Double, cGoal: Double) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Text("Cals + Macros", style = MaterialTheme.typography.titleMedium)
+            MacroBar("Calories", cal, calGoal, CalorieColor, unit = "cal")
             MacroBar("Protein", p, pGoal, ProteinColor)
             MacroBar("Fat", f, fGoal, FatColor)
             MacroBar("Carbs", c, cGoal, CarbColor)
@@ -146,13 +149,13 @@ private fun MacroCard(p: Double, pGoal: Double, f: Double, fGoal: Double, c: Dou
 }
 
 @Composable
-private fun MacroBar(label: String, current: Double, goal: Double, color: Color) {
+private fun MacroBar(label: String, current: Double, goal: Double, color: Color, unit: String = "g") {
     val fraction = if (goal > 0.0) (current / goal).coerceIn(0.0, 1.0).toFloat() else 0f
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, style = MaterialTheme.typography.labelLarge)
             Text(
-                if (goal > 0.0) "${current.roundToInt()} / ${goal.roundToInt()} g" else "${current.roundToInt()} g",
+                if (goal > 0.0) "${current.roundToInt()} / ${goal.roundToInt()} $unit" else "${current.roundToInt()} $unit",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
