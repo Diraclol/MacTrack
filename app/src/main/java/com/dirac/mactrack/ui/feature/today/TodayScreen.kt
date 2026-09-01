@@ -116,7 +116,12 @@ private fun hourLabel(hour: Int): String {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifier: Modifier = Modifier) {
+fun TodayScreen(
+    onOpenSearch: () -> Unit,
+    onOpenEntry: (String) -> Unit,
+    onOpenNutrient: (String) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     val viewModel: MealLogViewModel = viewModel(factory = MealLogViewModel.Factory)
     val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
     val entries by viewModel.todayEntries.collectAsState()
@@ -178,7 +183,8 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
                     fiberG = totalFiber,
                     caffeineMg = totalCaffeine,
                     order = nutrientOrder,
-                    onReorder = { themeViewModel.setNutrientOrder(it) }
+                    onReorder = { themeViewModel.setNutrientOrder(it) },
+                    onOpenNutrient = onOpenNutrient
                 )
             }
             if (byHour.isEmpty()) {
@@ -369,7 +375,8 @@ private fun NutrientBox(
     fiberG: Double,
     caffeineMg: Double,
     order: List<String>,
-    onReorder: (List<String>) -> Unit
+    onReorder: (List<String>) -> Unit,
+    onOpenNutrient: (String) -> Unit
 ) {
     val data = mapOf(
         "sodium" to NutrientDatum("sodium", "Sodium", "${sodiumMg.roundToInt()} mg", (sodiumMg / SodiumTargetMg).coerceIn(0.0, 1.0).toFloat(), SodiumColor),
@@ -419,7 +426,7 @@ private fun NutrientBox(
                             )
                         }
                 ) {
-                    NutrientCard(d)
+                    NutrientCard(d, onClick = { onOpenNutrient(d.key) })
                 }
             }
         }
@@ -427,8 +434,8 @@ private fun NutrientBox(
 }
 
 @Composable
-private fun NutrientCard(d: NutrientDatum) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun NutrientCard(d: NutrientDatum, onClick: () -> Unit = {}) {
+    Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)

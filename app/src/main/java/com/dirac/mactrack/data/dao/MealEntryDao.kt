@@ -29,6 +29,9 @@ interface MealEntryDao {
     @Query("SELECT DISTINCT date FROM meal_entries WHERE date >= :since")
     fun getLoggedDates(since: String): Flow<List<String>>
 
+    @Query("SELECT * FROM meal_entries WHERE date >= :since ORDER BY date")
+    fun getEntriesSince(since: String): Flow<List<MealEntry>>
+
     @Query(
         "SELECT date, SUM(calories) AS calories, SUM(proteinG) AS proteinG, " +
             "SUM(carbG) AS carbG, SUM(fatG) AS fatG FROM meal_entries " +

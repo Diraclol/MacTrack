@@ -47,6 +47,7 @@ import com.dirac.mactrack.ui.feature.foodsearch.UnifiedSearchScreen
 import com.dirac.mactrack.ui.feature.foodsearch.FoodDetailScreen
 import com.dirac.mactrack.ui.feature.weight.WeightScreen
 import com.dirac.mactrack.ui.feature.trends.TrendsScreen
+import com.dirac.mactrack.ui.feature.nutrient.NutrientDetailScreen
 
 @Composable
 fun MacTrackApp() {
@@ -139,8 +140,16 @@ fun MacTrackApp() {
             composable(Destination.FOOD_LOG.route) {
                 TodayScreen(
                     onOpenSearch = { navController.navigate("food_search") },
-                    onOpenEntry = { entryId -> navController.navigate("food_detail/entry/$entryId") }
+                    onOpenEntry = { entryId -> navController.navigate("food_detail/entry/$entryId") },
+                    onOpenNutrient = { key -> navController.navigate("nutrient_detail/$key") }
                 )
+            }
+            composable(
+                "nutrient_detail/{nutrient}",
+                arguments = listOf(navArgument("nutrient") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val nutrient = backStackEntry.arguments?.getString("nutrient") ?: "sodium"
+                NutrientDetailScreen(nutrientKey = nutrient, onBack = { navController.popBackStack() })
             }
             composable(Destination.MORE.route) {
                 MoreScreen(

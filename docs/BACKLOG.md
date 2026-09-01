@@ -58,32 +58,32 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
 
 ## Follow-ups not blocked by hardware (UI / no schema)
 
-- [ ] **UI-1: Export / Import data (JSON).** No way to back up or move data. Add a More-screen action
-      that serializes entities to JSON and re-imports with schema/bounds validation (see the
-      import/export notes in `docs/SECURITY.md`). Done = round-trip export → wipe → import restores the log.
-- [ ] **UI-2: Dashboard rings redesign.** The dashboard macro card is bars today. Rebuild as
-      MacroFirst-style weekly nutrition rings with a Consumed/Remaining toggle and small insight graphs.
-- [ ] **UI-3: Trends screen.** Tapping the "Cals + Macros" card should open a Trends screen with a
-      period selector (1W / 1M / 3M / 6M / 1Y / All) and a daily line/bar; the card itself should show
-      the WEEKLY AVERAGE of cals/P/C/F. Aggregate with `GROUP BY date` — no totals table.
-- [ ] **UI-4: Weight redesign.** Drop steps and "weigh-in"; collapse weight logging to a button; keep
-      only bodyweight + date; add a trend graph with 1M / 3M / 1Y / All ranges (`WeightEntry` already exists).
+- [x] **UI-1: Export / Import data (JSON).** SHIPPED. `data/backup/BackupManager` serializes every
+      table to JSON (org.json, no new dep) and restores by upsert; Export/Import buttons in More via the
+      Storage Access Framework. Round-trips export → wipe → import.
+- [ ] **UI-2: Dashboard rings redesign.** The dashboard macro card is bars today (now showing the 7-day
+      average, UI-3). Rebuild as MacroFactor-style weekly nutrition **rings** with a Consumed/Remaining
+      toggle. NEEDS A VISUAL REFERENCE before building — deferred pending Dirac's input on the look.
+- [x] **UI-3: Trends screen.** SHIPPED. TrendsScreen (metric + period selectors, daily-average card,
+      Canvas daily bar chart with goal line); `DailyTotals` aggregation via `GROUP BY date`; the
+      dashboard "Cals + Macros" card shows the rolling 7-day average and taps through to Trends.
+- [x] **UI-4: Weight redesign.** SHIPPED. Dedicated Weight screen (nav card in More): current weight +
+      change, Log-weight dialog, 1M/3M/1Y/All range chips, a Canvas trend graph, history with delete.
 - [ ] **UI-5: Log-reminder notifications.** Opt-in reminder to log food, **off by default**, toggle in
       More. Needs `POST_NOTIFICATIONS` (Android 13+) + a WorkManager scheduler. A pref, no schema.
 - [ ] **UI-6: Drag-to-reorder log items between time blocks.** Hold + drag a logged row up/down to
       move it to another hour block. Gesture-heavy (device testing) AND moving between blocks means
       rewriting the row's `timeMinutes` — decide that data behavior before building.
-- [ ] **UI-7: Rebuild Create Recipe / Create Meal with a proper ingredient picker.** Today Create
-      Recipe just lists your saved foods with a servings box each — so with few/no saved foods there's
-      **nowhere to add ingredients**, and there's no search/add flow. Rebuild both around an "add
-      ingredient" search (over CNF + saved foods), a chosen-ingredient list, and per-screen fields:
-      **Recipe** = named, each ingredient has a **servings** amount, plus recipe-level **cooked weight**
-      and an icon; logs as ONE per-serving entry (SCHEMA-4 model). **Meal** = the same food set but
-      **no per-item servings/label and no weight** — it's a batch that logs each of its foods to the
-      food log at once (the current MealTemplate "add to cart → log" flow). Also a recipe **icon
-      picker** (reuse `EmojiPickerDialog` + `FOOD_EMOJIS`). Pairs with SCHEMA-5.
-- [ ] **UI-8: Nutrient detail screens.** Per-nutrient trend with Floor / Target / Ceiling and an
-      all-contributors list (MacroFactor-style), reachable from the micronutrient box.
+- [~] **UI-7: Ingredient picker for Create Recipe / Create Meal.** SHIPPED the shared
+      `ui/common/IngredientPicker` (search your saved foods, tap to add, amount per ingredient, remove,
+      and a "Create a new food" shortcut for the empty case) — fixes "nowhere to add ingredients". Both
+      screens use it. **Remaining:** ingredients are still saved foods (`food_items`) only; adding
+      CNF/common foods to a meal/recipe needs a schema change (a source ref on the item rows) — a
+      separate decision. Also a recipe **icon picker** (reuse `EmojiPickerDialog` + `FOOD_EMOJIS`).
+- [x] **UI-8: Nutrient detail screens.** SHIPPED. Tapping a micronutrient card on the food log opens
+      `ui/feature/nutrient/NutrientDetailScreen`: today's total vs a reference target, a 30-day Canvas
+      bar chart with a target line, and today's contributors (foods summed by that nutrient). Covers the
+      four box nutrients (sodium/potassium/fiber/caffeine).
 - [ ] **UI-9: Barcode camera scanning.** Manual barcode lookup works; camera scanning needs new deps
       (CameraX + ML Kit barcode) + the CAMERA permission + a scanner screen.
 - [ ] **UI-10: Instrumented Compose tests.** No UI tests exist; the day strip, swipe-to-delete, and

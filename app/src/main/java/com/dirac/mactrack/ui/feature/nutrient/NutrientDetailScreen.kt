@@ -1,0 +1,154 @@
+package com.dirac.mactrack.ui.feature.nutrient
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Card
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.data.entity.MealEntry
+import com.dirac.mactrack.ui.common.BackBar
+import java.time.LocalDate
+import kotlin.math.roundToInt
+
+private val SodiumColor = Color(0xFF26A69A)
+private val PotassiumColor = Color(0xFF66BB6A)
+private val FiberColor = Color(0xFF42A5F5)
+private val CaffeineColor = Color(0xFFAB47BC)
+
+private data class NutrientSpec(
+    val key: String,
+    val label: String,
+    val unit: String,
+    val target: Double,
+    val color: Color,
+    val selector: (MealEntry) -> Double
+)
+
+private val NUTRIENTS = listOf(
+    NutrientSpec("sodium", "Sodium", "mg", 2300.0, SodiumColor) { it.sodiumMg },
+    NutrientSpec("potassium", "Potassium", "mg", 3400.0, PotassiumColor) { it.potassiumMg },
+    NutrientSpec("fiber", "Dietary Fiber", "g", 28.0, FiberColor) { it.fiberG },
+    NutrientSpec("caffeine", "Caffeine", "mg", 400.0, CaffeineColor) { it.caffeineMg }
+)
+
+private fun fmt(x: Double): String = if (x >= 100) x.roundToInt().toString() else (Math.round(x * 10.0) / 10.0).toString()
+
+@Composable
+fun NutrientDetailScreen(nutrientKey: String, onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
+    val spec = NUTRIENTS.find { it.key == nutrientKey } ?: NUTRIENTS.first()
+    val vm: NutrientDetailViewModel = viewModel(factory = NutrientDetailViewModel.Factory)
+    val entries by vm.entries.collectAsState()
+
+    val today = LocalDate.now().toString()
+    val todayTotal = entries.filter { it.date == today }.sumOf { spec.selector(it) }
+
+    // 30-day daily series (missing days filled with 0), oldest -> newest.
+    val byDate = entries.groupBy { it.date }.mapValues { (_, list) -> list.sumOf { spec.selector(it) } }
+    val series = (0 until 30).map { i ->
+        byDate[LocalDate.now().minusDays((29 - i).toLong()).toString()] ?: 0.0
+    }
+
+    // Today's contributors, summed per food, biggest first.
+    val contributors = entries.filter { it.date == today && spec.selector(it) > 0.0 }
+        .groupBy { it.foodName }
+        .map { (name, list) -> name to list.sumOf { spec.selector(it) } }
+        .sortedByDescending { it.second }
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item { BackBar(spec.label, onBack) }
+
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Today", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${fmt(todayTotal)} ${spec.unit}", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                    LinearProgressIndicator(
+                        progress = { (todayTotal / spec.target).coerceIn(0.0, 1.0).toFloat() },
+                        color = spec.color,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        "Reference: ${fmt(spec.target)} ${spec.unit}/day",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        item { Text("Last 30 days", style = MaterialTheme.typography.titleSmall) }
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Box(modifier = Modifier.fillMaxWidth().height(180.dp).padding(16.dp)) {
+                    NutrientBarChart(series = series, target = spec.target, color = spec.color, modifier = Modifier.fillMaxSize())
+                }
+            }
+        }
+
+        item { Text("Today's contributors", style = MaterialTheme.typography.titleSmall) }
+        if (contributors.isEmpty()) {
+            item {
+                Text(
+                    "Nothing logged with ${spec.label.lowercase()} today.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            items(items = contributors, key = { it.first }) { (name, amount) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(name, style = MaterialTheme.typography.bodyMedium)
+                    Text("${fmt(amount)} ${spec.unit}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NutrientBarChart(series: List<Double>, target: Double, color: Color, modifier: Modifier = Modifier) {
+    val goalColor = MaterialTheme.colorScheme.onSurfaceVariant
+    Canvas(modifier = modifier) {
+        if (series.isEmpty()) return@Canvas
+        val maxV = maxOf(series.max(), target, 1.0)
+        val n = series.size
+        val gap = 2.dp.toPx()
+        val barW = ((size.width - gap * (n - 1)) / n).coerceAtLeast(1f)
+        series.forEachIndexed { i, v ->
+            val h = (v / maxV).toFloat() * size.height
+            val x = i * (barW + gap)
+            drawRect(color = color, topLeft = Offset(x, size.height - h), size = Size(barW, h))
+        }
+        if (target > 0.0) {
+            val gy = size.height - (target / maxV).toFloat() * size.height
+            drawLine(goalColor, Offset(0f, gy), Offset(size.width, gy), strokeWidth = 2.dp.toPx())
+        }
+    }
+}
