@@ -39,3 +39,22 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         db.execSQL("ALTER TABLE food_items ADD COLUMN barcode TEXT")
     }
 }
+
+// 5 -> 6: recipes get real storage (two new tables). Purely additive — no existing table
+// changes. Column types/NOT NULL must match the Recipe / RecipeIngredient entities exactly:
+// makesServings and createdAt are non-null with no SQL DEFAULT (Kotlin defaults only);
+// cookedWeightG and emoji are nullable.
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `recipes` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, " +
+                "`makesServings` REAL NOT NULL, `cookedWeightG` REAL, `emoji` TEXT, " +
+                "`createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `recipe_ingredients` (`id` TEXT NOT NULL, " +
+                "`recipeId` TEXT NOT NULL, `foodId` TEXT NOT NULL, `amount` REAL NOT NULL, " +
+                "PRIMARY KEY(`id`))"
+        )
+    }
+}

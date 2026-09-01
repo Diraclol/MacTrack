@@ -9,6 +9,7 @@ import com.dirac.mactrack.data.repository.MealEntryRepository
 import com.dirac.mactrack.data.repository.WeightRepository
 import com.dirac.mactrack.data.repository.UserProfileRepository
 import com.dirac.mactrack.data.repository.MealTemplateRepository
+import com.dirac.mactrack.data.repository.RecipeRepository
 import com.dirac.mactrack.data.repository.ThemeRepository
 import com.dirac.mactrack.data.cnf.CnfRepository
 import com.dirac.mactrack.data.cart.CartRepository
@@ -18,11 +19,12 @@ import com.dirac.mactrack.data.MIGRATION_1_2
 import com.dirac.mactrack.data.MIGRATION_2_3
 import com.dirac.mactrack.data.MIGRATION_3_4
 import com.dirac.mactrack.data.MIGRATION_4_5
+import com.dirac.mactrack.data.MIGRATION_5_6
 
 class MacTrackApplication : Application() {
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, "mactrack.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .build()
     }
     val foodRepository: FoodRepository by lazy {
@@ -42,6 +44,9 @@ class MacTrackApplication : Application() {
     }
     val mealTemplateRepository: MealTemplateRepository by lazy {
         MealTemplateRepository(database.mealTemplateDao())
+    }
+    val recipeRepository: RecipeRepository by lazy {
+        RecipeRepository(database.recipeDao())
     }
     val themeRepository: ThemeRepository by lazy {
         ThemeRepository(this)

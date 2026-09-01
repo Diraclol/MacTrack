@@ -69,6 +69,13 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
       (CameraX + ML Kit barcode) + the CAMERA permission + a scanner screen.
 - [ ] **UI-10: Instrumented Compose tests.** No UI tests exist; the day strip, swipe-to-delete, and
       swipe-toggle totals are only verified by screenshot. Add a first `androidTest` pass for the food log.
+- [ ] **RESEARCH-1: PWA / iOS feasibility spike.** MacTrack is Android-native today (Kotlin + Jetpack
+      Compose + Room, with a bundled SQLite `cnf.db` asset). Investigate reaching the web (as a PWA)
+      and iOS. Sketch the options and their cost: a Compose Multiplatform / KMP share of the domain +
+      data layer (Room has KMP support; the CNF asset and cnf.db access would need a cross-platform
+      story), vs. a separate web/PWA client over an eventual sync backend (ties into ACCT-1), vs. a
+      fresh cross-platform rewrite. Done = a short written recommendation (what's realistic, what it
+      costs, what it forces on the current architecture) in `docs/` — not an implementation.
 
 ---
 

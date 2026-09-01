@@ -15,8 +15,11 @@ import com.dirac.mactrack.data.entity.UserProfile
 import com.dirac.mactrack.data.entity.MealTemplate
 import com.dirac.mactrack.data.entity.MealTemplateItem
 import com.dirac.mactrack.data.dao.MealTemplateDao
+import com.dirac.mactrack.data.entity.Recipe
+import com.dirac.mactrack.data.entity.RecipeIngredient
+import com.dirac.mactrack.data.dao.RecipeDao
 
-@Database(entities = [FoodItem::class, Goal::class, MealEntry::class, WeightEntry::class, UserProfile::class, MealTemplate::class, MealTemplateItem::class], version = 5, exportSchema = true)
+@Database(entities = [FoodItem::class, Goal::class, MealEntry::class, WeightEntry::class, UserProfile::class, MealTemplate::class, MealTemplateItem::class, Recipe::class, RecipeIngredient::class], version = 6, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun foodItemDao(): FoodItemDao
     abstract fun goalDao(): GoalDao
@@ -24,4 +27,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun weightEntryDao(): WeightEntryDao
     abstract fun userProfileDao(): UserProfileDao
     abstract fun mealTemplateDao(): MealTemplateDao
+    abstract fun recipeDao(): RecipeDao
 }
