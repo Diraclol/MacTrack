@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -69,33 +70,35 @@ fun MacTrackApp() {
         containerColor = Color.Transparent,
         bottomBar = {
             if (showBottomBar) {
-                Surface(
+                // A compact pill centered at the bottom: the outline hugs the tabs so the side tabs sit
+                // right next to the selected "blue block", rather than spread across the full width.
+                Box(
                     modifier = Modifier
+                        .fillMaxWidth()
                         .navigationBarsPadding()
-                        .padding(horizontal = 24.dp, vertical = 12.dp)
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(28.dp),
-                    color = Color.Transparent,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    shadowElevation = 0.dp,
-                    tonalElevation = 0.dp
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        modifier = Modifier.wrapContentWidth(),
+                        shape = RoundedCornerShape(28.dp),
+                        color = Color.Transparent,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        shadowElevation = 0.dp,
+                        tonalElevation = 0.dp
                     ) {
-                        Destination.entries.forEach { destination ->
-                            val selected = currentRoute == destination.route
-                            val tint = if (selected) {
-                                MaterialTheme.colorScheme.onSecondaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                            // Each tab gets an equal third and centers its content, so unequal label
-                            // widths (Dashboard vs More) don't push the row off-center.
-                            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Destination.entries.forEach { destination ->
+                                val selected = currentRoute == destination.route
+                                val tint = if (selected) {
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -111,7 +114,7 @@ fun MacTrackApp() {
                                         .background(
                                             if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
                                         )
-                                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                                        .padding(horizontal = 18.dp, vertical = 8.dp)
                                 ) {
                                     Icon(destination.icon, contentDescription = destination.label, tint = tint)
                                     Text(destination.label, style = MaterialTheme.typography.labelSmall, color = tint)
