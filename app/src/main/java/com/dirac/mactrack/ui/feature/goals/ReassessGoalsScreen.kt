@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -147,8 +148,8 @@ private fun AlgoReassess(
     ChipGroup("Protein", ProteinLevel.entries, protein, { pretty(it.name) }) { protein = it }
     ChipGroup("Fat", FatLevel.entries, fat, { pretty(it.name) }) { fat = it }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Maintenance (TDEE): ${maintenance.roundToInt()} cal", style = MaterialTheme.typography.bodyMedium)
             Text("Target: ${targets.calories.roundToInt()} cal", style = MaterialTheme.typography.titleSmall)
             Text("Protein ${targets.proteinG.roundToInt()} g   Carbs ${targets.carbG.roundToInt()} g   Fat ${targets.fatG.roundToInt()} g", style = MaterialTheme.typography.bodyMedium)
@@ -218,6 +219,7 @@ private fun NumField(value: String, onValueChange: (String) -> Unit, label: Stri
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
+        shape = RoundedCornerShape(16.dp),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         singleLine = true,
         modifier = Modifier.fillMaxWidth()
