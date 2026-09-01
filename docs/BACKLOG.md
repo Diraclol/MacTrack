@@ -149,6 +149,17 @@ This whole track is scheduled **last**.
       **Remaining:** Slice 2 = image attach (downscale ~1024 px → base64 data URL) for photo → macros;
       Slice 3 = a "Log this" action turning an estimate into a review-before-save food/log entry.
       Later: chat persistence (Room), a "local server" preset button.
+      **Model designation (dev note).** Main = `gemini-3.5-flash-lite` (app default; fastest/cheapest
+      multimodal 3.5, verified ~15 RPM / 500 RPD). Backup = `gemini-2.5-flash` (stronger multimodal for
+      hard vision cases or when the main's daily bucket is spent; a different model = a separate per-model
+      daily bucket). The Model field is an editable dropdown of these, so switching is one tap. We ride
+      the **OpenAI-compat endpoint** (`/v1beta/openai/…`), which sits on the now-"legacy"-but-supported
+      `generateContent` API — fine for now; if it's ever retired we'd move to the Interactions API.
+      **Quota coordination.** Free-tier daily request quotas pool at the Google Cloud PROJECT level, so
+      if the app and Dirac's homelab chatting share one project they draw down the same daily buckets.
+      To avoid contention: put MacTrack in its OWN project (separate key → fully separate quota), or keep
+      homelab chatting on a DIFFERENT model tier (e.g. `gemini-3.7-flash` / a Pro tier) so per-model daily
+      limits don't collide with the app's flash-lite/2.5-flash. The app is deliberately the light one.
 
 ---
 
