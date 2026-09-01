@@ -38,6 +38,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -49,6 +50,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -95,8 +97,8 @@ fun UnifiedSearchScreen(
     }
     BackHandler(enabled = true) { attemptBack() }
 
-    // The search field only makes sense on the browsing tabs (All, Foods).
-    val showSearchBar = tab == 0 || tab == 1
+    // The search field shows on the browsing tabs (All, Foods, Meals). Quick add has its own form.
+    val showSearchBar = tab == 0 || tab == 1 || tab == 2
 
     // imePadding lifts the docked bottom bar above the keyboard when it opens.
     Column(modifier = modifier.fillMaxSize().imePadding()) {
@@ -132,7 +134,7 @@ fun UnifiedSearchScreen(
             when (tab) {
                 0 -> AllTab(query, recent, custom, common, onOpenFood, viewModel)
                 1 -> FoodsTab(savedFoods, onOpenFood, viewModel)
-                2 -> MealsTab(templates, viewModel)
+                2 -> MealsTab(query, templates, viewModel)
                 else -> QuickAddTab(viewModel, onLoggedCart)
             }
         }
@@ -156,6 +158,10 @@ fun UnifiedSearchScreen(
                         }
                     },
                     shape = RoundedCornerShape(28.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent
+                    ),
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -291,17 +297,25 @@ private fun FoodsTab(
 
 @Composable
 private fun MealsTab(
+    query: String,
     templates: List<com.dirac.mactrack.data.entity.MealTemplate>,
     viewModel: UnifiedSearchViewModel
 ) {
+    val shown = if (query.isBlank()) templates
+        else templates.filter { it.name.contains(query.trim(), ignoreCase = true) }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        if (templates.isEmpty()) {
-            item { EmptyHint("No saved meals yet. Create repeatable meals from the More screen.") }
+        if (shown.isEmpty()) {
+            item {
+                EmptyHint(
+                    if (query.isBlank()) "No saved meals yet. Create repeatable meals from the More screen."
+                    else "No meals match \"$query\"."
+                )
+            }
         }
-        items(items = templates, key = { it.id }) { template ->
+        items(items = shown, key = { it.id }) { template ->
             Card(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
@@ -341,17 +355,19 @@ private fun QuickAddTab(viewModel: UnifiedSearchViewModel, onDone: () -> Unit) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name (optional)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        val fieldShape = RoundedCornerShape(16.dp)
+        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name (optional)") }, shape = fieldShape, modifier = Modifier.fillMaxWidth(), singleLine = true)
         OutlinedTextField(
             value = calories, onValueChange = { calories = it },
             label = { Text("Calories (blank = use macro sum)") },
+            shape = fieldShape,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth(), singleLine = true
         )
         Text("Macro sum: ${macroKcal.roundToInt()} kcal", style = MaterialTheme.typography.bodySmall)
-        OutlinedTextField(value = protein, onValueChange = { protein = it }, label = { Text("Protein (g)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), singleLine = true)
-        OutlinedTextField(value = carb, onValueChange = { carb = it }, label = { Text("Carbs (g)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), singleLine = true)
-        OutlinedTextField(value = fat, onValueChange = { fat = it }, label = { Text("Fat (g)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), singleLine = true)
+        OutlinedTextField(value = protein, onValueChange = { protein = it }, label = { Text("Protein (g)") }, shape = fieldShape, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), singleLine = true)
+        OutlinedTextField(value = carb, onValueChange = { carb = it }, label = { Text("Carbs (g)") }, shape = fieldShape, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), singleLine = true)
+        OutlinedTextField(value = fat, onValueChange = { fat = it }, label = { Text("Fat (g)") }, shape = fieldShape, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), singleLine = true)
         Button(
             onClick = {
                 val cal = calories.toDoubleOrNull() ?: macroKcal
