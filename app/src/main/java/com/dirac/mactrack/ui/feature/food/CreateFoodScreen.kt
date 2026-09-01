@@ -56,6 +56,9 @@ private val CarbColor = Color(0xFF2196F3)
 private val FatColor = Color(0xFF4CAF50)
 private val CalorieColor = Color(0xFFFF9800)
 
+// Shared rounded shape for every entry box on this screen.
+private val FieldShape = RoundedCornerShape(16.dp)
+
 private val UNITS = listOf("serving", "g", "ml", "piece", "cup", "tbsp", "tsp", "oz", "scoop", "tablet", "capsule")
 
 // A "create a saved food" screen styled like the food detail screen (cards, a live summary
@@ -155,13 +158,38 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
                 }
             }
 
-            // Identity card.
+            // Identity card: name full width, brand + barcode share a row to save space.
             item {
                 Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        IdentityField("Food", name, { name = it }, "Name")
-                        IdentityField("Brand", brand, { brand = it }, "Optional")
-                        IdentityField("Barcode", barcode, { barcode = it }, "Optional")
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text("Name") },
+                            singleLine = true,
+                            shape = FieldShape,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = brand,
+                                onValueChange = { brand = it },
+                                label = { Text("Brand") },
+                                placeholder = { Text("Optional") },
+                                singleLine = true,
+                                shape = FieldShape,
+                                modifier = Modifier.weight(1f)
+                            )
+                            OutlinedTextField(
+                                value = barcode,
+                                onValueChange = { barcode = it },
+                                label = { Text("Barcode") },
+                                placeholder = { Text("Optional") },
+                                singleLine = true,
+                                shape = FieldShape,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
             }
@@ -180,6 +208,7 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
                             label = { Text("Amount") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
+                            shape = FieldShape,
                             modifier = Modifier.fillMaxWidth()
                         )
                         Row(
@@ -254,23 +283,6 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
 }
 
 @Composable
-private fun IdentityField(label: String, value: String, onValueChange: (String) -> Unit, placeholder: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = { Text(placeholder) },
-            singleLine = true,
-            modifier = Modifier.weight(2f)
-        )
-    }
-}
-
-@Composable
 private fun NutrientField(value: String, onValueChange: (String) -> Unit, label: String, helper: String? = null) {
     Column {
         OutlinedTextField(
@@ -279,6 +291,7 @@ private fun NutrientField(value: String, onValueChange: (String) -> Unit, label:
             label = { Text(label) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
+            shape = FieldShape,
             modifier = Modifier.fillMaxWidth()
         )
         if (helper != null) {

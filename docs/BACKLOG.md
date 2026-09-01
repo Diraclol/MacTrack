@@ -68,7 +68,15 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
 - [ ] **UI-6: Drag-to-reorder log items between time blocks.** Hold + drag a logged row up/down to
       move it to another hour block. Gesture-heavy (device testing) AND moving between blocks means
       rewriting the row's `timeMinutes` — decide that data behavior before building.
-- [ ] **UI-7: Restyle Create Meal / Create Recipe** to the reference screenshots (pairs with SCHEMA-4/5).
+- [ ] **UI-7: Rebuild Create Recipe / Create Meal with a proper ingredient picker.** Today Create
+      Recipe just lists your saved foods with a servings box each — so with few/no saved foods there's
+      **nowhere to add ingredients**, and there's no search/add flow. Rebuild both around an "add
+      ingredient" search (over CNF + saved foods), a chosen-ingredient list, and per-screen fields:
+      **Recipe** = named, each ingredient has a **servings** amount, plus recipe-level **cooked weight**
+      and an icon; logs as ONE per-serving entry (SCHEMA-4 model). **Meal** = the same food set but
+      **no per-item servings/label and no weight** — it's a batch that logs each of its foods to the
+      food log at once (the current MealTemplate "add to cart → log" flow). Also a recipe **icon
+      picker** (reuse `EmojiPickerDialog` + `FOOD_EMOJIS`). Pairs with SCHEMA-5.
 - [ ] **UI-8: Nutrient detail screens.** Per-nutrient trend with Floor / Target / Ceiling and an
       all-contributors list (MacroFactor-style), reachable from the micronutrient box.
 - [ ] **UI-9: Barcode camera scanning.** Manual barcode lookup works; camera scanning needs new deps
@@ -96,20 +104,16 @@ This whole track is scheduled **last**.
       roles with server-side claims / row-level security. Never hardcode the admin credential anywhere.
 - [ ] **ACCT-2: Shared food database.** The database Btesters grow. Needs validation, moderation, and
       rate-limiting so shared entries can't poison everyone's search.
-- [ ] **AI-1: Vision features (separate, opt-in, BYO-key).** Photo → estimate macros; photo + a
-      weight → more accurate; paste an item list (brands optional) → match/calculate against CNF +
-      saved foods; menu photo → cutting/bulking recommendation. All go through review-before-save.
-      **Provider decision:** default **Gemini Flash** — for a bring-your-own-key app the deciding
-      factor is friction, and Gemini's AI Studio key is free and needs no card, with usable free
-      RPM/RPD and native structured (JSON schema) output. **OpenAI is an optional second provider,
-      and must use a *mini* model** (e.g. gpt-5.4-mini class), never the flagship — the flagship's
-      entry-tier limits (~3 RPM / 10K TPM) choke on image inputs, while mini gets ~10 RPM / 100K TPM
-      and is cheaper. Skip NVIDIA NIM for v1 (weaker vision fit, more setup). Architect behind one
-      `NutritionAiProvider` interface (Gemini impl first; OpenAI a second impl), user picks in-app.
-      Keys live in EncryptedSharedPreferences / Keystore, never embedded in the app or committed.
-      Model/vision quality shifts fast and newer OpenAI models are unverified here — settle the
-      Gemini-vs-mini choice empirically by running ~10 food photos through both and comparing macro
-      estimates before committing UI copy to one.
+- [ ] **AI-1: Vision features (separate, opt-in, BYO-key). Gemini only.** Photo → estimate macros;
+      photo + a weight → more accurate; paste an item list (brands optional) → match/calculate against
+      CNF + saved foods; menu photo → cutting/bulking recommendation. All go through review-before-save.
+      **Provider decision (locked): Gemini only — no OpenAI, no NVIDIA NIM, no backup provider.** For a
+      bring-your-own-key app the deciding factor is friction, and Gemini's AI Studio key is free, needs
+      no card, has usable free RPM/RPD, native structured (JSON schema) output, and a range of models
+      to pick from (Flash for speed/cost, Pro for hard cases). Let the user choose the Gemini **model**
+      in-app; default to a Flash-class model. Key lives in EncryptedSharedPreferences / Keystore, never
+      embedded in the app or committed. Still keep the call site behind a thin interface for
+      testability, but only one implementation is planned.
 
 ---
 
