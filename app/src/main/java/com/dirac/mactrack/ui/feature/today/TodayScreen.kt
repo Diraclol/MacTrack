@@ -25,8 +25,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -141,8 +146,8 @@ fun TodayScreen(
     val byHour = entries.groupBy { it.timeMinutes / 60 }.toSortedMap()
 
     var editing by remember { mutableStateOf<MealEntry?>(null) }
-    // false = totals show "remaining"; true = totals show "eaten / goal". Swipe the row to toggle.
-    var statTotalMode by remember { mutableStateOf(false) }
+    // Totals view, cycled by swiping the row: 0 = "remaining", 1 = "eaten / goal", 2 = rings.
+    var statMode by remember { mutableStateOf(0) }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         DayNavigator(
@@ -161,18 +166,30 @@ fun TodayScreen(
                     var acc = 0f
                     detectHorizontalDragGestures(
                         onDragEnd = {
-                            if (kotlin.math.abs(acc) > 40f) statTotalMode = !statTotalMode
+                            // Swipe left = next view, right = previous; wrap around 3 modes.
+                            if (kotlin.math.abs(acc) > 40f) {
+                                statMode = if (acc < 0f) (statMode + 1) % 3 else (statMode + 2) % 3
+                            }
                             acc = 0f
                         },
                         onDragCancel = { acc = 0f }
                     ) { _, dragAmount -> acc += dragAmount }
                 },
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            TotalStat(Modifier.weight(1f), "Cal", totalCal, goal?.calorieGoal ?: 0.0, CalorieColor, statTotalMode)
-            TotalStat(Modifier.weight(1f), "P", totalP, goal?.proteinGoalG ?: 0.0, ProteinColor, statTotalMode)
-            TotalStat(Modifier.weight(1f), "F", totalF, goal?.fatGoalG ?: 0.0, FatColor, statTotalMode)
-            TotalStat(Modifier.weight(1f), "C", totalC, goal?.carbGoalG ?: 0.0, CarbColor, statTotalMode)
+            if (statMode == 2) {
+                TotalRing(Modifier.weight(1f), "Cal", totalCal, goal?.calorieGoal ?: 0.0, CalorieColor)
+                TotalRing(Modifier.weight(1f), "P", totalP, goal?.proteinGoalG ?: 0.0, ProteinColor)
+                TotalRing(Modifier.weight(1f), "F", totalF, goal?.fatGoalG ?: 0.0, FatColor)
+                TotalRing(Modifier.weight(1f), "C", totalC, goal?.carbGoalG ?: 0.0, CarbColor)
+            } else {
+                val totalMode = statMode == 1
+                TotalStat(Modifier.weight(1f), "Cal", totalCal, goal?.calorieGoal ?: 0.0, CalorieColor, totalMode)
+                TotalStat(Modifier.weight(1f), "P", totalP, goal?.proteinGoalG ?: 0.0, ProteinColor, totalMode)
+                TotalStat(Modifier.weight(1f), "F", totalF, goal?.fatGoalG ?: 0.0, FatColor, totalMode)
+                TotalStat(Modifier.weight(1f), "C", totalC, goal?.carbGoalG ?: 0.0, CarbColor, totalMode)
+            }
         }
 
         LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -359,6 +376,37 @@ private fun TotalStat(modifier: Modifier, label: String, consumed: Double, goal:
                 )
             }
         }
+    }
+}
+
+// The rings view of the totals (cycled to by swiping the totals row): one circular progress ring per
+// macro toward its goal, over-goal turning red, with the consumed value in the center.
+@Composable
+private fun TotalRing(modifier: Modifier, label: String, consumed: Double, goal: Double, color: Color) {
+    val has = goal > 0.0
+    val frac = if (has) (consumed / goal).coerceIn(0.0, 1.0).toFloat() else 0f
+    val over = has && consumed > goal
+    val track = MaterialTheme.colorScheme.surfaceVariant
+    val ringColor = if (over) MaterialTheme.colorScheme.error else color
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(58.dp)) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val stroke = 7.dp.toPx()
+                val d = size.minDimension - stroke
+                val topLeft = Offset((size.width - d) / 2f, (size.height - d) / 2f)
+                val arcSize = Size(d, d)
+                drawArc(color = track, startAngle = 0f, sweepAngle = 360f, useCenter = false, topLeft = topLeft, size = arcSize, style = Stroke(width = stroke))
+                if (frac > 0f) {
+                    drawArc(color = ringColor, startAngle = -90f, sweepAngle = 360f * frac, useCenter = false, topLeft = topLeft, size = arcSize, style = Stroke(width = stroke, cap = StrokeCap.Round))
+                }
+            }
+            Text("${consumed.roundToInt()}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+        }
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

@@ -32,6 +32,16 @@ class ThemeRepository(context: Context) {
         _reminderEnabled.value = enabled
     }
 
+    // Whether the AI assistant tab is shown. Off by default: it's opt-in (needs a Gemini key and sends
+    // data to the provider), so only users who want it turn it on.
+    private val _aiEnabled = MutableStateFlow(prefs.getBoolean("ai_enabled", false))
+    val aiEnabled: StateFlow<Boolean> = _aiEnabled.asStateFlow()
+
+    fun setAiEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("ai_enabled", enabled).apply()
+        _aiEnabled.value = enabled
+    }
+
     private fun load(): ThemeMode =
         runCatching {
             ThemeMode.valueOf(prefs.getString("theme_mode", ThemeMode.SYSTEM.name) ?: ThemeMode.SYSTEM.name)

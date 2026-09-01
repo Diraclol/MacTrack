@@ -64,11 +64,11 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
 - [x] **UI-1: Export / Import data (JSON).** SHIPPED. `data/backup/BackupManager` serializes every
       table to JSON (org.json, no new dep) and restores by upsert; Export/Import buttons in More via the
       Storage Access Framework. Round-trips export → wipe → import.
-- [ ] **UI-2: Macro rings on the food log (swipe view).** NOT the dashboard — Dirac confirmed the
-      dashboard stays as-is. On the food log's swipeable totals row, add a **rings** view as another
-      swipe state (same gesture as the existing totals / goal-tick swipe): one circular progress ring per
-      macro (calories / protein / carbs / fat) filling toward the day's goal, MacroFactor-style, with a
-      Consumed/Remaining sense. Reuses the day's existing numbers — just a new way to draw them.
+- [x] **UI-2: Macro rings on the food log (swipe view).** SHIPPED. The food-log totals row is now a
+      3-way swipe cycle: "remaining" → "eaten / goal" → **rings** (a `TotalRing` per macro — a Canvas
+      progress ring toward the day's goal, over-goal turning red, value in the center). Not the
+      dashboard (stays as-is). Follow-up if wanted: a persisted default view and a Consumed/Remaining
+      label on the rings.
 - [x] **UI-3: Trends screen.** SHIPPED. TrendsScreen (metric + period selectors, daily-average card,
       Canvas daily bar chart with goal line); `DailyTotals` aggregation via `GROUP BY date`; the
       dashboard "Cals + Macros" card shows the rolling 7-day average and taps through to Trends.

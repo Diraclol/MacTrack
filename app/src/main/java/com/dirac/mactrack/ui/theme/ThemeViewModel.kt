@@ -25,6 +25,9 @@ class ThemeViewModel(private val repository: ThemeRepository) : ViewModel() {
     val reminderEnabled: StateFlow<Boolean> = repository.reminderEnabled
     fun setReminderEnabled(enabled: Boolean) = repository.setReminderEnabled(enabled)
 
+    val aiEnabled: StateFlow<Boolean> = repository.aiEnabled
+    fun setAiEnabled(enabled: Boolean) = repository.setAiEnabled(enabled)
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

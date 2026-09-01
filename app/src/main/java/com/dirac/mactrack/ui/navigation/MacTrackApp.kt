@@ -20,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -73,6 +74,11 @@ fun MacTrackApp() {
         else Destination.DASHBOARD.route
     }
 
+    // The AI tab is opt-in (More → Preferences). Hide it from the nav when disabled.
+    val aiEnabled by themeViewModel.aiEnabled.collectAsState()
+    val navDestinations = if (aiEnabled) Destination.entries.toList()
+        else Destination.entries.filter { it != Destination.AI }
+
     Scaffold(
         containerColor = Color.Transparent,
         bottomBar = {
@@ -95,7 +101,7 @@ fun MacTrackApp() {
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Destination.entries.forEach { destination ->
+                        navDestinations.forEach { destination ->
                             val selected = currentRoute == destination.route
                             val tint = if (selected) {
                                 MaterialTheme.colorScheme.onSecondaryContainer

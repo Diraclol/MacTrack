@@ -98,6 +98,7 @@ fun MoreScreen(
     }
 
     val reminderEnabled by themeViewModel.reminderEnabled.collectAsState()
+    val aiEnabled by themeViewModel.aiEnabled.collectAsState()
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -222,6 +223,21 @@ fun MoreScreen(
                             )
                         }
                         Switch(checked = reminderEnabled, onCheckedChange = { setReminder(it) })
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("AI assistant", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "Adds an AI tab for food/macro help. Needs a free Gemini key and sends what you ask to Google.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(checked = aiEnabled, onCheckedChange = { themeViewModel.setAiEnabled(it) })
                     }
                 }
             }
