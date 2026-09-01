@@ -32,7 +32,6 @@ import com.dirac.mactrack.ui.feature.more.MoreScreen
 import com.dirac.mactrack.ui.feature.today.TodayScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import com.dirac.mactrack.ui.feature.foodsearch.QuickAddScreen
 import com.dirac.mactrack.ui.feature.foodsearch.UnifiedSearchScreen
 import com.dirac.mactrack.ui.feature.foodsearch.FoodDetailScreen
 
@@ -114,17 +113,10 @@ fun MacTrackApp() {
                 MoreScreen(
                     onOpenLibrary = { navController.navigate("library") },
                     onOpenGoals = { navController.navigate("goals") },
-                    onOpenQuickAdd = { navController.navigate("quick_add") },
                 )
             }
             composable("library") { LibraryScreen(onBack = { navController.popBackStack() }) }
             composable("goals") { GoalsScreen(onBack = { navController.popBackStack() }) }
-            composable("quick_add") {
-                QuickAddScreen(
-                    onDone = { navController.popBackStack() },
-                    onBack = { navController.popBackStack() }
-                )
-            }
             composable("food_search") {
                 UnifiedSearchScreen(
                     onOpenFood = { source, id -> navController.navigate("food_detail/$source/$id") },

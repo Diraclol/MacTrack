@@ -53,7 +53,6 @@ fun MoreScreen(
     modifier: Modifier = Modifier,
     onOpenLibrary: () -> Unit = {},
     onOpenGoals: () -> Unit = {},
-    onOpenQuickAdd: () -> Unit = {},
 ) {
     val weightViewModel: WeightViewModel = viewModel(factory = WeightViewModel.Factory)
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
@@ -125,7 +124,6 @@ fun MoreScreen(
         // Navigation cards
         item { MoreCard("Saved Foods, Meals & Recipes", onOpenLibrary) }
         item { MoreCard("Goals", onOpenGoals) }
-        item { MoreCard("Quick add", onOpenQuickAdd) }
         // Preferences
         item {
             Text(
