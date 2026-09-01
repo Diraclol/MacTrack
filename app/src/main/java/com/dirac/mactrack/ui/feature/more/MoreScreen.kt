@@ -43,6 +43,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.ui.feature.profile.ProfileViewModel
+import com.dirac.mactrack.ui.theme.StartScreen
 import com.dirac.mactrack.ui.theme.ThemeMode
 import com.dirac.mactrack.ui.theme.ThemeViewModel
 
@@ -61,6 +62,7 @@ fun MoreScreen(
     val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
     val statsViewModel: MoreStatsViewModel = viewModel(factory = MoreStatsViewModel.Factory)
     val themeMode by themeViewModel.mode.collectAsState()
+    val startScreen by themeViewModel.startScreen.collectAsState()
     val weights by weightViewModel.weights.collectAsState()
     val profile by profileViewModel.profile.collectAsState()
     val stats by statsViewModel.stats.collectAsState()
@@ -141,6 +143,16 @@ fun MoreScreen(
                                 selected = themeMode == mode,
                                 onClick = { themeViewModel.setMode(mode) },
                                 label = { Text(pretty(mode.name)) }
+                            )
+                        }
+                    }
+                    Text("Start screen", style = MaterialTheme.typography.titleMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        StartScreen.entries.forEach { s ->
+                            FilterChip(
+                                selected = startScreen == s,
+                                onClick = { themeViewModel.setStartScreen(s) },
+                                label = { Text(if (s == StartScreen.DASHBOARD) "Dashboard" else "Food log") }
                             )
                         }
                     }

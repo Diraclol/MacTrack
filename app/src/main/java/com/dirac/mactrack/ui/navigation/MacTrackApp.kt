@@ -16,6 +16,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.ui.theme.StartScreen
+import com.dirac.mactrack.ui.theme.ThemeViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +52,13 @@ fun MacTrackApp() {
 
     val tabRoutes = Destination.entries.map { it.route }
     val showBottomBar = currentRoute in tabRoutes
+
+    // Which tab the app opens on (a setting). Read once so it only applies at launch.
+    val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
+    val startRoute = remember {
+        if (themeViewModel.startScreen.value == StartScreen.FOOD_LOG) Destination.FOOD_LOG.route
+        else Destination.DASHBOARD.route
+    }
 
     Scaffold(
         bottomBar = {
@@ -104,7 +115,7 @@ fun MacTrackApp() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Destination.DASHBOARD.route,
+            startDestination = startRoute,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Destination.DASHBOARD.route) {

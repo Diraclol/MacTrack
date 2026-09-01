@@ -13,6 +13,9 @@ class ThemeViewModel(private val repository: ThemeRepository) : ViewModel() {
     val mode: StateFlow<ThemeMode> = repository.mode
     fun setMode(mode: ThemeMode) = repository.setMode(mode)
 
+    val startScreen: StateFlow<StartScreen> = repository.startScreen
+    fun setStartScreen(startScreen: StartScreen) = repository.setStartScreen(startScreen)
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
