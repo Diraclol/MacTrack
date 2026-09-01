@@ -45,6 +45,7 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.dirac.mactrack.ui.feature.foodsearch.UnifiedSearchScreen
 import com.dirac.mactrack.ui.feature.foodsearch.FoodDetailScreen
+import com.dirac.mactrack.ui.feature.weight.WeightScreen
 
 @Composable
 fun MacTrackApp() {
@@ -139,7 +140,11 @@ fun MacTrackApp() {
                     onOpenLibrary = { navController.navigate("library") },
                     onOpenGoals = { navController.navigate("goals") },
                     onOpenProfile = { navController.navigate("profile") },
+                    onOpenWeight = { navController.navigate("weight") },
                 )
+            }
+            composable("weight") {
+                WeightScreen(onBack = { navController.popBackStack() })
             }
             composable("library") {
                 LibraryScreen(

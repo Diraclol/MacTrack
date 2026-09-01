@@ -55,18 +55,16 @@ fun MoreScreen(
     onOpenLibrary: () -> Unit = {},
     onOpenGoals: () -> Unit = {},
     onOpenProfile: () -> Unit = {},
+    onOpenWeight: () -> Unit = {},
 ) {
-    val weightViewModel: WeightViewModel = viewModel(factory = WeightViewModel.Factory)
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
     val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
     val statsViewModel: MoreStatsViewModel = viewModel(factory = MoreStatsViewModel.Factory)
     val themeMode by themeViewModel.mode.collectAsState()
     val startScreen by themeViewModel.startScreen.collectAsState()
     val avatar by themeViewModel.avatar.collectAsState()
-    val weights by weightViewModel.weights.collectAsState()
     val profile by profileViewModel.profile.collectAsState()
     val stats by statsViewModel.stats.collectAsState()
-    var weight by remember { mutableStateOf("") }
     val context = LocalContext.current
     val versionName = remember {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "?"
@@ -120,6 +118,7 @@ fun MoreScreen(
         // Navigation cards
         item { MoreCard("Saved Foods, Meals & Recipes", onOpenLibrary) }
         item { MoreCard("Goals", onOpenGoals) }
+        item { MoreCard("Weight", onOpenWeight) }
         // Preferences
         item {
             Text(
@@ -155,50 +154,6 @@ fun MoreScreen(
                             )
                         }
                     }
-                }
-            }
-        }
-        // Weight logging
-        item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text("Log weight", style = MaterialTheme.typography.titleMedium)
-                    OutlinedTextField(
-                        value = weight,
-                        onValueChange = { weight = it },
-                        label = { Text("Weight (kg)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Button(
-                        onClick = {
-                            val w = weight.toDoubleOrNull()
-                            if (w != null && w > 0) {
-                                weightViewModel.logWeight(w)
-                                weight = ""
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Save weight")
-                    }
-                    if (weights.isNotEmpty()) {
-                        Text("History", style = MaterialTheme.typography.titleSmall)
-                    }
-                }
-            }
-        }
-        items(items = weights, key = { it.id }) { entry ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("${entry.date} — ${entry.weightKg} kg", modifier = Modifier.weight(1f))
-                IconButton(onClick = { weightViewModel.deleteWeight(entry) }) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Delete weight from ${entry.date}")
                 }
             }
         }
