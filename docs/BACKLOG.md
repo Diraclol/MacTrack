@@ -107,21 +107,21 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       Goal (Lose/Maintain/Gain, which shows the adjusted daily target) → Fat preference → Protein
       preference → summary → saves profile + goal. Follow-ups: fancier pickers (wheel/ruler like the
       reference) and an optional body-fat step (SCHEMA-6 column exists).
-- [ ] **RESEARCH-1: PWA / iOS feasibility spike.** MacTrack is Android-native today (Kotlin + Jetpack
-      Compose + Room, with a bundled SQLite `cnf.db` asset). Investigate reaching the web (as a PWA)
-      and iOS. Sketch the options and their cost: a Compose Multiplatform / KMP share of the domain +
-      data layer (Room has KMP support; the CNF asset and cnf.db access would need a cross-platform
-      story), vs. a separate web/PWA client over an eventual sync backend (ties into ACCT-1), vs. a
-      fresh cross-platform rewrite. Done = a short written recommendation (what's realistic, what it
-      costs, what it forces on the current architecture) in `docs/` — not an implementation.
+- [x] **RESEARCH-1: PWA / iOS feasibility spike.** DONE — see [PWA_IOS_SPIKE.md](PWA_IOS_SPIKE.md).
+      Recommendation: iOS via **Compose Multiplatform** (share domain/data/most-UI, ship native iOS);
+      web via a **thin PWA over the Supabase backend** later (not CMP-wasm); no Flutter/RN rewrite.
+      The one discipline to hold now: keep `domain`/`data`/`calc` free of `android.*` imports (they are).
 
 ---
 
 ## Accounts, roles & AI (needs a backend + product decisions)
 
-Gated on choosing a backend (Firebase Auth/Firestore vs a Postgres-backed service like Supabase) and
-on the security rules in `docs/SECURITY.md`. Roles must be enforced server-side, never client-trusted.
-This whole track is scheduled **last**.
+Gated on choosing a backend and on the security rules in `docs/SECURITY.md`. Roles must be enforced
+server-side, never client-trusted. This whole track is scheduled **last**. **Backend decision: Supabase**
+(Postgres + Auth + Row-Level Security + auto API + a Kotlin SDK) — it supplies the server-side role
+enforcement the security model requires with minimal backend to build; Neon was evaluated and rejected
+(DB-only, would force building auth+API+roles ourselves). Rationale in
+[BACKEND_RESEARCH.md](BACKEND_RESEARCH.md).
 
 - [ ] **ACCT-1: Auth + accounts.** Google sign-in and email/password. Three roles — **admin** (newest
       features), **Btester** (can add foods to a shared database), **regular** (no extras). Enforce
