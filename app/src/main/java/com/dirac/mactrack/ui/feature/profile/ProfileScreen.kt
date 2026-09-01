@@ -32,7 +32,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.ui.common.AVATAR_EMOJIS
 import com.dirac.mactrack.ui.common.BackBar
+import com.dirac.mactrack.ui.common.EmojiPickerDialog
 import com.dirac.mactrack.ui.feature.more.MoreStatsViewModel
 import com.dirac.mactrack.ui.theme.ThemeViewModel
 
@@ -129,51 +131,14 @@ fun ProfileScreen(onBack: () -> Unit = {}, onReassessGoals: () -> Unit = {}, mod
     }
 
     if (showAvatarPicker) {
-        AvatarPickerDialog(
+        EmojiPickerDialog(
+            title = "Choose an avatar",
             current = avatar,
+            choices = AVATAR_EMOJIS,
             onPick = { themeViewModel.setAvatar(it); showAvatarPicker = false },
             onDismiss = { showAvatarPicker = false }
         )
     }
-}
-
-@Composable
-private fun AvatarPickerDialog(current: String, onPick: (String) -> Unit, onDismiss: () -> Unit) {
-    val choices = listOf(
-        "🧑", "👩", "👨", "🧔", "👵", "👴",
-        "🧑‍🦰", "🧑‍🦱", "🧑‍🦳", "💪", "🏃", "🏋️",
-        "🥗", "🍎", "🔥", "⭐", "🎯", "🏆",
-        "🐻", "🐱", "🐶", "🦊", "🐼", "🦁"
-    )
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Choose an avatar") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                choices.chunked(6).forEach { rowItems ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        rowItems.forEach { emoji ->
-                            val selected = emoji == current
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (selected) MaterialTheme.colorScheme.primaryContainer
-                                        else MaterialTheme.colorScheme.surfaceVariant
-                                    )
-                                    .clickable { onPick(emoji) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(emoji, style = MaterialTheme.typography.titleLarge)
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } }
-    )
 }
 
 @Composable

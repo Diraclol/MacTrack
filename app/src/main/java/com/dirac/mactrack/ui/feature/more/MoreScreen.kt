@@ -95,7 +95,7 @@ fun MoreScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Your profile", style = MaterialTheme.typography.titleMedium)
                             Text(
-                                "MacTrack $versionName",
+                                "View and edit your details",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
