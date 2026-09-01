@@ -229,6 +229,29 @@ Decisions to confirm when back (I did NOT guess these):
 - **"Recent" re-log**: `quick`/`unknown` recent entries have no `sourceId`, so they can't
   reopen their source food -- they'd need a snapshot re-log path. Design TBD.
 
+## Session notes (2026-08-31, Dirac back from gym)
+
+**Shipped (verified + committed + pushed):**
+- Search screen reworked toward MacroFactor: top bar = back + "Add food" + a right-aligned
+  `Log N` button (moved the cart/log up from the bottom bar); a tab row **All / Foods / Meals /
+  Quick**. All = old search behaviour; Foods = browse saved custom foods; Meals = saved
+  `MealTemplate`s, tapping adds all their foods to the cart; Quick = one-off macro entry.
+  The docked search bar now carries a barcode-scan trailing icon that opens a barcode-entry
+  dialog (replaced the standalone barcode field + Look up button). Commit `82510e5`.
+
+**Recipes tab — deferred, needs a real model.** Dirac's definition: a recipe is *a set of
+foods + a name + servings made + cooked weight*, distinct from a meal (repeatable set) and a
+saved food (single custom food). Today `RecipesScreen` collapses a recipe into a single
+`FoodItem`, so there's nothing to distinguish it and no place for servings/cooked-weight. A
+proper Recipes tab means a distinct recipe model (name, ingredient set, servingsMade,
+cookedWeight) — a schema addition. Build this as its own next step, not a flag on `FoodItem`.
+
+**Edit-sheet "all units" was already fixed in `02fb3de` (landed while Dirac was at the gym).**
+It reloads the source food's full portion list for any entry traceable via provenance
+(a Common/CNF food, or a saved food). Quick-adds and pre-provenance entries stay single-unit
+because there is no source to expand. If it still shows one unit after a rebuild on a *fresh*
+Common food, that's a real bug to chase with device logs.
+
 ## Known issues worth fixing when nearby
 
 - **Goals are read as "latest", not "as of that date."** `GoalRepository.getLatestGoal()`
