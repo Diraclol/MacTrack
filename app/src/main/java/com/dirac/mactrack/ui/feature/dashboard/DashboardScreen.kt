@@ -2,6 +2,8 @@ package com.dirac.mactrack.ui.feature.dashboard
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,7 +43,7 @@ private val FatColor = Color(0xFF4CAF50)
 private val CalorieColor = Color(0xFFFF9800)
 
 @Composable
-fun DashboardScreen(modifier: Modifier = Modifier) {
+fun DashboardScreen(modifier: Modifier = Modifier, onOpenProfile: () -> Unit = {}) {
     val viewModel: DashboardViewModel = viewModel(factory = DashboardViewModel.Factory)
     val goal by viewModel.goal.collectAsState()
     val entries by viewModel.todayEntries.collectAsState()
@@ -60,13 +62,23 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
             val today = LocalDate.now()
             val dateLabel = "${today.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()).uppercase()}, " +
                     "${today.month.getDisplayName(TextStyle.FULL, Locale.getDefault()).uppercase()} ${today.dayOfMonth}"
-            Column {
-                Text(
-                    dateLabel,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text("Dashboard", style = MaterialTheme.typography.headlineSmall)
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        dateLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text("Dashboard", style = MaterialTheme.typography.headlineSmall)
+                }
+                Box(
+                    modifier = Modifier.size(40.dp).clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .clickable { onOpenProfile() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("🧑", style = MaterialTheme.typography.titleLarge)
+                }
             }
         }
         item {

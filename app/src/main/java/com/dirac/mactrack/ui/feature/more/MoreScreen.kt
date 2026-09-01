@@ -54,6 +54,7 @@ fun MoreScreen(
     onOpenLibrary: () -> Unit = {},
     onOpenGoals: () -> Unit = {},
     onReassessGoals: () -> Unit = {},
+    onOpenProfile: () -> Unit = {},
 ) {
     val weightViewModel: WeightViewModel = viewModel(factory = WeightViewModel.Factory)
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
@@ -73,9 +74,9 @@ fun MoreScreen(
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Profile header
+        // Profile header (tap to open the full profile)
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(modifier = Modifier.fillMaxWidth().clickable { onOpenProfile() }) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -89,7 +90,7 @@ fun MoreScreen(
                             Text("🧑", style = MaterialTheme.typography.titleLarge)
                         }
                         Spacer(Modifier.width(12.dp))
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text("Your profile", style = MaterialTheme.typography.titleMedium)
                             Text(
                                 "MacTrack $versionName",
@@ -97,6 +98,11 @@ fun MoreScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -105,19 +111,6 @@ fun MoreScreen(
                         StatItem("Active streak", "${stats.activeStreak} days")
                         StatItem("Longest streak", "${stats.longestStreak} days")
                         StatItem("Total tracked", "${stats.totalTracked} days")
-                    }
-                    val p = profile
-                    if (p == null) {
-                        Text(
-                            "Not set yet. It's saved when you complete onboarding.",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    } else {
-                        Text("Sex: ${pretty(p.sex)}   Age: ${p.age}", style = MaterialTheme.typography.bodyMedium)
-                        Text("Weight: ${p.weightKg} kg   Height: ${p.heightCm} cm", style = MaterialTheme.typography.bodyMedium)
-                        Text("Activity: ${pretty(p.activityLevel)}", style = MaterialTheme.typography.bodyMedium)
-                        Text("Goal: ${pretty(p.goalType)}", style = MaterialTheme.typography.bodyMedium)
-                        Text("Protein: ${pretty(p.proteinLevel)}   Fat: ${pretty(p.fatLevel)}", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }

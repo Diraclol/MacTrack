@@ -29,6 +29,7 @@ import com.dirac.mactrack.ui.feature.dashboard.DashboardScreen
 import com.dirac.mactrack.ui.feature.library.LibraryScreen
 import com.dirac.mactrack.ui.feature.goals.GoalsScreen
 import com.dirac.mactrack.ui.feature.goals.ReassessGoalsScreen
+import com.dirac.mactrack.ui.feature.profile.ProfileScreen
 import com.dirac.mactrack.ui.feature.more.MoreScreen
 import com.dirac.mactrack.ui.feature.today.TodayScreen
 import com.dirac.mactrack.ui.feature.food.CreateFoodScreen
@@ -106,7 +107,9 @@ fun MacTrackApp() {
             startDestination = Destination.DASHBOARD.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Destination.DASHBOARD.route) { DashboardScreen() }
+            composable(Destination.DASHBOARD.route) {
+                DashboardScreen(onOpenProfile = { navController.navigate("profile") })
+            }
             composable(Destination.FOOD_LOG.route) {
                 TodayScreen(
                     onOpenSearch = { navController.navigate("food_search") },
@@ -118,6 +121,7 @@ fun MacTrackApp() {
                     onOpenLibrary = { navController.navigate("library") },
                     onOpenGoals = { navController.navigate("goals") },
                     onReassessGoals = { navController.navigate("reassess_goals") },
+                    onOpenProfile = { navController.navigate("profile") },
                 )
             }
             composable("library") {
@@ -139,6 +143,12 @@ fun MacTrackApp() {
             composable("create_recipe") { RecipesScreen(onBack = { navController.popBackStack() }, showBar = true) }
             composable("goals") { GoalsScreen(onBack = { navController.popBackStack() }) }
             composable("reassess_goals") { ReassessGoalsScreen(onBack = { navController.popBackStack() }) }
+            composable("profile") {
+                ProfileScreen(
+                    onBack = { navController.popBackStack() },
+                    onReassessGoals = { navController.navigate("reassess_goals") }
+                )
+            }
             composable("food_search") {
                 UnifiedSearchScreen(
                     onOpenFood = { source, id -> navController.navigate("food_detail/$source/$id") },
