@@ -16,10 +16,15 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -28,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -41,8 +47,21 @@ import com.dirac.mactrack.ui.common.BackBar
 
 private val FieldShape = RoundedCornerShape(16.dp)
 
+// Suggested Gemini model endpoints, cheapest/fastest first. gemini-3.5-flash-lite is the app default
+// (main); gemini-2.5-flash is a solid higher-quality fallback. The field stays editable, so a homelab
+// model name (e.g. "qwen2.5-vl") can be typed in when the base URL points at a local server.
+private val SUGGESTED_MODELS = listOf(
+    "gemini-3.5-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-3.5-flash",
+    "gemini-3.7-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.5-pro"
+)
+
 // AI connection settings: base URL, model, and the API key (stored encrypted via the Keystore).
 // Defaults to Gemini; changing the base URL points the same client at any OpenAI-compatible server.
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiSettingsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val vm: AiViewModel = viewModel(factory = AiViewModel.Factory)
@@ -55,6 +74,7 @@ fun AiSettingsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     var model by rememberSaveable { mutableStateOf(currentModel) }
     var apiKey by rememberSaveable { mutableStateOf("") }
     var showKey by rememberSaveable { mutableStateOf(false) }
+    var modelMenuOpen by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize().imePadding()) {
         BackBar("AI settings", onBack, modifier = Modifier.padding(horizontal = 16.dp))
@@ -82,14 +102,31 @@ fun AiSettingsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 shape = FieldShape,
                 modifier = Modifier.fillMaxWidth()
             )
-            OutlinedTextField(
-                value = model,
-                onValueChange = { model = it },
-                label = { Text("Model") },
-                singleLine = true,
-                shape = FieldShape,
-                modifier = Modifier.fillMaxWidth()
-            )
+            ExposedDropdownMenuBox(
+                expanded = modelMenuOpen,
+                onExpandedChange = { modelMenuOpen = !modelMenuOpen }
+            ) {
+                OutlinedTextField(
+                    value = model,
+                    onValueChange = { model = it },
+                    label = { Text("Model") },
+                    singleLine = true,
+                    shape = FieldShape,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelMenuOpen) },
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable).fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = modelMenuOpen,
+                    onDismissRequest = { modelMenuOpen = false }
+                ) {
+                    SUGGESTED_MODELS.forEach { m ->
+                        DropdownMenuItem(
+                            text = { Text(m) },
+                            onClick = { model = m; modelMenuOpen = false }
+                        )
+                    }
+                }
+            }
 
             HorizontalDivider()
 

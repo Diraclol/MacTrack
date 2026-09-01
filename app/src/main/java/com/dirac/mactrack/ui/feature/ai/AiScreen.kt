@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.ui.common.MarkdownText
 
 // The AI tab: an OpenWebUI-style chat. User bubbles right, assistant bubbles left, streaming replies.
 // A gear opens AI settings (base URL, key, model). Conversation is in-memory for now.
@@ -142,12 +143,16 @@ private fun MessageBubble(m: UiMessage) {
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
         Surface(color = bg, shape = RoundedCornerShape(18.dp), modifier = Modifier.widthIn(max = 320.dp)) {
-            Text(
-                text = m.text.ifBlank { "…" },
-                color = fg,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
-            )
+            val pad = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+            when {
+                m.text.isBlank() ->
+                    Text("…", color = fg, style = MaterialTheme.typography.bodyMedium, modifier = pad)
+                isUser || m.error ->
+                    Text(m.text, color = fg, style = MaterialTheme.typography.bodyMedium, modifier = pad)
+                else ->
+                    // Assistant replies may contain Markdown (bold, bullet lists); render it cleanly.
+                    MarkdownText(text = m.text, color = fg, style = MaterialTheme.typography.bodyMedium, modifier = pad)
+            }
         }
     }
 }
