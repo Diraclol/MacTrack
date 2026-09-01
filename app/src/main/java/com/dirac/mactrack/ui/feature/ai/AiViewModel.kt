@@ -10,10 +10,14 @@ import com.dirac.mactrack.MacTrackApplication
 import com.dirac.mactrack.data.ai.AiClient
 import com.dirac.mactrack.data.ai.AiSettingsStore
 import com.dirac.mactrack.data.ai.ChatMessage
+import com.dirac.mactrack.data.entity.MealEntry
+import com.dirac.mactrack.data.repository.MealEntryRepository
+import com.dirac.mactrack.data.session.LogDateStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalTime
 
 // One message in the chat, as shown. `error = true` renders it as an error notice rather than a reply;
 // `imageDataUrl` is an attached photo on a user turn.
@@ -35,7 +39,9 @@ private const val SYSTEM_PROMPT =
 // resets when the app is killed. Settings (base URL, model, key presence) come from AiSettingsStore.
 class AiViewModel(
     private val client: AiClient,
-    private val settings: AiSettingsStore
+    private val settings: AiSettingsStore,
+    private val mealEntryRepository: MealEntryRepository,
+    private val logDateStore: LogDateStore
 ) : ViewModel() {
 
     private val _messages = MutableStateFlow<List<UiMessage>>(emptyList())
@@ -113,6 +119,32 @@ class AiViewModel(
         _messages.value = emptyList()
     }
 
+    // Log a reviewed AI estimate to the current day as a one-off entry (provenance "ai"). Values come
+    // from the review dialog, so the user has already confirmed/edited them.
+    fun logEstimate(name: String, calories: Double, protein: Double, carb: Double, fat: Double, onLogged: () -> Unit) {
+        viewModelScope.launch {
+            val now = LocalTime.now()
+            mealEntryRepository.logEntry(
+                MealEntry(
+                    date = logDateStore.current().toString(),
+                    timeMinutes = now.hour * 60 + now.minute,
+                    foodName = name.ifBlank { "AI estimate" },
+                    amount = 1.0,
+                    quantity = 1.0,
+                    unit = "serving",
+                    calories = calories,
+                    proteinG = protein,
+                    carbG = carb,
+                    fatG = fat,
+                    sourceType = "ai",
+                    unitLabel = "serving",
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
+            onLogged()
+        }
+    }
+
     // --- Settings ---
 
     fun setApiKey(key: String) = settings.setApiKey(key)
@@ -139,7 +171,7 @@ class AiViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                AiViewModel(app.aiClient, app.aiSettingsStore)
+                AiViewModel(app.aiClient, app.aiSettingsStore, app.mealEntryRepository, app.logDateStore)
             }
         }
     }

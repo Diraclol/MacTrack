@@ -146,9 +146,12 @@ enforcement the security model requires with minimal backend to build; Neon was 
       code change (a homelab consult confirmed Gemini is the right default — the local GTX-1050 box has
       no vision model and ~30-90 s latency). The key is encrypted with a hardware-backed Android
       Keystore AES-GCM key (no third-party dep); only ciphertext is stored. Conversation is in-memory.
-      **Remaining:** Slice 2 = image attach (downscale ~1024 px → base64 data URL) for photo → macros;
-      Slice 3 = a "Log this" action turning an estimate into a review-before-save food/log entry.
-      Later: chat persistence (Room), a "local server" preset button.
+      **Slice 2 SHIPPED:** attach a food photo (PickVisualMedia → downscale ~1024 px → base64 data URL,
+      `ImageEncoder`/`DataUrlImage`), sent as an OpenAI vision content part; photo-only asks for a macro
+      estimate. **Slice 3 SHIPPED:** a "Log this" button under assistant estimates → best-effort
+      `MacroParser` → an editable review dialog → logs a `meal_entry` (sourceType "ai") to the current
+      day. The AI feature is now end-to-end. **Later (optional):** chat persistence (Room), a "local
+      server" preset button, structured-output extraction instead of regex parsing.
       **Model designation (dev note, corrected by homelab 2026-09-01).** Main = `gemini-3.5-flash-lite`
       (app default; fastest/cheapest multimodal, verified ~15 RPM / 500 RPD). Backup =
       **`gemini-3.1-flash-lite`** — same tier, SEPARATE per-model daily bucket, so main+backup ≈ 1,000

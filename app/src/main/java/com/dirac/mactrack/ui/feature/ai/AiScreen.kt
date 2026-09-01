@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -34,11 +35,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -48,10 +51,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.ai.ImageEncoder
+import com.dirac.mactrack.data.ai.MacroParser
 import com.dirac.mactrack.ui.common.DataUrlImage
 import com.dirac.mactrack.ui.common.MarkdownText
 import kotlinx.coroutines.launch
@@ -68,6 +74,7 @@ fun AiScreen(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
     val pendingImage by vm.pendingImage.collectAsState()
 
     var input by rememberSaveable { mutableStateOf("") }
+    var review by remember { mutableStateOf<MacroParser.Estimate?>(null) }
     val listState = rememberLazyListState()
 
     val context = LocalContext.current
@@ -114,7 +121,16 @@ fun AiScreen(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(items = messages, key = { it.id }) { m -> MessageBubble(m) }
+                items(items = messages, key = { it.id }) { m ->
+                    MessageBubble(m)
+                    // Offer to log a parsed estimate under assistant replies that contain macros.
+                    if (m.role == "assistant" && !m.error && m.text.isNotBlank()) {
+                        val est = remember(m.text) { MacroParser.parse(m.text) }
+                        if (est.hasAny) {
+                            TextButton(onClick = { review = est }) { Text("Log this") }
+                        }
+                    }
+                }
             }
         }
 
@@ -165,7 +181,84 @@ fun AiScreen(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
             }
         }
     }
+
+    val currentReview = review
+    if (currentReview != null) {
+        LogReviewDialog(
+            estimate = currentReview,
+            onDismiss = { review = null },
+            onConfirm = { name, cal, p, c, f ->
+                vm.logEstimate(name, cal, p, c, f) {
+                    Toast.makeText(context, "Logged to today", Toast.LENGTH_SHORT).show()
+                }
+                review = null
+            }
+        )
+    }
 }
+
+@Composable
+private fun LogReviewDialog(
+    estimate: MacroParser.Estimate,
+    onDismiss: () -> Unit,
+    onConfirm: (String, Double, Double, Double, Double) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var cal by remember { mutableStateOf(numField(estimate.calories)) }
+    var protein by remember { mutableStateOf(numField(estimate.protein)) }
+    var carb by remember { mutableStateOf(numField(estimate.carb)) }
+    var fat by remember { mutableStateOf(numField(estimate.fat)) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Log to today") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberField(cal, { cal = it }, "Cal", Modifier.weight(1f))
+                    NumberField(protein, { protein = it }, "P (g)", Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberField(carb, { carb = it }, "C (g)", Modifier.weight(1f))
+                    NumberField(fat, { fat = it }, "F (g)", Modifier.weight(1f))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirm(
+                    name,
+                    cal.toDoubleOrNull() ?: 0.0,
+                    protein.toDoubleOrNull() ?: 0.0,
+                    carb.toDoubleOrNull() ?: 0.0,
+                    fat.toDoubleOrNull() ?: 0.0
+                )
+            }) { Text("Log") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@Composable
+private fun NumberField(value: String, onValueChange: (String) -> Unit, label: String, modifier: Modifier) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        modifier = modifier
+    )
+}
+
+private fun numField(x: Double): String =
+    if (x == 0.0) "" else if (x % 1.0 == 0.0) x.toInt().toString() else x.toString()
 
 @Composable
 private fun MessageBubble(m: UiMessage) {
