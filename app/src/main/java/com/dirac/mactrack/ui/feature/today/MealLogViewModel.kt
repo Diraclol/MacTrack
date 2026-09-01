@@ -15,9 +15,12 @@ import com.dirac.mactrack.data.food.PortionUnit
 import com.dirac.mactrack.data.food.entryFoodDetail
 import com.dirac.mactrack.data.food.stagePortion
 import com.dirac.mactrack.data.repository.FoodRepository
+import com.dirac.mactrack.data.session.LogDateStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.withContext
 import com.dirac.mactrack.data.repository.GoalRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
@@ -31,13 +34,21 @@ class MealLogViewModel(
     private val mealEntryRepository: MealEntryRepository,
     private val goalRepository: GoalRepository,
     private val cnfRepository: CnfRepository,
-    private val foodRepository: FoodRepository
+    private val foodRepository: FoodRepository,
+    private val logDateStore: LogDateStore
 ) : ViewModel() {
 
-    private val today: String = LocalDate.now().toString()
+    // The day the log is viewing (and logging to). Shared so the add flow lands entries here.
+    val selectedDate: StateFlow<LocalDate> = logDateStore.date
 
-    val todayEntries: StateFlow<List<MealEntry>> = mealEntryRepository.getEntriesForDate(today)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val todayEntries: StateFlow<List<MealEntry>> = logDateStore.date
+        .flatMapLatest { mealEntryRepository.getEntriesForDate(it.toString()) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun selectDate(date: LocalDate) { logDateStore.set(date) }
+    fun shiftDay(delta: Long) { logDateStore.set(logDateStore.current().plusDays(delta)) }
+    fun goToToday() { logDateStore.today() }
 
     val goal: StateFlow<Goal?> = goalRepository.getLatestGoal()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -113,7 +124,7 @@ class MealLogViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                MealLogViewModel(app.mealEntryRepository, app.goalRepository, app.cnfRepository, app.foodRepository)
+                MealLogViewModel(app.mealEntryRepository, app.goalRepository, app.cnfRepository, app.foodRepository, app.logDateStore)
             }
         }
     }

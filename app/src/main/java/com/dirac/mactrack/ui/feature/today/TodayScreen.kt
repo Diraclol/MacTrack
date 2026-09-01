@@ -1,6 +1,7 @@
 package com.dirac.mactrack.ui.feature.today
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,9 +14,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Search
@@ -87,6 +92,7 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
     val viewModel: MealLogViewModel = viewModel(factory = MealLogViewModel.Factory)
     val entries by viewModel.todayEntries.collectAsState()
     val goal by viewModel.goal.collectAsState()
+    val selectedDate by viewModel.selectedDate.collectAsState()
 
     val totalCal = entries.sumOf { it.calories }
     val totalP = entries.sumOf { it.proteinG }
@@ -102,13 +108,14 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
 
     var editing by remember { mutableStateOf<MealEntry?>(null) }
 
-    val today = LocalDate.now()
-    val dateLabel = "${today.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()).uppercase()}, " +
-            "${today.month.getDisplayName(TextStyle.FULL, Locale.getDefault()).uppercase()} ${today.dayOfMonth}"
-
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        Text(dateLabel, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Today", style = MaterialTheme.typography.headlineSmall)
+        DayNavigator(
+            selected = selectedDate,
+            onPrev = { viewModel.shiftDay(-1) },
+            onNext = { viewModel.shiftDay(1) },
+            onSelect = { viewModel.selectDate(it) },
+            onToday = { viewModel.goToToday() }
+        )
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -307,6 +314,87 @@ private fun MacroPill(text: String, color: Color, icon: ImageVector? = null) {
             Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(12.dp))
         }
         Text(text, style = MaterialTheme.typography.labelMedium, color = color)
+    }
+}
+
+private fun fullDate(d: LocalDate): String =
+    "${d.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()).uppercase()}, " +
+        "${d.month.getDisplayName(TextStyle.FULL, Locale.getDefault()).uppercase()} ${d.dayOfMonth}"
+
+private fun relativeLabel(d: LocalDate, today: LocalDate): String = when (d) {
+    today -> "Today"
+    today.minusDays(1) -> "Yesterday"
+    today.plusDays(1) -> "Tomorrow"
+    else -> d.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
+}
+
+// Date header: prev/next arrows around the day label (tap the label to jump back to today) plus a
+// scrollable strip of days; the selected day is filled, every other day is outlined so it reads.
+@Composable
+private fun DayNavigator(
+    selected: LocalDate,
+    onPrev: () -> Unit,
+    onNext: () -> Unit,
+    onSelect: (LocalDate) -> Unit,
+    onToday: () -> Unit
+) {
+    val today = LocalDate.now()
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onPrev) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous day")
+            }
+            Column(
+                modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).clickable { onToday() },
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(fullDate(selected), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(relativeLabel(selected, today), style = MaterialTheme.typography.headlineSmall)
+            }
+            IconButton(onClick = onNext) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next day")
+            }
+        }
+        DayStrip(selected, today, onSelect)
+    }
+}
+
+@Composable
+private fun DayStrip(selected: LocalDate, today: LocalDate, onSelect: (LocalDate) -> Unit) {
+    val days = remember(today) { (-42L..7L).map { today.plusDays(it) } }
+    val selIndex = days.indexOf(selected)
+    val state = rememberLazyListState(
+        initialFirstVisibleItemIndex = (if (selIndex >= 0) selIndex - 3 else days.lastIndex - 10).coerceAtLeast(0)
+    )
+    LaunchedEffect(selected) {
+        val i = days.indexOf(selected)
+        if (i >= 0) state.animateScrollToItem((i - 3).coerceAtLeast(0))
+    }
+    LazyRow(state = state, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        items(items = days, key = { it.toString() }) { d ->
+            val isSel = d == selected
+            val cell = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .then(
+                    if (isSel) Modifier.background(MaterialTheme.colorScheme.primary)
+                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
+                )
+                .clickable { onSelect(d) }
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+            Column(modifier = cell, horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    d.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "${d.dayOfMonth}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
     }
 }
 

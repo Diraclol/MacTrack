@@ -20,6 +20,7 @@ import com.dirac.mactrack.data.food.entryFoodDetail
 import com.dirac.mactrack.data.food.mealEntryDetail
 import com.dirac.mactrack.data.food.stagePortion
 import com.dirac.mactrack.data.off.OpenFoodFactsRepository
+import com.dirac.mactrack.data.session.LogDateStore
 import com.dirac.mactrack.data.repository.FoodRepository
 import com.dirac.mactrack.data.repository.GoalRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
@@ -39,6 +40,7 @@ class FoodDetailViewModel(
     private val openFoodFactsRepository: OpenFoodFactsRepository,
     private val cartRepository: CartRepository,
     private val mealEntryRepository: MealEntryRepository,
+    private val logDateStore: LogDateStore,
     goalRepository: GoalRepository
 ) : ViewModel() {
 
@@ -100,7 +102,7 @@ class FoodDetailViewModel(
         viewModelScope.launch {
             mealEntryRepository.logEntry(
                 MealEntry(
-                    date = today, timeMinutes = timeMinutes, foodName = d.name,
+                    date = logDateStore.current().toString(), timeMinutes = timeMinutes, foodName = d.name,
                     amount = amount, quantity = staged.quantity, unit = staged.unit,
                     calories = s.kcal, proteinG = s.protein, carbG = s.carb, fatG = s.fat,
                     fiberG = s.fiber, sugarG = s.sugar, satFatG = s.satFat,
@@ -143,7 +145,7 @@ class FoodDetailViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                FoodDetailViewModel(app.foodRepository, app.cnfRepository, app.openFoodFactsRepository, app.cartRepository, app.mealEntryRepository, app.goalRepository)
+                FoodDetailViewModel(app.foodRepository, app.cnfRepository, app.openFoodFactsRepository, app.cartRepository, app.mealEntryRepository, app.logDateStore, app.goalRepository)
             }
         }
     }

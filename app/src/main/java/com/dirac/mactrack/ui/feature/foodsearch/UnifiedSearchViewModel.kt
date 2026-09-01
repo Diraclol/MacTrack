@@ -20,6 +20,7 @@ import com.dirac.mactrack.data.food.stagePortion
 import com.dirac.mactrack.data.repository.FoodRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
 import com.dirac.mactrack.data.repository.MealTemplateRepository
+import com.dirac.mactrack.data.session.LogDateStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,7 +39,8 @@ class UnifiedSearchViewModel(
     private val cnfRepository: CnfRepository,
     private val cartRepository: CartRepository,
     private val mealEntryRepository: MealEntryRepository,
-    private val mealTemplateRepository: MealTemplateRepository
+    private val mealTemplateRepository: MealTemplateRepository,
+    private val logDateStore: LogDateStore
 ) : ViewModel() {
 
     private val _query = MutableStateFlow("")
@@ -126,7 +128,7 @@ class UnifiedSearchViewModel(
             val now = LocalTime.now()
             mealEntryRepository.logEntry(
                 MealEntry(
-                    date = LocalDate.now().toString(), timeMinutes = now.hour * 60 + now.minute,
+                    date = logDateStore.current().toString(), timeMinutes = now.hour * 60 + now.minute,
                     foodName = name.ifBlank { "Quick add" }, amount = 1.0, quantity = 1.0, unit = "serving",
                     calories = calories, proteinG = protein, carbG = carb, fatG = fat,
                     sourceType = "quick", unitLabel = "serving", updatedAt = System.currentTimeMillis()
@@ -142,11 +144,11 @@ class UnifiedSearchViewModel(
         viewModelScope.launch {
             val now = LocalTime.now()
             val tm = now.hour * 60 + now.minute
-            val today = LocalDate.now().toString()
+            val date = logDateStore.current().toString()
             items.forEach { ci ->
                 mealEntryRepository.logEntry(
                     MealEntry(
-                        date = today, timeMinutes = tm, foodName = ci.name,
+                        date = date, timeMinutes = tm, foodName = ci.name,
                         amount = ci.amount, quantity = ci.quantity, unit = ci.unit,
                         calories = ci.nutrients.kcal, proteinG = ci.nutrients.protein, carbG = ci.nutrients.carb, fatG = ci.nutrients.fat,
                         fiberG = ci.nutrients.fiber, sugarG = ci.nutrients.sugar, satFatG = ci.nutrients.satFat,
@@ -165,7 +167,7 @@ class UnifiedSearchViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                UnifiedSearchViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository, app.mealTemplateRepository)
+                UnifiedSearchViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository, app.mealTemplateRepository, app.logDateStore)
             }
         }
     }

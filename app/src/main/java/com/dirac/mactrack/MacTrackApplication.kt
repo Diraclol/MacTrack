@@ -13,6 +13,7 @@ import com.dirac.mactrack.data.repository.ThemeRepository
 import com.dirac.mactrack.data.cnf.CnfRepository
 import com.dirac.mactrack.data.cart.CartRepository
 import com.dirac.mactrack.data.off.OpenFoodFactsRepository
+import com.dirac.mactrack.data.session.LogDateStore
 import com.dirac.mactrack.data.MIGRATION_1_2
 
 class MacTrackApplication : Application() {
@@ -52,6 +53,10 @@ class MacTrackApplication : Application() {
 
     val openFoodFactsRepository: OpenFoodFactsRepository by lazy {
         OpenFoodFactsRepository()
+    }
+
+    val logDateStore: LogDateStore by lazy {
+        LogDateStore()
     }
 
 }
