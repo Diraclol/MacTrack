@@ -4,6 +4,8 @@ import com.dirac.mactrack.data.cnf.CnfFood
 import com.dirac.mactrack.data.cnf.CnfMeasure
 import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.entity.MealEntry
+import com.dirac.mactrack.data.entity.Recipe
+import com.dirac.mactrack.data.entity.RecipeIngredient
 
 data class Nutrients(
     val kcal: Double, val protein: Double, val carb: Double, val fat: Double,
@@ -16,6 +18,17 @@ data class Nutrients(
         kcal * m, protein * m, carb * m, fat * m, fiber * m, sugar * m,
         satFat * m, sodium * m, potassium * m, cholesterol * m, caffeine * m
     )
+
+    operator fun plus(o: Nutrients) = Nutrients(
+        kcal + o.kcal, protein + o.protein, carb + o.carb, fat + o.fat,
+        fiber + o.fiber, sugar + o.sugar, satFat + o.satFat,
+        sodium + o.sodium, potassium + o.potassium, cholesterol + o.cholesterol,
+        caffeine + o.caffeine
+    )
+
+    companion object {
+        val ZERO = Nutrients(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    }
 }
 
 // A selectable portion (e.g. "g", "1 large egg", "serving") and the nutrients in ONE of it.
@@ -90,6 +103,36 @@ fun mealEntryDetail(entry: MealEntry): FoodDetail {
     val label = entry.unitLabel ?: entry.unit
     val units = listOf(PortionUnit(label, perUnit, grams = null))
     return FoodDetail(entry.foodName, units, defaultUnitLabel = label, defaultAmount = amt)
+}
+
+// A recipe maps to a per-serving FoodDetail so it flows through the same detail -> cart -> log
+// path as any other food. Total = sum over ingredients of (that food's per-serving nutrients *
+// servings used); per-serving = total / makesServings. When a cooked (finished) weight is known,
+// a "g" unit additionally lets you log by grams of the batch.
+fun recipeDetail(
+    recipe: Recipe,
+    ingredients: List<RecipeIngredient>,
+    foodsById: Map<String, FoodItem>
+): FoodDetail {
+    val total = ingredients.fold(Nutrients.ZERO) { acc, ing ->
+        val food = foodsById[ing.foodId] ?: return@fold acc
+        val perServing = Nutrients(
+            food.calories, food.proteinG, food.carbG, food.fatG, food.fiberG, food.sugarG,
+            food.satFatG, food.sodiumMg, food.potassiumMg, food.cholesterolMg, food.caffeineMg
+        )
+        acc + perServing * ing.amount
+    }
+    val n = if (recipe.makesServings > 0.0) recipe.makesServings else 1.0
+    val perServing = total * (1.0 / n)
+    val cooked = recipe.cookedWeightG
+    val gramsPerServing = if (cooked != null && cooked > 0.0) cooked / n else null
+    val units = buildList {
+        add(PortionUnit("serving", perServing, gramsPerServing))
+        if (cooked != null && cooked > 0.0) {
+            add(PortionUnit("g", total * (1.0 / cooked), 1.0))
+        }
+    }
+    return FoodDetail(recipe.name, units, defaultUnitLabel = "serving", defaultAmount = 1.0)
 }
 
 data class Staged(val quantity: Double, val unit: String, val nutrients: Nutrients)

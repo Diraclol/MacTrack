@@ -18,12 +18,14 @@ import com.dirac.mactrack.data.food.cnfFoodDetail
 import com.dirac.mactrack.data.food.foodItemDetail
 import com.dirac.mactrack.data.food.entryFoodDetail
 import com.dirac.mactrack.data.food.mealEntryDetail
+import com.dirac.mactrack.data.food.recipeDetail
 import com.dirac.mactrack.data.food.stagePortion
 import com.dirac.mactrack.data.off.OpenFoodFactsRepository
 import com.dirac.mactrack.data.session.LogDateStore
 import com.dirac.mactrack.data.repository.FoodRepository
 import com.dirac.mactrack.data.repository.GoalRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
+import com.dirac.mactrack.data.repository.RecipeRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,6 +42,7 @@ class FoodDetailViewModel(
     private val openFoodFactsRepository: OpenFoodFactsRepository,
     private val cartRepository: CartRepository,
     private val mealEntryRepository: MealEntryRepository,
+    private val recipeRepository: RecipeRepository,
     private val logDateStore: LogDateStore,
     goalRepository: GoalRepository
 ) : ViewModel() {
@@ -75,6 +78,11 @@ class FoodDetailViewModel(
                         cnfFoodDetail(f, cnfRepository.measures(f.code))
                     }
                     "custom" -> foodRepository.getFood(id)?.let { foodItemDetail(it) }
+                    "recipe" -> recipeRepository.getRecipe(id)?.let { r ->
+                        val ings = recipeRepository.getIngredients(r.id)
+                        val foodsById = ings.mapNotNull { foodRepository.getFood(it.foodId) }.associateBy { it.id }
+                        recipeDetail(r, ings, foodsById)
+                    }
                     "branded" -> openFoodFactsRepository.lookup(id)
                     "entry" -> {
                         val e = mealEntryRepository.getEntry(id)
@@ -147,7 +155,7 @@ class FoodDetailViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                FoodDetailViewModel(app.foodRepository, app.cnfRepository, app.openFoodFactsRepository, app.cartRepository, app.mealEntryRepository, app.logDateStore, app.goalRepository)
+                FoodDetailViewModel(app.foodRepository, app.cnfRepository, app.openFoodFactsRepository, app.cartRepository, app.mealEntryRepository, app.recipeRepository, app.logDateStore, app.goalRepository)
             }
         }
     }

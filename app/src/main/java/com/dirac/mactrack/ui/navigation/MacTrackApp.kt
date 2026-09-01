@@ -144,7 +144,8 @@ fun MacTrackApp() {
                     onCreateFood = { navController.navigate("create_food") },
                     onCreateMeal = { navController.navigate("create_meal") },
                     onCreateRecipe = { navController.navigate("create_recipe") },
-                    onOpenFood = { id -> navController.navigate("food_detail/custom/$id") }
+                    onOpenFood = { id -> navController.navigate("food_detail/custom/$id") },
+                    onOpenRecipe = { id -> navController.navigate("food_detail/recipe/$id") }
                 )
             }
             composable("create_food") {

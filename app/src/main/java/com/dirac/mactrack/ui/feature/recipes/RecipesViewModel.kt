@@ -9,57 +9,40 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dirac.mactrack.MacTrackApplication
 import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.repository.FoodRepository
+import com.dirac.mactrack.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class RecipesViewModel(private val foodRepository: FoodRepository) : ViewModel() {
+class RecipesViewModel(
+    private val foodRepository: FoodRepository,
+    private val recipeRepository: RecipeRepository
+) : ViewModel() {
 
+    // The saved foods that can be used as recipe ingredients.
     val foods: StateFlow<List<FoodItem>> = foodRepository.getAllFoods()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // ingredients: foodId -> servings of that food used in the whole recipe
-    fun saveRecipe(name: String, makesServings: Double, ingredients: Map<String, Double>) {
+    // Persist a real recipe: name, how many servings it makes, an optional cooked/finished
+    // weight, an optional icon, and the ingredient list (foodId -> servings of that food used
+    // in the whole recipe). Macros are computed from the ingredients at display/log time
+    // (recipeDetail), so editing an ingredient food is reflected -- no frozen copy here.
+    fun saveRecipe(
+        name: String,
+        makesServings: Double,
+        cookedWeightG: Double?,
+        emoji: String?,
+        ingredients: Map<String, Double>
+    ) {
         if (name.isBlank() || makesServings <= 0.0 || ingredients.isEmpty()) return
-        val foodsById = foods.value.associateBy { it.id }
-
-        var cal = 0.0; var p = 0.0; var c = 0.0; var f = 0.0
-        var fiber = 0.0; var sugar = 0.0; var sat = 0.0
-        var sodium = 0.0; var potassium = 0.0; var chol = 0.0
-
-        ingredients.forEach { (foodId, servings) ->
-            val food = foodsById[foodId] ?: return@forEach
-            cal += food.calories * servings
-            p += food.proteinG * servings
-            c += food.carbG * servings
-            f += food.fatG * servings
-            fiber += food.fiberG * servings
-            sugar += food.sugarG * servings
-            sat += food.satFatG * servings
-            sodium += food.sodiumMg * servings
-            potassium += food.potassiumMg * servings
-            chol += food.cholesterolMg * servings
-        }
-
-        val n = makesServings
         viewModelScope.launch {
-            foodRepository.addFood(
-                FoodItem(
-                    name = name.trim(),
-                    calories = cal / n,
-                    proteinG = p / n,
-                    carbG = c / n,
-                    fatG = f / n,
-                    fiberG = fiber / n,
-                    sugarG = sugar / n,
-                    satFatG = sat / n,
-                    sodiumMg = sodium / n,
-                    potassiumMg = potassium / n,
-                    cholesterolMg = chol / n,
-                    servingSize = 1.0,
-                    servingUnit = "serving"
-                )
+            recipeRepository.saveRecipe(
+                name = name.trim(),
+                makesServings = makesServings,
+                cookedWeightG = cookedWeightG,
+                emoji = emoji,
+                ingredients = ingredients.toList()
             )
         }
     }
@@ -68,7 +51,7 @@ class RecipesViewModel(private val foodRepository: FoodRepository) : ViewModel()
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                RecipesViewModel(app.foodRepository)
+                RecipesViewModel(app.foodRepository, app.recipeRepository)
             }
         }
     }

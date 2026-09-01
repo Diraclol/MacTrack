@@ -9,8 +9,11 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dirac.mactrack.MacTrackApplication
 import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.entity.MealTemplate
+import com.dirac.mactrack.data.entity.Recipe
+import com.dirac.mactrack.data.food.recipeDetail
 import com.dirac.mactrack.data.repository.FoodRepository
 import com.dirac.mactrack.data.repository.MealTemplateRepository
+import com.dirac.mactrack.data.repository.RecipeRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,10 +33,20 @@ data class MealSummary(
     val fatG: Double
 )
 
-// Browse-side ViewModel for the Kitchen: saved foods and saved meals, filtered by a query.
+// A saved recipe plus its PER-SERVING macros (total ingredients / makesServings).
+data class RecipeSummary(
+    val recipe: Recipe,
+    val calories: Double,
+    val proteinG: Double,
+    val carbG: Double,
+    val fatG: Double
+)
+
+// Browse-side ViewModel for the Kitchen: saved foods, meals, and recipes, filtered by a query.
 class KitchenViewModel(
     private val foodRepository: FoodRepository,
-    private val mealTemplateRepository: MealTemplateRepository
+    private val mealTemplateRepository: MealTemplateRepository,
+    private val recipeRepository: RecipeRepository
 ) : ViewModel() {
 
     private val _query = MutableStateFlow("")
@@ -71,10 +84,33 @@ class KitchenViewModel(
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private val allRecipes: StateFlow<List<Recipe>> = recipeRepository.getRecipes()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Recipes with their PER-SERVING macros, computed from the current ingredient foods via
+    // recipeDetail (so editing an ingredient food is reflected). Recomputes off the main thread.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val recipes: StateFlow<List<RecipeSummary>> =
+        combine(_query, allRecipes, allFoods) { q, recipes, foods -> Triple(q, recipes, foods) }
+            .mapLatest { (q, recipes, foods) ->
+                val byId = foods.associateBy { it.id }
+                val filtered = if (q.isBlank()) recipes else recipes.filter { it.name.contains(q, ignoreCase = true) }
+                filtered.map { r ->
+                    val ings = recipeRepository.getIngredients(r.id)
+                    val per = recipeDetail(r, ings, byId).units.firstOrNull()?.per
+                    RecipeSummary(r, per?.kcal ?: 0.0, per?.protein ?: 0.0, per?.carb ?: 0.0, per?.fat ?: 0.0)
+                }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun onQueryChange(q: String) { _query.value = q }
 
     fun deleteFood(food: FoodItem) {
         viewModelScope.launch { foodRepository.deleteFood(food) }
+    }
+
+    fun deleteRecipe(recipe: Recipe) {
+        viewModelScope.launch { recipeRepository.deleteRecipe(recipe) }
     }
 
     fun setEmoji(id: String, emoji: String?) {
@@ -85,7 +121,7 @@ class KitchenViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                KitchenViewModel(app.foodRepository, app.mealTemplateRepository)
+                KitchenViewModel(app.foodRepository, app.mealTemplateRepository, app.recipeRepository)
             }
         }
     }

@@ -34,15 +34,15 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
       tap-to-change icon on Kitchen rows; `foodIcon(emoji, name)` renders the chosen icon (falling
       back to the name-derived one) in the Kitchen and unified search. Barcode camera scanning is
       still UI-9.
-- [~] **SCHEMA-4: Recipe model.** Data layer SHIPPED (DB v6): `Recipe` (name, makesServings,
+- [x] **SCHEMA-4: Recipe model.** SHIPPED (DB v6 + full wiring). `Recipe` (name, makesServings,
       nullable cookedWeightG, emoji) + `RecipeIngredient` entities, `RecipeDao`, `RecipeRepository`,
-      `MIGRATION_5_6` (two additive tables). Decided model: a recipe logs as ONE per-serving
-      `meal_entry` (sourceType="recipe"); portion by servings OR grams of the finished dish
-      (cookedWeightG). **Remaining (4b, non-schema):** rewire `RecipesViewModel`/`RecipesScreen` off
-      the current "collapse into a FoodItem" hack to persist real recipes; add a `recipeDetail`
-      mapper so recipes flow through the existing FoodDetail → cart → log path; Kitchen "Recipes" tab
-      + Create Recipe UI (cooked-weight field, ingredient picker). Done = a recipe is created, saved,
-      reopened/edited, and logged per-serving or per-gram.
+      `MIGRATION_5_6`. `RecipesViewModel`/`RecipesScreen` now persist real recipes (with a
+      cooked-weight field), off the old "collapse into a FoodItem" hack. `recipeDetail` maps a recipe
+      to a per-serving `FoodDetail` (total ÷ makesServings; a "g" unit appears when a cooked weight is
+      set), so recipes flow through the existing FoodDetail → cart → log path — logging writes ONE
+      `meal_entry` with `sourceType="recipe"`. Kitchen "Recipes" tab lists them with per-serving
+      macros (tap to open/log, long-press to delete). Follow-ups: a recipe-ingredient *picker* (today
+      you set servings against the full food list) and a recipe icon picker live under UI-7.
 - [ ] **SCHEMA-5: Meal type on templates.** `MealTemplate` has no meal-type field (breakfast/lunch/…);
       the Create Meal screen wants one. Add `MealTemplate.mealType`. Done = meals carry and filter by type.
 - [ ] **SCHEMA-6: Bodyfat on the profile.** The Profile screen should show an optional bodyfat box,

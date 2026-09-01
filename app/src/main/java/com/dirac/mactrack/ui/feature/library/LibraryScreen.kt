@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.FoodItem
+import com.dirac.mactrack.data.entity.Recipe
 import com.dirac.mactrack.data.food.foodIcon
 import com.dirac.mactrack.ui.common.BackBar
 import com.dirac.mactrack.ui.common.EmojiPickerDialog
@@ -75,20 +76,24 @@ fun LibraryScreen(
     onCreateMeal: () -> Unit = {},
     onCreateRecipe: () -> Unit = {},
     onOpenFood: (String) -> Unit = {},
+    onOpenRecipe: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val viewModel: KitchenViewModel = viewModel(factory = KitchenViewModel.Factory)
     val query by viewModel.query.collectAsState()
     val foods by viewModel.foods.collectAsState()
     val meals by viewModel.meals.collectAsState()
+    val recipes by viewModel.recipes.collectAsState()
 
     var tab by remember { mutableStateOf(0) }
     var showCreate by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<FoodItem?>(null) }
     var pendingIconEdit by remember { mutableStateOf<FoodItem?>(null) }
+    var pendingRecipeDelete by remember { mutableStateOf<Recipe?>(null) }
 
     val showFoods = tab == 0 || tab == 3
     val showMeals = tab == 0 || tab == 2
+    val showRecipes = tab == 0 || tab == 1
 
     Column(modifier = modifier.fillMaxSize().imePadding()) {
         BackBar("Kitchen", onBack, modifier = Modifier.padding(horizontal = 16.dp))
@@ -113,6 +118,11 @@ fun LibraryScreen(
         ) {
             item { Text("Saved", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(vertical = 4.dp)) }
 
+            if (showRecipes) {
+                items(items = recipes, key = { "r_" + it.recipe.id }) { summary ->
+                    RecipeRow(summary = summary, onOpen = { onOpenRecipe(summary.recipe.id) }, onLongPress = { pendingRecipeDelete = summary.recipe })
+                }
+            }
             if (showFoods) {
                 items(items = foods, key = { "f_" + it.id }) { food ->
                     FoodRow(food = food, onOpen = { onOpenFood(food.id) }, onLongPress = { pendingDelete = food }, onEditIcon = { pendingIconEdit = food })
@@ -124,10 +134,10 @@ fun LibraryScreen(
                 }
             }
             when (tab) {
-                1 -> item { EmptyHint("Recipes are coming soon.") }
+                1 -> if (recipes.isEmpty()) item { EmptyHint("No saved recipes yet. Tap + to create one.") }
                 2 -> if (meals.isEmpty()) item { EmptyHint("No saved meals yet. Tap + to create one.") }
                 3 -> if (foods.isEmpty()) item { EmptyHint("No saved foods yet. Tap + to create one.") }
-                else -> if (foods.isEmpty() && meals.isEmpty()) item { EmptyHint("Nothing saved yet. Tap + to create a food, meal, or recipe.") }
+                else -> if (foods.isEmpty() && meals.isEmpty() && recipes.isEmpty()) item { EmptyHint("Nothing saved yet. Tap + to create a food, meal, or recipe.") }
             }
         }
 
@@ -187,6 +197,19 @@ fun LibraryScreen(
             onDismiss = { pendingIconEdit = null }
         )
     }
+
+    val toDeleteRecipe = pendingRecipeDelete
+    if (toDeleteRecipe != null) {
+        AlertDialog(
+            onDismissRequest = { pendingRecipeDelete = null },
+            title = { Text("Delete recipe?") },
+            text = { Text("Remove \"${toDeleteRecipe.name}\" from your recipes? Past logs of it are kept.") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.deleteRecipe(toDeleteRecipe); pendingRecipeDelete = null }) { Text("Delete") }
+            },
+            dismissButton = { TextButton(onClick = { pendingRecipeDelete = null }) { Text("Cancel") } }
+        )
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -213,6 +236,32 @@ private fun FoodRow(food: FoodItem, onOpen: () -> Unit, onLongPress: () -> Unit,
         Column(horizontalAlignment = Alignment.End) {
             Text("${food.calories.roundToInt()}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text("cal", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+    HorizontalDivider()
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun RecipeRow(summary: RecipeSummary, onOpen: () -> Unit, onLongPress: () -> Unit) {
+    val r = summary.recipe
+    Row(
+        modifier = Modifier.fillMaxWidth().combinedClickable(onClick = onOpen, onLongClick = onLongPress).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(foodIcon(r.emoji, r.name), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(r.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Recipe · ${servingText(r.makesServings)} serv", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("P${summary.proteinG.roundToInt()}", style = MaterialTheme.typography.labelMedium, color = ProteinColor)
+                Text("C${summary.carbG.roundToInt()}", style = MaterialTheme.typography.labelMedium, color = CarbColor)
+                Text("F${summary.fatG.roundToInt()}", style = MaterialTheme.typography.labelMedium, color = FatColor)
+            }
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text("${summary.calories.roundToInt()}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("cal/serv", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
     HorizontalDivider()

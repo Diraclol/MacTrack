@@ -35,6 +35,7 @@ fun RecipesScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBa
 
     var name by remember { mutableStateOf("") }
     var makes by remember { mutableStateOf("1") }
+    var cooked by remember { mutableStateOf("") }
     val amounts = remember { mutableStateMapOf<String, String>() }
 
     LazyColumn(
@@ -59,8 +60,16 @@ fun RecipesScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBa
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.fillMaxWidth()
                     )
+                    OutlinedTextField(
+                        value = cooked,
+                        onValueChange = { cooked = it },
+                        label = { Text("Cooked weight in grams (optional)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     Text(
-                        "For each ingredient, enter how many servings of it the whole recipe uses.",
+                        "For each ingredient, enter how many servings of it the whole recipe uses. " +
+                            "A cooked weight lets you later log by grams of the finished dish.",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -99,14 +108,21 @@ fun RecipesScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBa
                             if (v != null && v > 0.0) id to v else null
                         }
                         .toMap()
-                    viewModel.saveRecipe(name, makes.toDoubleOrNull() ?: 1.0, ingredients)
+                    viewModel.saveRecipe(
+                        name = name,
+                        makesServings = makes.toDoubleOrNull() ?: 1.0,
+                        cookedWeightG = cooked.toDoubleOrNull(),
+                        emoji = null,
+                        ingredients = ingredients
+                    )
                     name = ""
                     makes = "1"
+                    cooked = ""
                     amounts.clear()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save recipe as a food")
+                Text("Save recipe")
             }
         }
     }
