@@ -282,6 +282,58 @@ points at a new styled Create Recipe screen; a recipe can be logged by serving.
 P/C/F/cal; restyle Create Meal to match the screenshot; an "edit food" screen (Create Food
 pre-filled) reached from a saved food.
 
+## Session notes (2026-08-31, late — feedback round + forward plan)
+
+**Shipped (verified + committed + pushed):**
+- Food log: moved the micronutrient box here from the dashboard (Sodium / Potassium / Dietary
+  Fiber / Caffeine); hour headers now use outlined macro pills + a calories pill with a flame
+  icon; food rows shrink the name (2 lines) and put calories on one line; the search bar is
+  transparent + outlined. `2686318`
+- Search: tabs are pill chips now, with breathing room above Recent; bottom nav is transparent
+  (no choppy grey box). `e1a1936`
+- More: **Reassess goals** — a popup picks Recalculate (TDEE algo, adjust activity/goal/protein/
+  fat, keep physical stats) or Custom (advanced) manual targets. Reuses the calc engine. `395298e`
+
+**Blocked on the held schema migration (do these together when Dirac can build after each step):**
+- `FoodItem.barcode` column -> the Create Food "Barcode" section (optional).
+- `FoodItem.emoji` column -> custom icon picker on Create Food (tap the avatar, choose from a
+  catalog). Today the emoji is derived from the name; storing one needs a column.
+- `caffeineMg` on `FoodItem` + `MealEntry` -> the food-log Caffeine card currently reads 0.
+- `Recipe` + `RecipeIngredient` tables (name, total servings, cooked weight, ingredients, prep)
+  -> the styled Create Recipe screen; Recipes tab.
+- A meal-type field on `MealTemplate` -> the Create Meal "Meal" dropdown (Breakfast/Lunch/...).
+
+## Forward plan (Dirac asked to scope these; NOT built yet)
+
+**A. Barcode scanning (camera).** The Open Food Facts *lookup* already works via manual entry.
+Camera scanning needs new deps — CameraX (`androidx.camera:*`) + ML Kit barcode
+(`com.google.mlkit:barcode-scanning`) — plus the CAMERA permission and a scanner screen that
+feeds the scanned code into the existing `openFoodFactsRepository.lookup`. New deps + a runtime
+permission: confirm before adding (roadmap Phase 10). Keep it offline-safe: no network = fall
+back to CNF + saved foods (already how OFF behaves).
+
+**B. Internet / offline.** INTERNET permission is already declared (for OFF). The app stays
+offline-first: OFF returns null when offline and the app uses CNF + saved foods. Firebase (below)
+would add more network use; keep every online feature degradable to offline.
+
+**C. Accounts / Firebase auth.** This is a real shift: the app is currently "no account, no
+backend" (a stated principle). Adding auth means a decision on scope — is it for cloud sync, for
+gating AI features, or just a profile? Setup needed (cannot be done blind here): a Firebase
+project, `google-services.json`, the Firebase Auth SDK + the `google-services` Gradle plugin.
+Options: email+password, or Google Sign-In (needs SHA fingerprints + OAuth client). The account
+UI (the Edit Profile screenshot: Name / Email / My Logins / Preferred Units / Birthday / Height /
+Sex / Activity / Logout / Delete Account) can largely reuse `UserProfile`; the email/logins/logout
+parts need auth wired.
+
+  **SECURITY — the admin login.** Dirac proposed a fixed admin account (credential shared in
+  chat). Do NOT hardcode that password in the source or commit it anywhere — MacTrack.txt itself
+  lists "putting API keys directly in the app" as a top mistake, and a committed password is
+  worse (it's in the APK and in git history forever, and this repo is meant to look solo/private).
+  Instead: make admin a normal Firebase account (create it once in the Firebase console), and gate
+  admin-only features (e.g. the shared Gemini key for AI) by checking that account's UID or a
+  custom claim — the password lives in Firebase, never in the repo. If a local-only admin flag is
+  ever needed, read it from `local.properties` (gitignored), not a literal in code.
+
 ## Known issues worth fixing when nearby
 
 - **Goals are read as "latest", not "as of that date."** `GoalRepository.getLatestGoal()`
