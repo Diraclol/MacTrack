@@ -91,9 +91,11 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
       (CameraX + ML Kit barcode) + the CAMERA permission + a scanner screen.
 - [ ] **UI-10: Instrumented Compose tests.** No UI tests exist; the day strip, swipe-to-delete, and
       swipe-toggle totals are only verified by screenshot. Add a first `androidTest` pass for the food log.
-- [ ] **UI-11: Onboarding overhaul.** The onboarding "Set up your profile" flow is a plain single
-      scroll of fields (Sex/Age/Weight/Height/Activity/Goal). Redesign into a stepped, friendlier flow
-      matching the app's polish; consider an optional body-fat step (the column exists now, SCHEMA-6).
+- [x] **UI-11: Onboarding overhaul.** SHIPPED. Rebuilt into a stepped, MacroFactor-style wizard with a
+      progress bar: Sex → Age → Height → Weight → Activity (the app's **5** levels) → **TDEE reveal** →
+      Goal (Lose/Maintain/Gain, which shows the adjusted daily target) → Fat preference → Protein
+      preference → summary → saves profile + goal. Follow-ups: fancier pickers (wheel/ruler like the
+      reference) and an optional body-fat step (SCHEMA-6 column exists).
 - [ ] **RESEARCH-1: PWA / iOS feasibility spike.** MacTrack is Android-native today (Kotlin + Jetpack
       Compose + Room, with a bundled SQLite `cnf.db` asset). Investigate reaching the web (as a PWA)
       and iOS. Sketch the options and their cost: a Compose Multiplatform / KMP share of the domain +
