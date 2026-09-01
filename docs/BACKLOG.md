@@ -161,5 +161,7 @@ This whole track is scheduled **last**.
 - [x] Dashboard (Cals + Macros card, 30-day logging heatmap) + Profile (changeable avatar)
 - [x] Goals folded with Reassess (TDEE recalc or custom); default-landing-screen setting
 - [x] Weight logging (`WeightEntry`)
-- [x] Neutral-dark theme (blue accent), centered bottom nav
+- [x] Neutral-dark theme (blue accent) + a full blue light theme; compact centered bottom-nav pill
+- [x] Kitchen edit flow: tap a food/meal/recipe to edit in place, swipe-to-delete rows; clustered
+      ingredient icons for meals/recipes; recipes loggable from the Add-food search (Recipes tab)
 - [x] Security assessment (`docs/SECURITY.md`)
