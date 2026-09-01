@@ -19,6 +19,12 @@ interface FoodItemDao {
     @Query("SELECT * FROM food_items WHERE id = :id")
     suspend fun getById(id: String): FoodItem?
 
+    @Query("SELECT * FROM food_items WHERE favorite = 1 ORDER BY name")
+    fun getFavorites(): Flow<List<FoodItem>>
+
+    @Query("UPDATE food_items SET favorite = :favorite WHERE id = :id")
+    suspend fun setFavorite(id: String, favorite: Boolean)
+
     @Delete
     suspend fun delete(foodItem: FoodItem)
 }

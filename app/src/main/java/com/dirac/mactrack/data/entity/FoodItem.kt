@@ -1,5 +1,6 @@
 package com.dirac.mactrack.data.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.UUID
@@ -22,5 +23,8 @@ data class FoodItem(
     val potassiumMg: Double = 0.0,
     val cholesterolMg: Double = 0.0,
     val servingSize: Double = 1.0,
-    val servingUnit: String = "serving"
+    val servingUnit: String = "serving",
+    // Whether the user has hearted this food. Stored as INTEGER 0/1; the migration's DEFAULT 0
+    // must match this @ColumnInfo(defaultValue) or Room's startup validation throws.
+    @ColumnInfo(defaultValue = "0") val favorite: Boolean = false
 )
