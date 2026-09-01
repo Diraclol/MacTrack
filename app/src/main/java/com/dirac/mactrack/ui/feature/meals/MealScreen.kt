@@ -42,6 +42,8 @@ fun MealsScreen(
     val viewModel: MealsViewModel = viewModel(factory = MealsViewModel.Factory)
     val foods by viewModel.foods.collectAsState()
     val templates by viewModel.templates.collectAsState()
+    val query by viewModel.query.collectAsState()
+    val cnfMatches by viewModel.cnfMatches.collectAsState()
 
     var mealName by remember { mutableStateOf("") }
     val amounts = remember { mutableStateMapOf<String, String>() }
@@ -87,7 +89,11 @@ fun MealsScreen(
                     Text("Foods in this meal:", style = MaterialTheme.typography.bodySmall)
                     IngredientPicker(
                         foods = foods,
+                        cnfMatches = cnfMatches,
+                        query = query,
+                        onQueryChange = { viewModel.onQueryChange(it) },
                         amounts = amounts,
+                        onAddCnf = { cnf -> viewModel.importCnf(cnf); amounts["cnf_${cnf.code}"] = "1" },
                         onCreateFood = onCreateFood,
                         amountUnit = "servings"
                     )

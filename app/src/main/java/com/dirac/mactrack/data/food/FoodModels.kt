@@ -77,6 +77,17 @@ fun cnfFoodDetail(food: CnfFood, measures: List<CnfMeasure>): FoodDetail {
     }
 }
 
+// Import a Common (CNF) food into the saved-foods table as a 100 g serving. The id is
+// deterministic (cnf_<code>) so re-adding the same common food upserts instead of duplicating.
+fun CnfFood.asFoodItem(): FoodItem = FoodItem(
+    id = "cnf_$code",
+    name = name,
+    calories = kcal, proteinG = protein, carbG = carb, fatG = fat,
+    fiberG = fiber, sugarG = sugar, satFatG = satFat,
+    sodiumMg = sodium, potassiumMg = potassium, cholesterolMg = cholesterol,
+    servingSize = 100.0, servingUnit = "g"
+)
+
 fun foodItemDetail(food: FoodItem): FoodDetail {
     val perServing = Nutrients(
         food.calories, food.proteinG, food.carbG, food.fatG, food.fiberG, food.sugarG,

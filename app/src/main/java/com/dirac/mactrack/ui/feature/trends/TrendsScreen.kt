@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -108,15 +109,27 @@ fun TrendsScreen(onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
         }
 
         Card(modifier = Modifier.fillMaxWidth()) {
-            Box(modifier = Modifier.fillMaxWidth().height(220.dp).padding(16.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxWidth().height(220.dp).padding(16.dp)) {
                 if (values.isEmpty()) {
                     Text(
                         "Log food to see your trend.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
-                    TrendBarChart(values = values, goal = goalVal, color = color, modifier = Modifier.fillMaxSize())
+                    TrendBarChart(values = values, goal = goalVal, avg = avg, color = color, modifier = Modifier.fillMaxSize())
+                    // Value labels on the graph itself.
+                    Row(
+                        modifier = Modifier.align(Alignment.TopStart),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text("Avg ${avg.roundToInt()}", style = MaterialTheme.typography.labelSmall, color = color, fontWeight = FontWeight.Bold)
+                        if (goalVal > 0.0) {
+                            Text("Goal ${goalVal.roundToInt()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Text("Max ${(values.maxOrNull() ?: 0.0).roundToInt()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }
@@ -124,11 +137,11 @@ fun TrendsScreen(onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun TrendBarChart(values: List<Double>, goal: Double, color: Color, modifier: Modifier = Modifier) {
+private fun TrendBarChart(values: List<Double>, goal: Double, avg: Double, color: Color, modifier: Modifier = Modifier) {
     val goalColor = MaterialTheme.colorScheme.onSurfaceVariant
     Canvas(modifier = modifier) {
         if (values.isEmpty()) return@Canvas
-        val maxV = maxOf(values.max(), goal, 1.0)
+        val maxV = maxOf(values.max(), goal, avg, 1.0)
         val n = values.size
         val gap = if (n <= 60) 2.dp.toPx() else 0f
         val barW = ((size.width - gap * (n - 1)) / n).coerceAtLeast(1f)
@@ -140,6 +153,14 @@ private fun TrendBarChart(values: List<Double>, goal: Double, color: Color, modi
         if (goal > 0.0) {
             val gy = size.height - (goal / maxV).toFloat() * size.height
             drawLine(goalColor, Offset(0f, gy), Offset(size.width, gy), strokeWidth = 2.dp.toPx())
+        }
+        if (avg > 0.0) {
+            // Dashed line at the period average.
+            val ay = size.height - (avg / maxV).toFloat() * size.height
+            drawLine(
+                color, Offset(0f, ay), Offset(size.width, ay), strokeWidth = 2.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f))
+            )
         }
     }
 }

@@ -7,29 +7,57 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dirac.mactrack.MacTrackApplication
+import com.dirac.mactrack.data.cnf.CnfFood
+import com.dirac.mactrack.data.food.asFoodItem
 import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.entity.MealEntry
 import com.dirac.mactrack.data.entity.MealTemplate
+import com.dirac.mactrack.data.cnf.CnfRepository
 import com.dirac.mactrack.data.repository.FoodRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
 import com.dirac.mactrack.data.repository.MealTemplateRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalTime
 
 class MealsViewModel(
     private val foodRepository: FoodRepository,
     private val mealTemplateRepository: MealTemplateRepository,
-    private val mealEntryRepository: MealEntryRepository
+    private val mealEntryRepository: MealEntryRepository,
+    private val cnfRepository: CnfRepository
 ) : ViewModel() {
 
     private val today: String = LocalDate.now().toString()
 
     val foods: StateFlow<List<FoodItem>> = foodRepository.getAllFoods()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Ingredient search over the whole catalog: custom foods are filtered in the picker; Common
+    // (CNF) foods are searched here. Adding a CNF food imports it into food_items (deduped by code).
+    private val _query = MutableStateFlow("")
+    val query: StateFlow<String> = _query.asStateFlow()
+
+    private val _cnfMatches = MutableStateFlow<List<CnfFood>>(emptyList())
+    val cnfMatches: StateFlow<List<CnfFood>> = _cnfMatches.asStateFlow()
+
+    fun onQueryChange(q: String) {
+        _query.value = q
+        viewModelScope.launch {
+            val r = if (q.isBlank()) emptyList() else withContext(Dispatchers.IO) { cnfRepository.search(q) }
+            if (_query.value == q) _cnfMatches.value = r
+        }
+    }
+
+    fun importCnf(cnf: CnfFood) {
+        viewModelScope.launch { foodRepository.addFood(cnf.asFoodItem()) }
+    }
 
     val templates: StateFlow<List<MealTemplate>> = mealTemplateRepository.getTemplates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -85,7 +113,7 @@ class MealsViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                MealsViewModel(app.foodRepository, app.mealTemplateRepository, app.mealEntryRepository)
+                MealsViewModel(app.foodRepository, app.mealTemplateRepository, app.mealEntryRepository, app.cnfRepository)
             }
         }
     }

@@ -38,6 +38,8 @@ fun RecipesScreen(
 ) {
     val viewModel: RecipesViewModel = viewModel(factory = RecipesViewModel.Factory)
     val foods by viewModel.foods.collectAsState()
+    val query by viewModel.query.collectAsState()
+    val cnfMatches by viewModel.cnfMatches.collectAsState()
 
     var name by remember { mutableStateOf("") }
     var makes by remember { mutableStateOf("1") }
@@ -87,7 +89,11 @@ fun RecipesScreen(
         item {
             IngredientPicker(
                 foods = foods,
+                cnfMatches = cnfMatches,
+                query = query,
+                onQueryChange = { viewModel.onQueryChange(it) },
                 amounts = amounts,
+                onAddCnf = { cnf -> viewModel.importCnf(cnf); amounts["cnf_${cnf.code}"] = "1" },
                 onCreateFood = onCreateFood,
                 amountUnit = "servings"
             )

@@ -21,30 +21,29 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.dirac.mactrack.data.cnf.CnfFood
 import com.dirac.mactrack.data.entity.FoodItem
 
-// A reusable "add ingredients" section for the Create Meal / Create Recipe screens: search your
-// saved foods, tap to add, set an amount per added food, and a shortcut to create a food when you
-// have none. `amounts` is foodId -> amount text (the caller owns the state and reads it on save).
+// A reusable "add ingredients" section spanning the whole food catalog (your saved foods + Common
+// foods), like the food search. Custom foods are filtered here from `foods`; Common (CNF) foods
+// come from the caller's search (`cnfMatches`) and are imported into food_items when added
+// (`onAddCnf`). `amounts` is foodId -> amount text; the caller owns it and reads it on save.
 @Composable
 fun IngredientPicker(
     foods: List<FoodItem>,
-    amounts: SnapshotStateMap<String, String>,
+    cnfMatches: List<CnfFood>,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    amounts: androidx.compose.runtime.snapshots.SnapshotStateMap<String, String>,
+    onAddCnf: (CnfFood) -> Unit,
     onCreateFood: () -> Unit,
     modifier: Modifier = Modifier,
     amountUnit: String = "servings"
 ) {
-    var query by remember { mutableStateOf("") }
-
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // Chosen ingredients, each with an editable amount.
         amounts.keys.toList().forEach { id ->
@@ -74,35 +73,54 @@ fun IngredientPicker(
 
         OutlinedTextField(
             value = query,
-            onValueChange = { query = it },
-            placeholder = { Text("Search your foods to add") },
+            onValueChange = onQueryChange,
+            placeholder = { Text("Search all foods to add") },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             singleLine = true,
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth()
         )
 
-        val matches = foods.filter { it.id !in amounts.keys && (query.isBlank() || it.name.contains(query, ignoreCase = true)) }
-        if (foods.isEmpty()) {
+        val customMatches = foods.filter {
+            it.id !in amounts.keys && (query.isBlank() || it.name.contains(query, ignoreCase = true))
+        }
+        if (customMatches.isNotEmpty()) {
+            Text("Your foods", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            customMatches.take(6).forEach { food ->
+                AddRow(food.name) { amounts[food.id] = "1" }
+            }
+        }
+
+        val commonMatches = cnfMatches.filter { "cnf_${it.code}" !in amounts.keys }
+        if (commonMatches.isNotEmpty()) {
+            Text("Common foods", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            commonMatches.take(8).forEach { cnf ->
+                AddRow("${cnf.name}  ·  per 100 g") { onAddCnf(cnf) }
+            }
+        }
+
+        if (foods.isEmpty() && cnfMatches.isEmpty() && query.isBlank()) {
             Text(
-                "You have no saved foods yet. Create one to add it as an ingredient.",
+                "Search for a food above, or create your own.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-        matches.take(8).forEach { food ->
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable { amounts[food.id] = "1" }.padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text(food.name, style = MaterialTheme.typography.bodyMedium)
-            }
         }
 
         OutlinedButton(onClick = onCreateFood, modifier = Modifier.fillMaxWidth()) {
             Text("Create a new food")
         }
+    }
+}
+
+@Composable
+private fun AddRow(label: String, onAdd: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onAdd() }.padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Text(label, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
     }
 }
