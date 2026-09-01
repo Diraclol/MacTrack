@@ -62,6 +62,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.food.foodIcon
 import com.dirac.mactrack.ui.common.BackBar
+import com.dirac.mactrack.ui.common.ClusterIcon
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -259,7 +260,7 @@ private fun FoodRow(food: FoodItem, onOpen: () -> Unit, onDelete: () -> Unit) {
 private fun RecipeRow(summary: RecipeSummary, onOpen: () -> Unit, onDelete: () -> Unit) {
     val r = summary.recipe
     SwipeToDeleteRow(rowKey = r.id, deleteLabel = "Delete ${r.name}", onOpen = onOpen, onDelete = onDelete) {
-        Text(foodIcon(r.emoji, r.name), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
+        ClusterIcon(emojis = summary.icons, fallback = foodIcon(r.emoji, r.name), modifier = Modifier.padding(end = 12.dp))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(r.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -279,7 +280,7 @@ private fun RecipeRow(summary: RecipeSummary, onOpen: () -> Unit, onDelete: () -
 @Composable
 private fun MealRow(summary: MealSummary, onOpen: () -> Unit, onDelete: () -> Unit) {
     SwipeToDeleteRow(rowKey = summary.template.id, deleteLabel = "Delete ${summary.template.name}", onOpen = onOpen, onDelete = onDelete) {
-        Text("🍱", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
+        ClusterIcon(emojis = summary.icons, fallback = "🍱", modifier = Modifier.padding(end = 12.dp))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(summary.template.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -10,6 +10,7 @@ import com.dirac.mactrack.MacTrackApplication
 import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.entity.MealTemplate
 import com.dirac.mactrack.data.entity.Recipe
+import com.dirac.mactrack.data.food.foodIcon
 import com.dirac.mactrack.data.food.recipeDetail
 import com.dirac.mactrack.data.repository.FoodRepository
 import com.dirac.mactrack.data.repository.MealTemplateRepository
@@ -24,22 +25,26 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-// A saved meal plus the macro totals of its foods (one serving of each, times its amount).
+// A saved meal plus the macro totals of its foods (one serving of each, times its amount) and the
+// icons of those foods (for the clustered meal icon).
 data class MealSummary(
     val template: MealTemplate,
     val calories: Double,
     val proteinG: Double,
     val carbG: Double,
-    val fatG: Double
+    val fatG: Double,
+    val icons: List<String>
 )
 
-// A saved recipe plus its PER-SERVING macros (total ingredients / makesServings).
+// A saved recipe plus its PER-SERVING macros (total ingredients / makesServings) and the icons of its
+// ingredient foods (for the clustered recipe icon).
 data class RecipeSummary(
     val recipe: Recipe,
     val calories: Double,
     val proteinG: Double,
     val carbG: Double,
-    val fatG: Double
+    val fatG: Double,
+    val icons: List<String>
 )
 
 // Browse-side ViewModel for the Kitchen: saved foods, meals, and recipes, filtered by a query.
@@ -72,14 +77,16 @@ class KitchenViewModel(
                 val filtered = if (q.isBlank()) meals else meals.filter { it.name.contains(q, ignoreCase = true) }
                 filtered.map { tpl ->
                     var kcal = 0.0; var p = 0.0; var c = 0.0; var f = 0.0
+                    val icons = mutableListOf<String>()
                     mealTemplateRepository.getItems(tpl.id).forEach { item ->
                         val food = byId[item.foodId] ?: return@forEach
                         kcal += food.calories * item.amount
                         p += food.proteinG * item.amount
                         c += food.carbG * item.amount
                         f += food.fatG * item.amount
+                        icons.add(foodIcon(food.emoji, food.name))
                     }
-                    MealSummary(tpl, kcal, p, c, f)
+                    MealSummary(tpl, kcal, p, c, f, icons)
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -98,7 +105,8 @@ class KitchenViewModel(
                 filtered.map { r ->
                     val ings = recipeRepository.getIngredients(r.id)
                     val per = recipeDetail(r, ings, byId).units.firstOrNull()?.per
-                    RecipeSummary(r, per?.kcal ?: 0.0, per?.protein ?: 0.0, per?.carb ?: 0.0, per?.fat ?: 0.0)
+                    val icons = ings.mapNotNull { byId[it.foodId] }.map { foodIcon(it.emoji, it.name) }
+                    RecipeSummary(r, per?.kcal ?: 0.0, per?.protein ?: 0.0, per?.carb ?: 0.0, per?.fat ?: 0.0, icons)
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

@@ -65,7 +65,7 @@ import kotlin.math.roundToInt
 private fun servingText(amount: Double): String =
     if (amount % 1.0 == 0.0) amount.toInt().toString() else amount.toString()
 
-private val TABS = listOf("All", "Foods", "Meals", "Quick")
+private val TABS = listOf("All", "Foods", "Meals", "Recipes", "Quick")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,6 +89,7 @@ fun UnifiedSearchScreen(
     val recent by viewModel.recent.collectAsState()
     val savedFoods by viewModel.savedFoods.collectAsState()
     val templates by viewModel.templates.collectAsState()
+    val recipes by viewModel.recipes.collectAsState()
     val focusManager = LocalFocusManager.current
 
     // Picker mode: the screen is reused to pick ingredients for a meal/recipe. It adds picked foods
@@ -110,8 +111,8 @@ fun UnifiedSearchScreen(
     }
     BackHandler(enabled = true) { attemptBack() }
 
-    // The search field shows on the browsing tabs (All, Foods, Meals). Quick add has its own form.
-    val showSearchBar = if (isPicker) true else (tab == 0 || tab == 1 || tab == 2)
+    // The search field shows on every browsing tab; only Quick add (its own form) hides it.
+    val showSearchBar = isPicker || tabs[tab] != "Quick"
 
     // imePadding lifts the docked bottom bar above the keyboard when it opens.
     Column(modifier = modifier.fillMaxSize().imePadding()) {
@@ -158,6 +159,7 @@ fun UnifiedSearchScreen(
                 0 -> AllTab(query, recent, custom, common, onOpenFood, viewModel, isPicker)
                 1 -> FoodsTab(savedFoods, onOpenFood, viewModel, isPicker)
                 2 -> MealsTab(query, templates, viewModel)
+                3 -> RecipesTab(query, recipes, onOpenFood)
                 else -> QuickAddTab(viewModel, onLoggedCart)
             }
         }
@@ -380,6 +382,43 @@ private fun MealsTab(
                     Text(template.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                     IconButton(onClick = { viewModel.addTemplateToCart(template.id) }) {
                         Icon(Icons.Filled.Add, contentDescription = "Add ${template.name} to cart")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecipesTab(
+    query: String,
+    recipes: List<com.dirac.mactrack.data.entity.Recipe>,
+    onOpenFood: (String, String) -> Unit
+) {
+    val shown = if (query.isBlank()) recipes
+        else recipes.filter { it.name.contains(query.trim(), ignoreCase = true) }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (shown.isEmpty()) {
+            item {
+                EmptyHint(
+                    if (query.isBlank()) "No saved recipes yet. Create one in the Kitchen."
+                    else "No recipes match \"$query\"."
+                )
+            }
+        }
+        items(items = shown, key = { it.id }) { recipe ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { onOpenFood("recipe", recipe.id) }.padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(foodIcon(recipe.emoji, recipe.name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
+                    Text(recipe.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { onOpenFood("recipe", recipe.id) }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Log ${recipe.name}")
                     }
                 }
             }

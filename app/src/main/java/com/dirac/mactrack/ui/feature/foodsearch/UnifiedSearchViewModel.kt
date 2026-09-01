@@ -15,6 +15,7 @@ import com.dirac.mactrack.data.cnf.CnfRepository
 import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.entity.MealEntry
 import com.dirac.mactrack.data.entity.MealTemplate
+import com.dirac.mactrack.data.entity.Recipe
 import com.dirac.mactrack.data.food.asFoodItem
 import com.dirac.mactrack.data.food.cnfFoodDetail
 import com.dirac.mactrack.data.food.foodItemDetail
@@ -22,6 +23,7 @@ import com.dirac.mactrack.data.food.stagePortion
 import com.dirac.mactrack.data.repository.FoodRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
 import com.dirac.mactrack.data.repository.MealTemplateRepository
+import com.dirac.mactrack.data.repository.RecipeRepository
 import com.dirac.mactrack.data.session.LogDateStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +44,7 @@ class UnifiedSearchViewModel(
     private val cartRepository: CartRepository,
     private val mealEntryRepository: MealEntryRepository,
     private val mealTemplateRepository: MealTemplateRepository,
+    private val recipeRepository: RecipeRepository,
     private val ingredientBuilder: IngredientBuilderRepository,
     private val logDateStore: LogDateStore
 ) : ViewModel() {
@@ -68,6 +71,10 @@ class UnifiedSearchViewModel(
 
     // Saved meals (repeatable sets of foods) for the Meals tab.
     val templates: StateFlow<List<MealTemplate>> = mealTemplateRepository.getTemplates()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Saved recipes for the Recipes tab; tapping one opens its detail to log by serving.
+    val recipes: StateFlow<List<Recipe>> = recipeRepository.getRecipes()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _common = MutableStateFlow<List<CnfFood>>(emptyList())
@@ -205,7 +212,7 @@ class UnifiedSearchViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                UnifiedSearchViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository, app.mealTemplateRepository, app.ingredientBuilder, app.logDateStore)
+                UnifiedSearchViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository, app.mealTemplateRepository, app.recipeRepository, app.ingredientBuilder, app.logDateStore)
             }
         }
     }
