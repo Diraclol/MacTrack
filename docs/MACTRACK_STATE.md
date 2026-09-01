@@ -252,6 +252,36 @@ It reloads the source food's full portion list for any entry traceable via prove
 because there is no source to expand. If it still shows one unit after a rebuild on a *fresh*
 Common food, that's a real bug to chase with device logs.
 
+## Session notes (2026-08-31, evening session)
+
+**Shipped (verified + committed + pushed):**
+- More: removed the Quick add card (quick add now lives as a tab inside food search). `8f37545`
+- Dashboard: nutrient box row (Sodium / Potassium / Dietary Fiber / Sugar), each a compact
+  card with today's total and a mini bar vs a soft daily reference target. `c209262`
+- Kitchen: a "+" FAB opening a Create menu (Create Food / Meal / Recipe), and a new
+  **Create Food** screen styled like the food detail screen (emoji header, identity card,
+  serving size + unit, live calorie/macro summary) with entry boxes; saves a `FoodItem`
+  (now with optional brand). Create Meal / Recipe route to the existing builders. `7613cb3`
+- Kitchen browse restyle: pill tabs (All / Recipes / Meals / Foods), a Saved list of rich
+  food rows (emoji, name, serving, coloured P/C/F, calories) + meal rows, a docked search
+  that filters by name, long-press to delete a food. New `KitchenViewModel`. `4c4de03`
+
+**Reference:** MacroFactor "Kitchen", its "+"/create sheet, and the Create Food/Meal/Recipe
+screens are saved in the session screenshots. Create Food matches; Create Meal/Recipe still
+use the old builders.
+
+**NEXT — Recipe model (blocked on a build).** Dirac's recipe = name + total servings + total
+weight after cooking + ingredient set + prep instructions (see the Create Recipe screenshot).
+This needs new storage (`Recipe` + `RecipeIngredient` entities) and therefore a real Room
+**migration** (version bump + `Migration(N-1,N)` + a KSP-generated `schemas/N.json`). I cannot
+run KSP here, so the schema JSON has to come from Dirac's build. Do this WITH Dirac able to
+build after each step, not blind. Once it lands: Recipes tab browses recipes; `create_recipe`
+points at a new styled Create Recipe screen; a recipe can be logged by serving.
+
+**Also queued (no schema, safe to loop later):** meal rows in the Kitchen showing computed
+P/C/F/cal; restyle Create Meal to match the screenshot; an "edit food" screen (Create Food
+pre-filled) reached from a saved food.
+
 ## Known issues worth fixing when nearby
 
 - **Goals are read as "latest", not "as of that date."** `GoalRepository.getLatestGoal()`
