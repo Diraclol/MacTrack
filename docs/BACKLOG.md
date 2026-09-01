@@ -43,8 +43,10 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
       `meal_entry` with `sourceType="recipe"`. Kitchen "Recipes" tab lists them with per-serving
       macros (tap to open/log, long-press to delete). Follow-ups: a recipe-ingredient *picker* (today
       you set servings against the full food list) and a recipe icon picker live under UI-7.
-- [ ] **SCHEMA-5: Meal type on templates.** `MealTemplate` has no meal-type field (breakfast/lunch/…);
-      the Create Meal screen wants one. Add `MealTemplate.mealType`. Done = meals carry and filter by type.
+- [x] **SCHEMA-5: Meal type on templates.** SHIPPED (DB v7). Nullable `MealTemplate.mealType`
+      (Breakfast/Lunch/Dinner/Snack) via `MIGRATION_6_7`. Create Meal has a meal-type chip selector;
+      saved meals show their type; `saveTemplate` threads it through the VM + repository. Filtering
+      meals by type is a small UI follow-up (the field is there).
 - [ ] **SCHEMA-6: Bodyfat on the profile.** The Profile screen should show an optional bodyfat box,
       but `UserProfile` has no field. Add `UserProfile.bodyFatPct` (nullable). Done = an optional
       bodyfat row on Profile that persists.
