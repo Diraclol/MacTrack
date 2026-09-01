@@ -13,6 +13,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +49,7 @@ fun OnboardingScreen(modifier: Modifier = Modifier) {
     var goal by remember { mutableStateOf(GoalType.MAINTAIN) }
     var protein by remember { mutableStateOf(ProteinLevel.MODERATE) }
     var fat by remember { mutableStateOf(FatLevel.MODERATE) }
+    var showAdvancedGoals by remember { mutableStateOf(false) }
     var tdeeValue by remember { mutableStateOf<Double?>(null) }
     var result by remember { mutableStateOf<MacroTargets?>(null) }
     val goalViewModel: GoalViewModel = viewModel(factory = GoalViewModel.Factory)
@@ -90,8 +92,11 @@ fun OnboardingScreen(modifier: Modifier = Modifier) {
         }
 
         Text("Goal")
-        GoalType.entries.forEach { g ->
+        GoalType.entries.filter { !it.advanced || showAdvancedGoals }.forEach { g ->
             FilterChip(selected = goal == g, onClick = { goal = g }, label = { Text(g.label) })
+        }
+        TextButton(onClick = { showAdvancedGoals = !showAdvancedGoals }) {
+            Text(if (showAdvancedGoals) "Fewer goal options" else "Advanced goals")
         }
 
         Text("Protein")

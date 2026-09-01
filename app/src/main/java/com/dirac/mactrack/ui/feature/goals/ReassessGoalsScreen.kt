@@ -129,6 +129,7 @@ private fun AlgoReassess(
     var goal by remember(p) { mutableStateOf(parseEnum(p.goalType, GoalType.MAINTAIN)) }
     var protein by remember(p) { mutableStateOf(parseEnum(p.proteinLevel, ProteinLevel.MODERATE)) }
     var fat by remember(p) { mutableStateOf(parseEnum(p.fatLevel, FatLevel.MODERATE)) }
+    var showAdvancedGoals by remember { mutableStateOf(goal.advanced) }
 
     val bmr = mifflinStJeorBmr(parseEnum(p.sex, Sex.MALE), p.weightKg, p.heightCm, p.age)
     val maintenance = tdee(bmr, activity)
@@ -139,7 +140,10 @@ private fun AlgoReassess(
     Text("Physical stats stay as they are; adjust the four levers below.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
     ChipGroup("Activity level", ActivityLevel.entries, activity, { pretty(it.name) }) { activity = it }
-    ChipGroup("Goal", GoalType.entries, goal, { it.label }) { goal = it }
+    ChipGroup("Goal", GoalType.entries.filter { !it.advanced || showAdvancedGoals }, goal, { it.label }) { goal = it }
+    TextButton(onClick = { showAdvancedGoals = !showAdvancedGoals }) {
+        Text(if (showAdvancedGoals) "Fewer goal options" else "Advanced goals")
+    }
     ChipGroup("Protein", ProteinLevel.entries, protein, { pretty(it.name) }) { protein = it }
     ChipGroup("Fat", FatLevel.entries, fat, { pretty(it.name) }) { fat = it }
 
