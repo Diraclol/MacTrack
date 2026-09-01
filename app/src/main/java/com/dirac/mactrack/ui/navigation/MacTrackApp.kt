@@ -30,6 +30,9 @@ import com.dirac.mactrack.ui.feature.library.LibraryScreen
 import com.dirac.mactrack.ui.feature.goals.GoalsScreen
 import com.dirac.mactrack.ui.feature.more.MoreScreen
 import com.dirac.mactrack.ui.feature.today.TodayScreen
+import com.dirac.mactrack.ui.feature.food.CreateFoodScreen
+import com.dirac.mactrack.ui.feature.meals.MealsScreen
+import com.dirac.mactrack.ui.feature.recipes.RecipesScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.dirac.mactrack.ui.feature.foodsearch.UnifiedSearchScreen
@@ -115,7 +118,22 @@ fun MacTrackApp() {
                     onOpenGoals = { navController.navigate("goals") },
                 )
             }
-            composable("library") { LibraryScreen(onBack = { navController.popBackStack() }) }
+            composable("library") {
+                LibraryScreen(
+                    onBack = { navController.popBackStack() },
+                    onCreateFood = { navController.navigate("create_food") },
+                    onCreateMeal = { navController.navigate("create_meal") },
+                    onCreateRecipe = { navController.navigate("create_recipe") }
+                )
+            }
+            composable("create_food") {
+                CreateFoodScreen(
+                    onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() }
+                )
+            }
+            composable("create_meal") { MealsScreen(onBack = { navController.popBackStack() }, showBar = true) }
+            composable("create_recipe") { RecipesScreen(onBack = { navController.popBackStack() }, showBar = true) }
             composable("goals") { GoalsScreen(onBack = { navController.popBackStack() }) }
             composable("food_search") {
                 UnifiedSearchScreen(

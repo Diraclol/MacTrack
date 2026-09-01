@@ -36,12 +36,14 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
         potassiumMg: Double = 0.0,
         cholesterolMg: Double = 0.0,
         servingSize: Double,
-        servingUnit: String
+        servingUnit: String,
+        brand: String? = null
     ) {
         viewModelScope.launch {
             repository.addFood(
                 FoodItem(
                     name = name,
+                    brand = brand,
                     calories = calories,
                     proteinG = proteinG,
                     carbG = carbG,
