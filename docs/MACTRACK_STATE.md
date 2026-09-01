@@ -309,6 +309,37 @@ the MacroFactor-style rings screen (a weekly day strip of progress rings, the ma
 moved off the dashboard to the food log. This is the reference in the session screenshots. It's
 a meaningful redesign of `DashboardScreen` (no data-model change) — do it as its own focused step.
 
+## Captured backlog (feedback firehose 2026-08-31 late) — not yet built
+
+Shipped this round already: search rounded rows + create FAB (`3d9a3c1`); dark-blue theme
+(`0e82ec3`); dashboard Calories bar + "Cals + Macros" title (`96099c1`); security assessment
+(`docs/SECURITY.md`). Still queued:
+
+UI, no schema:
+- More: structural rounding pass (MacroFirst-like boxes); collapse the profile header to a
+  tappable block that opens a Profile screen (don't show it all inline); Export/Import data
+  (JSON preferred); a setting for the default landing screen (Food Log vs Dashboard).
+- Dashboard: a profile button top-right; the rings redesign (weekly day strip + macro rings);
+  macro card shows the WEEKLY AVERAGE of cals/P/C/F and taps into a **Trends screen** (period
+  selector — pick a sensible subset of week / 2 weeks / month / 3 / 6 / year; a daily line/bar).
+- Food log: day navigation (a scrollable week strip + prev/next date arrows; other days need an
+  outline to read); drag a logged item between time blocks; swipe-left reveals a red delete;
+  a weight-trend graph OR nutrient block underneath (either/or — undecided).
+- Quick add: rounded boxes. Create Food: rounder boxes. Create Meal / Recipe: restyle to the
+  screenshots (Meal needs a meal-type field; Recipe needs the recipe model — both schema).
+
+Accounts / roles / AI (all need Firebase + decisions; see SECURITY.md):
+- Three roles: **admin** (newest features), **Btester** (can add foods to a SHARED database so it
+  grows), **regular** (no extras). Enforce roles server-side, never client-trusted.
+- Gemini: a step-by-step in-app guide for a user to add their own key; admin's shared key stays
+  server-side. AI is a completely separate feature.
+- AI use cases: photo -> estimate macros; photo + a weight -> more accurate; paste an item list
+  (brands optional) -> match/calculate against CNF + saved foods. All go through review-before-save.
+
+Schema-migration batch (do together when Dirac can build after each step): `FoodItem.barcode`,
+`FoodItem.emoji`, `caffeineMg` on FoodItem+MealEntry, `Recipe`+`RecipeIngredient` tables,
+`MealTemplate` meal-type.
+
 ## Forward plan (Dirac asked to scope these; NOT built yet)
 
 **A. Barcode scanning (camera).** The Open Food Facts *lookup* already works via manual entry.
