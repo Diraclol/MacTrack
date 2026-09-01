@@ -28,10 +28,12 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
       via `MIGRATION_3_4`, flowing through `Nutrients` (defaulted, so CNF/OFF sources need no change),
       the food-log Caffeine total, a Create Food "Caffeine (mg)" input, and the food-detail Caffeine
       row. CNF/branded foods carry no caffeine data, so custom foods are the source.
-- [ ] **SCHEMA-3: Custom-food barcode + emoji/icon.** Create Food wants an icon picker and an
-      optional barcode section, but `FoodItem` has neither field. Add `FoodItem.barcode` and
-      `FoodItem.emoji`. Done = a saved food carries a chosen icon and (optionally) a barcode that
-      round-trips through search.
+- [x] **SCHEMA-3: Custom-food barcode + emoji/icon.** SHIPPED (DB v5). Nullable `FoodItem.emoji`
+      and `FoodItem.barcode` via `MIGRATION_4_5`. A shared scrollable `EmojiPickerDialog`
+      (`ui/common`) powers a tap-to-choose icon in Create Food (plus a barcode field) and a
+      tap-to-change icon on Kitchen rows; `foodIcon(emoji, name)` renders the chosen icon (falling
+      back to the name-derived one) in the Kitchen and unified search. Barcode camera scanning is
+      still UI-9.
 - [ ] **SCHEMA-4: Recipe model.** Recipes ("a named set of foods with a serving count and a cooked
       weight") have no storage. Add `Recipe` + `RecipeIngredient` entities/DAOs; wire the Create
       Recipe screen (`ui/feature/recipes/`) to them. Done = a recipe can be created, saved, and logged.
