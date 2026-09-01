@@ -138,6 +138,17 @@ This whole track is scheduled **last**.
       in-app; default to a Flash-class model. Key lives in EncryptedSharedPreferences / Keystore, never
       embedded in the app or committed. Still keep the call site behind a thin interface for
       testability, but only one implementation is planned.
+      **STATUS — Slice 1 SHIPPED.** New "AI" nav tab with an OpenWebUI-style streaming chat
+      (`ui/feature/ai/`), plus AI settings (base URL / model / key / Test connection). Built on an
+      OpenAI-compatible client (`data/ai/AiClient`) over HttpURLConnection + SSE, so **base URL + key
+      + model are config, not constants**: defaults to Gemini's OpenAI endpoint
+      (`gemini-3.5-flash-lite`), and a homelab Ollama/Open WebUI URL drops in as a later toggle with no
+      code change (a homelab consult confirmed Gemini is the right default — the local GTX-1050 box has
+      no vision model and ~30-90 s latency). The key is encrypted with a hardware-backed Android
+      Keystore AES-GCM key (no third-party dep); only ciphertext is stored. Conversation is in-memory.
+      **Remaining:** Slice 2 = image attach (downscale ~1024 px → base64 data URL) for photo → macros;
+      Slice 3 = a "Log this" action turning an estimate into a review-before-save food/log entry.
+      Later: chat persistence (Room), a "local server" preset button.
 
 ---
 
