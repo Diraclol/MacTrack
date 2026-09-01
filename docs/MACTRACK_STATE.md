@@ -1,8 +1,53 @@
 # MacTrack — state and roadmap
 
-Accurate as of 2026-08-31.
+Accurate as of 2026-09-01. (The narrative below the next section predates this and is kept for
+history; **this Update block is the current position** — see [BACKLOG.md](BACKLOG.md) for the live
+task list.)
 
-## Where we are
+## Update — 2026-09-01 (current position)
+
+A large batch shipped since the v2 narrative below. Everything built + verified on the Pixel unless
+noted; the DB is now at **schema v8** (SCHEMA-1..6 all shipped: favorites, caffeine, barcode/emoji,
+recipes, meal-type [dormant], bodyfat).
+
+**Kitchen + food model.**
+- The old "Library" is the **Kitchen** (renamed in More too). Tap a food/meal/recipe to **edit** it
+  in place (Create screens double as Edit, loaded via the nav SavedStateHandle); **swipe left** to
+  reveal a trash button (like the food log). Meals/recipes show a **cluster icon** built from their
+  ingredients' icons.
+- **Create Meal / Create Recipe** rebuilt as MacroFactor-style forms: a Foods/Ingredients card whose
+  "+" reuses the **food-search screen in a picker mode** (searches the whole catalog: custom + CNF,
+  CNF auto-imported as `cnf_<code>`), a **P/C/F/🔥 pill summary**, per-ingredient macro rows, a
+  **Per Serving / Recipe Total** toggle (recipe), tap-a-row to edit amount. Picks survive the nav
+  round-trip via a shared in-memory `IngredientBuilderRepository`.
+- Recipes are now **loggable from the Add-food search** (new Recipes tab).
+
+**AI assistant — SHIPPED (opt-in).** A new **AI** nav tab (toggle in More → Preferences; off by
+default). OpenWebUI-style streaming chat over an **OpenAI-compatible** client (`data/ai/AiClient`,
+HttpURLConnection + SSE, no networking dep). BYO-key; **default Gemini** (main
+`gemini-3.5-flash-lite`, backup `gemini-3.1-flash-lite`; `gemini-2.5-flash` is retired/404). Key
+**encrypted in the Android Keystore**. Slice 2: attach a **food photo** (downscale→base64, vision).
+Slice 3: **"Log this"** parses an estimate → review dialog → logs a `meal_entry` (sourceType `ai`).
+429s retried with backoff. Quota decision: MacTrack gets its **own GCP project** (billing disabled).
+
+**Other UI/polish.** Onboarding overhaul (stepped, TDEE reveal, goal adjusts target, fat+protein);
+Trends + Weight + Nutrient-detail screens; JSON backup/import; 8 PM log reminder; drag-reorder
+micronutrient cards; **macro rings** as a food-log totals swipe view; full **blue light theme**;
+compact equal-width bottom nav. Unit tests: calc engine + `IngredientBuilderRepository` + `Nutrients`
++ FoodModels mappers (`./gradlew :app:testDebugUnitTest`, green).
+
+**Docs added.** [BACKEND_RESEARCH.md](BACKEND_RESEARCH.md) → backend decided **Supabase** (not Neon).
+[PWA_IOS_SPIKE.md](PWA_IOS_SPIKE.md) → iOS via Compose Multiplatform, web via a PWA over Supabase.
+
+**What's left (Dirac's call).** UI-9 barcode **camera** scan (needs CameraX + ML Kit deps + CAMERA
+perm); UI-6 drag log rows between time blocks (needs a `timeMinutes` data decision); UI-10
+instrumented Compose tests (needs a working emulator); ACCT-1/2 accounts + roles + shared food DB on
+Supabase (scheduled last). AI follow-ups: chat persistence, a "local server" preset, structured
+extraction instead of regex.
+
+---
+
+## Where we are (historical — pre-2026-09-01)
 
 MVP is done and working on a real Pixel. Recent work, newest first — all built and verified
 on device:

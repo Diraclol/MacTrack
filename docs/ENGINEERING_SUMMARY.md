@@ -9,14 +9,15 @@
 
 | | |
 |---|---|
-| **App** | Local-first Android calorie + macro tracker. Offline, single user, no backend. |
+| **App** | Local-first Android calorie + macro tracker. Offline core, single user, no backend yet. |
 | **Core (calc engine)** | Done, unit-tested. Mifflin–St Jeor BMR → TDEE → macro split. |
-| **Food log + search + dashboard** | Built and running on device. Reviewed by screenshot. |
-| **Data** | Room (`mactrack.db`, **schema v2**) + bundled read-only CNF asset (`cnf.db`). |
-| **Accounts / roles / AI** | Nothing built. Deliberate — scheduled last, needs a backend. |
-| **Next up** | Schema-migration batch (favorites → caffeine → barcode/emoji → recipe → bodyfat). |
+| **Food log + search + dashboard + Kitchen** | Built and running on device. Reviewed by screenshot. |
+| **Data** | Room (`mactrack.db`, **schema v8**) + bundled read-only CNF asset (`cnf.db`). |
+| **AI assistant** | SHIPPED — an opt-in chat tab (BYO-key, OpenAI-compatible, default Gemini): text + food-photo (vision) → macro estimate → review → log. Key encrypted in the Keystore. `data/ai/`, `ui/feature/ai/`. |
+| **Accounts / roles / shared DB** | Not built (scheduled last). Backend decided: **Supabase** (see BACKEND_RESEARCH.md). |
+| **Next up** | Dirac's call: UI-9 barcode camera (needs CameraX+ML Kit deps), UI-6 drag-between-blocks (needs a data decision), UI-10 instrumented tests (needs emulator), or ACCT-1 (Supabase). |
 
-**Build gate:** schema changes can't be finished from the editor — they need a device build so KSP regenerates `app/schemas/.../N.json`. Do them one migration at a time.
+**Build gate:** schema changes can't be finished from the editor — they need a device build so KSP regenerates `app/schemas/.../N.json`. Do them one migration at a time. (All of SCHEMA-1..6 shipped; DB is at v8.)
 
 ---
 
@@ -26,13 +27,14 @@
 |---|---|
 | Language | Kotlin |
 | UI | Jetpack Compose (Material3 1.4.0, Compose BOM 2026.02.01) |
-| Persistence | Room (KSP), schema version **2**, `exportSchema = true` |
+| Persistence | Room (KSP), schema version **8**, `exportSchema = true` |
 | DI | Manual — `MacTrackApplication` holds every repository as a `lazy val`. No Hilt/Koin. |
 | Package root | `com.dirac.mactrack` |
 | Bundled data | Canadian Nutrient File — `app/src/main/assets/cnf.db` (~2 MB, read-only) |
-| Network | Open Food Facts (barcode lookup only) |
+| Network | Open Food Facts (barcode lookup) + OpenAI-compatible AI (default Gemini). Both `HttpURLConnection` + `org.json`, no networking dependency. |
+| Secrets | AI API key encrypted with a hardware-backed Android **Keystore** AES-GCM key; only ciphertext in prefs (`data/ai/AiSettingsStore`). No secret is ever hardcoded or committed. |
 | Test devices | Pixel 8a (real) + emulator |
-| Source count | ~76 `.kt` files |
+| Source count | ~95 `.kt` files |
 
 ```bash
 ./gradlew :app:assembleDebug        # build
