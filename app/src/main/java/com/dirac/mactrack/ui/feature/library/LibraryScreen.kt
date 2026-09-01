@@ -1,17 +1,23 @@
 package com.dirac.mactrack.ui.feature.library
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,43 +25,44 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.FoodItem
-import com.dirac.mactrack.data.entity.MealTemplate
-import com.dirac.mactrack.data.entity.Recipe
 import com.dirac.mactrack.data.food.foodIcon
 import com.dirac.mactrack.ui.common.BackBar
-import com.dirac.mactrack.ui.common.EmojiPickerDialog
-import com.dirac.mactrack.ui.common.FOOD_EMOJIS
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 private val ProteinColor = Color(0xFFE91E63)
@@ -67,9 +74,10 @@ private val KITCHEN_TABS = listOf("All", "Recipes", "Meals", "Foods")
 private fun servingText(x: Double): String =
     if (x % 1.0 == 0.0) x.toInt().toString() else x.toString()
 
-// The Kitchen: browse saved foods and meals with pill tabs, a docked search, and a "+" that
-// opens a create menu (Create Food / Meal / Recipe).
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+// The Kitchen: browse saved foods, meals, and recipes with pill tabs, a docked search, and a "+" that
+// opens a create menu. Tap a row to edit that item; swipe it left to reveal a trash button (same
+// gesture as the food log). Managing saved foods/meals/recipes lives here.
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
     onBack: () -> Unit = {},
@@ -77,6 +85,7 @@ fun LibraryScreen(
     onCreateMeal: () -> Unit = {},
     onCreateRecipe: () -> Unit = {},
     onOpenFood: (String) -> Unit = {},
+    onOpenMeal: (String) -> Unit = {},
     onOpenRecipe: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -88,10 +97,6 @@ fun LibraryScreen(
 
     var tab by remember { mutableStateOf(0) }
     var showCreate by remember { mutableStateOf(false) }
-    var pendingDelete by remember { mutableStateOf<FoodItem?>(null) }
-    var pendingIconEdit by remember { mutableStateOf<FoodItem?>(null) }
-    var pendingRecipeDelete by remember { mutableStateOf<Recipe?>(null) }
-    var pendingMealDelete by remember { mutableStateOf<MealTemplate?>(null) }
 
     val showFoods = tab == 0 || tab == 3
     val showMeals = tab == 0 || tab == 2
@@ -116,23 +121,23 @@ fun LibraryScreen(
 
         LazyColumn(
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item { Text("Saved", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(vertical = 4.dp)) }
 
             if (showRecipes) {
                 items(items = recipes, key = { "r_" + it.recipe.id }) { summary ->
-                    RecipeRow(summary = summary, onOpen = { onOpenRecipe(summary.recipe.id) }, onLongPress = { pendingRecipeDelete = summary.recipe })
+                    RecipeRow(summary = summary, onOpen = { onOpenRecipe(summary.recipe.id) }, onDelete = { viewModel.deleteRecipe(summary.recipe) })
                 }
             }
             if (showFoods) {
                 items(items = foods, key = { "f_" + it.id }) { food ->
-                    FoodRow(food = food, onOpen = { onOpenFood(food.id) }, onLongPress = { pendingDelete = food }, onEditIcon = { pendingIconEdit = food })
+                    FoodRow(food = food, onOpen = { onOpenFood(food.id) }, onDelete = { viewModel.deleteFood(food) })
                 }
             }
             if (showMeals) {
                 items(items = meals, key = { "m_" + it.template.id }) { summary ->
-                    MealRow(summary, onLongPress = { pendingMealDelete = summary.template })
+                    MealRow(summary = summary, onOpen = { onOpenMeal(summary.template.id) }, onDelete = { viewModel.deleteMeal(summary.template) })
                 }
             }
             when (tab) {
@@ -175,70 +180,65 @@ fun LibraryScreen(
             Spacer(Modifier.height(24.dp))
         }
     }
+}
 
-    val toDelete = pendingDelete
-    if (toDelete != null) {
-        AlertDialog(
-            onDismissRequest = { pendingDelete = null },
-            title = { Text("Delete food?") },
-            text = { Text("Remove \"${toDelete.name}\" from your saved foods? Past logs of it are kept.") },
-            confirmButton = {
-                TextButton(onClick = { viewModel.deleteFood(toDelete); pendingDelete = null }) { Text("Delete") }
-            },
-            dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text("Cancel") } }
-        )
+// A row that slides left to reveal a red trash panel (same gesture as the food log). Tapping the row
+// while closed opens it for editing; while open, tapping just closes it. The trash button deletes.
+@Composable
+private fun SwipeToDeleteRow(
+    rowKey: Any,
+    deleteLabel: String,
+    onOpen: () -> Unit,
+    onDelete: () -> Unit,
+    content: @Composable RowScope.() -> Unit
+) {
+    val revealPx = with(LocalDensity.current) { 76.dp.toPx() }
+    val offsetX = remember(rowKey) { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    val dragState = rememberDraggableState { delta ->
+        scope.launch { offsetX.snapTo((offsetX.value + delta).coerceIn(-revealPx, 0f)) }
     }
-
-    val toEditIcon = pendingIconEdit
-    if (toEditIcon != null) {
-        EmojiPickerDialog(
-            title = "Choose an icon",
-            current = toEditIcon.emoji ?: "",
-            choices = FOOD_EMOJIS,
-            onPick = { viewModel.setEmoji(toEditIcon.id, it); pendingIconEdit = null },
-            onDismiss = { pendingIconEdit = null }
-        )
-    }
-
-    val toDeleteRecipe = pendingRecipeDelete
-    if (toDeleteRecipe != null) {
-        AlertDialog(
-            onDismissRequest = { pendingRecipeDelete = null },
-            title = { Text("Delete recipe?") },
-            text = { Text("Remove \"${toDeleteRecipe.name}\" from your recipes? Past logs of it are kept.") },
-            confirmButton = {
-                TextButton(onClick = { viewModel.deleteRecipe(toDeleteRecipe); pendingRecipeDelete = null }) { Text("Delete") }
-            },
-            dismissButton = { TextButton(onClick = { pendingRecipeDelete = null }) { Text("Cancel") } }
-        )
-    }
-
-    val toDeleteMeal = pendingMealDelete
-    if (toDeleteMeal != null) {
-        AlertDialog(
-            onDismissRequest = { pendingMealDelete = null },
-            title = { Text("Delete meal?") },
-            text = { Text("Remove \"${toDeleteMeal.name}\" from your meals? Past logs of it are kept.") },
-            confirmButton = {
-                TextButton(onClick = { viewModel.deleteMeal(toDeleteMeal); pendingMealDelete = null }) { Text("Delete") }
-            },
-            dismissButton = { TextButton(onClick = { pendingMealDelete = null }) { Text("Cancel") } }
-        )
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.errorContainer),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            IconButton(onClick = onDelete, modifier = Modifier.padding(end = 12.dp)) {
+                Icon(Icons.Filled.Delete, contentDescription = deleteLabel, tint = MaterialTheme.colorScheme.onErrorContainer)
+            }
+        }
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .draggable(
+                    orientation = Orientation.Horizontal,
+                    state = dragState,
+                    onDragStopped = {
+                        val target = if (offsetX.value < -revealPx / 2f) -revealPx else 0f
+                        offsetX.animateTo(target)
+                    }
+                )
+                .clickable {
+                    if (offsetX.value != 0f) scope.launch { offsetX.animateTo(0f) } else onOpen()
+                }
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                content = content
+            )
+        }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FoodRow(food: FoodItem, onOpen: () -> Unit, onLongPress: () -> Unit, onEditIcon: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().combinedClickable(onClick = onOpen, onLongClick = onLongPress).padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            foodIcon(food.emoji, food.name),
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.clickable { onEditIcon() }.padding(end = 12.dp)
-        )
+private fun FoodRow(food: FoodItem, onOpen: () -> Unit, onDelete: () -> Unit) {
+    SwipeToDeleteRow(rowKey = food.id, deleteLabel = "Delete ${food.name}", onOpen = onOpen, onDelete = onDelete) {
+        Text(foodIcon(food.emoji, food.name), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(food.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -253,17 +253,12 @@ private fun FoodRow(food: FoodItem, onOpen: () -> Unit, onLongPress: () -> Unit,
             Text("cal", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-    HorizontalDivider()
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun RecipeRow(summary: RecipeSummary, onOpen: () -> Unit, onLongPress: () -> Unit) {
+private fun RecipeRow(summary: RecipeSummary, onOpen: () -> Unit, onDelete: () -> Unit) {
     val r = summary.recipe
-    Row(
-        modifier = Modifier.fillMaxWidth().combinedClickable(onClick = onOpen, onLongClick = onLongPress).padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    SwipeToDeleteRow(rowKey = r.id, deleteLabel = "Delete ${r.name}", onOpen = onOpen, onDelete = onDelete) {
         Text(foodIcon(r.emoji, r.name), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(r.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -279,16 +274,11 @@ private fun RecipeRow(summary: RecipeSummary, onOpen: () -> Unit, onLongPress: (
             Text("cal/serv", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-    HorizontalDivider()
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MealRow(summary: MealSummary, onLongPress: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = onLongPress).padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+private fun MealRow(summary: MealSummary, onOpen: () -> Unit, onDelete: () -> Unit) {
+    SwipeToDeleteRow(rowKey = summary.template.id, deleteLabel = "Delete ${summary.template.name}", onOpen = onOpen, onDelete = onDelete) {
         Text("🍱", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(summary.template.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -304,7 +294,6 @@ private fun MealRow(summary: MealSummary, onLongPress: () -> Unit) {
             Text("cal", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-    HorizontalDivider()
 }
 
 @Composable

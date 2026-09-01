@@ -168,13 +168,43 @@ fun MacTrackApp() {
                     onCreateFood = { navController.navigate("create_food") },
                     onCreateMeal = { navController.navigate("create_meal") },
                     onCreateRecipe = { navController.navigate("create_recipe") },
-                    onOpenFood = { id -> navController.navigate("food_detail/custom/$id") },
-                    onOpenRecipe = { id -> navController.navigate("food_detail/recipe/$id") }
+                    onOpenFood = { id -> navController.navigate("edit_food/$id") },
+                    onOpenMeal = { id -> navController.navigate("edit_meal/$id") },
+                    onOpenRecipe = { id -> navController.navigate("edit_recipe/$id") }
                 )
             }
             composable("create_food") {
                 CreateFoodScreen(
                     onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() }
+                )
+            }
+            composable(
+                "edit_food/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) {
+                CreateFoodScreen(
+                    onBack = { navController.popBackStack() },
+                    onSaved = { navController.popBackStack() }
+                )
+            }
+            composable(
+                "edit_meal/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) {
+                MealsScreen(
+                    onBack = { navController.popBackStack() },
+                    onAddFoods = { navController.navigate("food_search?picker=meal") },
+                    onSaved = { navController.popBackStack() }
+                )
+            }
+            composable(
+                "edit_recipe/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) {
+                RecipesScreen(
+                    onBack = { navController.popBackStack() },
+                    onAddIngredients = { navController.navigate("food_search?picker=recipe") },
                     onSaved = { navController.popBackStack() }
                 )
             }

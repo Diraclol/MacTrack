@@ -31,6 +31,24 @@ class RecipeRepository(private val dao: RecipeDao) {
         return recipe.id
     }
 
+    // Update an existing recipe in place: keep the same row (id, createdAt), update its fields, and
+    // replace its ingredients. insertRecipe uses REPLACE, so re-inserting the copied row updates it.
+    suspend fun updateRecipe(
+        id: String,
+        name: String,
+        makesServings: Double,
+        cookedWeightG: Double?,
+        emoji: String?,
+        ingredients: List<Pair<String, Double>>
+    ) {
+        val existing = dao.getRecipe(id) ?: return
+        dao.insertRecipe(existing.copy(name = name, makesServings = makesServings, cookedWeightG = cookedWeightG, emoji = emoji))
+        dao.deleteIngredientsFor(id)
+        ingredients.forEach { (foodId, amount) ->
+            dao.insertIngredient(RecipeIngredient(recipeId = id, foodId = foodId, amount = amount))
+        }
+    }
+
     suspend fun deleteRecipe(recipe: Recipe) {
         dao.deleteIngredientsFor(recipe.id)
         dao.deleteRecipe(recipe)

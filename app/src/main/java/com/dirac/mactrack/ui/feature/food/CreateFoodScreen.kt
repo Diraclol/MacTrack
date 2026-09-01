@@ -20,6 +20,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -29,6 +31,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,11 +65,17 @@ private val FieldShape = RoundedCornerShape(16.dp)
 
 private val UNITS = listOf("serving", "g", "ml", "piece", "cup", "tbsp", "tsp", "oz", "scoop", "tablet", "capsule")
 
-// A "create a saved food" screen styled like the food detail screen (cards, a live summary
-// ring) but with entry boxes. Values entered are for ONE serving.
+// Prefill text for a numeric field: blank for zero, no trailing ".0" for whole numbers.
+private fun numText(x: Double): String =
+    if (x == 0.0) "" else if (x % 1.0 == 0.0) x.toInt().toString() else x.toString()
+
+// A create/edit saved-food screen styled like the food detail screen (cards, a live summary ring) but
+// with entry boxes. Values entered are for ONE serving. Opened from the Kitchen with an id, it edits
+// that food in place (and offers Delete); otherwise it creates a new one.
 @Composable
 fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier = Modifier) {
     val viewModel: FoodViewModel = viewModel(factory = FoodViewModel.Factory)
+    val editing by viewModel.editing.collectAsState()
 
     var name by remember { mutableStateOf("") }
     var brand by remember { mutableStateOf("") }
@@ -87,6 +97,35 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
     var barcode by remember { mutableStateOf("") }
     var showIconPicker by remember { mutableStateOf(false) }
 
+    // When editing, seed the fields once from the loaded food.
+    var seeded by remember { mutableStateOf(false) }
+    LaunchedEffect(editing) {
+        val e = editing
+        if (e != null && !seeded) {
+            name = e.name
+            brand = e.brand ?: ""
+            calories = numText(e.calories)
+            protein = numText(e.proteinG)
+            carb = numText(e.carbG)
+            fat = numText(e.fatG)
+            fiber = numText(e.fiberG)
+            sugar = numText(e.sugarG)
+            satFat = numText(e.satFatG)
+            sodium = numText(e.sodiumMg)
+            potassium = numText(e.potassiumMg)
+            cholesterol = numText(e.cholesterolMg)
+            caffeine = numText(e.caffeineMg)
+            servingSize = numText(e.servingSize)
+            servingUnit = e.servingUnit
+            emoji = e.emoji
+            barcode = e.barcode ?: ""
+            if (e.fiberG != 0.0 || e.sugarG != 0.0 || e.satFatG != 0.0 || e.sodiumMg != 0.0 ||
+                e.potassiumMg != 0.0 || e.cholesterolMg != 0.0 || e.caffeineMg != 0.0
+            ) showMicros = true
+            seeded = true
+        }
+    }
+
     val p = protein.toDoubleOrNull() ?: 0.0
     val c = carb.toDoubleOrNull() ?: 0.0
     val f = fat.toDoubleOrNull() ?: 0.0
@@ -96,7 +135,7 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
 
     fun save() {
         if (!canSave) return
-        viewModel.addFood(
+        viewModel.save(
             name = name.trim(),
             calories = cal,
             proteinG = p, carbG = c, fatG = f,
@@ -125,7 +164,7 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
-            Text("Create Food", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            Text(if (viewModel.isEditing) "Edit Food" else "Create Food", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
             IconButton(onClick = { save() }, enabled = canSave) {
                 Icon(Icons.Filled.Check, contentDescription = "Save food", tint = if (canSave) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -265,6 +304,18 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
                 item { NutrientField(potassium, { potassium = it }, "Potassium (mg)") }
                 item { NutrientField(cholesterol, { cholesterol = it }, "Cholesterol (mg)") }
                 item { NutrientField(caffeine, { caffeine = it }, "Caffeine (mg)") }
+            }
+
+            if (viewModel.isEditing) {
+                item {
+                    Button(
+                        onClick = { viewModel.deleteFood(onSaved) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Delete Food", color = MaterialTheme.colorScheme.onError)
+                    }
+                }
             }
 
             item { Box(Modifier.size(8.dp)) }

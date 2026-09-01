@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 class MealTemplateRepository(private val dao: MealTemplateDao) {
     fun getTemplates(): Flow<List<MealTemplate>> = dao.getTemplates()
+    suspend fun getTemplate(id: String): MealTemplate? = dao.getTemplate(id)
     suspend fun getItems(templateId: String): List<MealTemplateItem> = dao.getItems(templateId)
 
     suspend fun saveTemplate(name: String, items: List<Pair<String, Double>>) {
@@ -16,6 +17,17 @@ class MealTemplateRepository(private val dao: MealTemplateDao) {
         dao.insertTemplate(template)
         items.forEach { (foodId, amount) ->
             dao.insertItem(MealTemplateItem(templateId = template.id, foodId = foodId, amount = amount))
+        }
+    }
+
+    // Update an existing meal in place: keep the same row (id, createdAt), rename it, and replace its
+    // items. insertTemplate uses REPLACE, so re-inserting the copied row updates it.
+    suspend fun updateTemplate(id: String, name: String, items: List<Pair<String, Double>>) {
+        val existing = dao.getTemplate(id) ?: return
+        dao.insertTemplate(existing.copy(name = name))
+        dao.deleteItemsFor(id)
+        items.forEach { (foodId, amount) ->
+            dao.insertItem(MealTemplateItem(templateId = id, foodId = foodId, amount = amount))
         }
     }
 

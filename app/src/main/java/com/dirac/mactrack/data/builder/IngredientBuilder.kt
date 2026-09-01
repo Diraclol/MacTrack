@@ -38,6 +38,18 @@ class IngredientBuilderRepository {
         _items.value = _items.value.map { if (it.foodId == foodId) it.copy(servings = servings) else it }
     }
 
+    // Add or replace an ingredient at a specific serving count. Used when loading an existing meal or
+    // recipe into the draft for editing.
+    fun set(foodId: String, name: String, servings: Double) {
+        val current = _items.value
+        val index = current.indexOfFirst { it.foodId == foodId }
+        _items.value = if (index >= 0) {
+            current.mapIndexed { i, it -> if (i == index) it.copy(name = name, servings = servings) else it }
+        } else {
+            current + DraftIngredient(foodId, name, servings)
+        }
+    }
+
     fun remove(foodId: String) {
         _items.value = _items.value.filterNot { it.foodId == foodId }
     }

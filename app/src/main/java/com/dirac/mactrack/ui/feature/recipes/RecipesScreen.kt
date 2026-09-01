@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +57,7 @@ fun RecipesScreen(
     val viewModel: RecipesViewModel = viewModel(factory = RecipesViewModel.Factory)
     val foods by viewModel.foods.collectAsState()
     val ingredients by viewModel.ingredients.collectAsState()
+    val initial by viewModel.initial.collectAsState()
 
     var name by rememberSaveable { mutableStateOf("") }
     var makes by rememberSaveable { mutableStateOf("1") }
@@ -62,6 +66,18 @@ fun RecipesScreen(
     var perServing by rememberSaveable { mutableStateOf(false) }
     var editing by remember { mutableStateOf<DraftIngredient?>(null) }
 
+    // When editing, seed the fields once from the loaded recipe.
+    var seeded by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(initial) {
+        val r = initial
+        if (r != null && !seeded) {
+            name = r.name
+            makes = amountText(r.makesServings)
+            cooked = r.cookedWeightG?.let { amountText(it) } ?: ""
+            seeded = true
+        }
+    }
+
     val foodsById = foods.associateBy { it.id }
     val makesN = makes.toDoubleOrNull() ?: 1.0
     val div = if (perServing && makesN > 0.0) makesN else 1.0
@@ -69,7 +85,7 @@ fun RecipesScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
         CreateTopBar(
-            title = "Create Recipe",
+            title = if (viewModel.isEditing) "Edit Recipe" else "Create Recipe",
             onBack = onBack,
             saveEnabled = canSave,
             onSave = {
@@ -77,7 +93,7 @@ fun RecipesScreen(
                     name = name,
                     makesServings = makesN,
                     cookedWeightG = cooked.toDoubleOrNull(),
-                    emoji = null,
+                    emoji = initial?.emoji,
                     ingredients = ingredients.map { it.foodId to it.servings },
                     onDone = onSaved
                 )
@@ -174,6 +190,18 @@ fun RecipesScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            if (viewModel.isEditing) {
+                item {
+                    Button(
+                        onClick = { viewModel.deleteRecipe(onSaved) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Delete Recipe", color = MaterialTheme.colorScheme.onError)
+                    }
+                }
             }
         }
     }

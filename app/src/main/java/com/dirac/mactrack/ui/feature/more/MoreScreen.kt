@@ -167,7 +167,7 @@ fun MoreScreen(
             }
         }
         // Navigation cards
-        item { MoreCard("Saved Foods, Meals & Recipes", onOpenLibrary) }
+        item { MoreCard("Kitchen", onOpenLibrary) }
         item { MoreCard("Goals", onOpenGoals) }
         item { MoreCard("Weight", onOpenWeight) }
         // Preferences

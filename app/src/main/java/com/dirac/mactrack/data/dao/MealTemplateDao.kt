@@ -20,6 +20,9 @@ interface MealTemplateDao {
     @Query("SELECT * FROM meal_templates ORDER BY name")
     fun getTemplates(): Flow<List<MealTemplate>>
 
+    @Query("SELECT * FROM meal_templates WHERE id = :id")
+    suspend fun getTemplate(id: String): MealTemplate?
+
     @Query("SELECT * FROM meal_template_items WHERE templateId = :templateId")
     suspend fun getItems(templateId: String): List<MealTemplateItem>
 

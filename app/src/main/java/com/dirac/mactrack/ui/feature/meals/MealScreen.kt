@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,16 +52,24 @@ fun MealsScreen(
     val viewModel: MealsViewModel = viewModel(factory = MealsViewModel.Factory)
     val foods by viewModel.foods.collectAsState()
     val ingredients by viewModel.ingredients.collectAsState()
+    val initialName by viewModel.initialName.collectAsState()
 
     var mealName by rememberSaveable { mutableStateOf("") }
     var editing by remember { mutableStateOf<DraftIngredient?>(null) }
+
+    // When editing, seed the name once from the loaded meal.
+    var seeded by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(initialName) {
+        val n = initialName
+        if (n != null && !seeded) { mealName = n; seeded = true }
+    }
 
     val foodsById = foods.associateBy { it.id }
     val canSave = mealName.isNotBlank() && ingredients.isNotEmpty()
 
     Column(modifier = modifier.fillMaxSize()) {
         CreateTopBar(
-            title = "Create Meal",
+            title = if (viewModel.isEditing) "Edit Meal" else "Create Meal",
             onBack = onBack,
             saveEnabled = canSave,
             onSave = { viewModel.saveMeal(mealName, ingredients.map { it.foodId to it.servings }, onSaved) }
@@ -121,6 +132,18 @@ fun MealsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            if (viewModel.isEditing) {
+                item {
+                    Button(
+                        onClick = { viewModel.deleteMeal(onSaved) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Delete Meal", color = MaterialTheme.colorScheme.onError)
+                    }
+                }
             }
         }
     }
