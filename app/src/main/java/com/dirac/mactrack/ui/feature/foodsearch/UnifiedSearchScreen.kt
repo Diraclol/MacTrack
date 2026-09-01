@@ -2,6 +2,7 @@ package com.dirac.mactrack.ui.feature.foodsearch
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,9 +28,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -99,13 +99,21 @@ fun UnifiedSearchScreen(
             }
         }
 
-        TabRow(selectedTabIndex = tab) {
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             TABS.forEachIndexed { i, title ->
-                Tab(selected = tab == i, onClick = { tab = i }, text = { Text(title) })
+                FilterChip(
+                    selected = tab == i,
+                    onClick = { tab = i },
+                    label = { Text(title) },
+                    shape = RoundedCornerShape(50)
+                )
             }
         }
 
-        Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
+        Column(modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp)) {
             when (tab) {
                 0 -> AllTab(query, recent, custom, common, onOpenFood, viewModel)
                 1 -> FoodsTab(savedFoods, onOpenFood, viewModel)

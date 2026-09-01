@@ -56,9 +56,9 @@ fun MacTrackApp() {
                         .padding(horizontal = 24.dp, vertical = 12.dp)
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shadowElevation = 8.dp,
-                    tonalElevation = 3.dp
+                    color = Color.Transparent,
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp
                 ) {
                     Row(
                         modifier = Modifier
