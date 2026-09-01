@@ -296,9 +296,9 @@ private fun ContribColumn(
 private fun ShareRing(label: String, pct: Int, grams: Double, color: Color) {
     val track = MaterialTheme.colorScheme.surfaceVariant
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(56.dp)) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(64.dp)) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val stroke = 8f
+                val stroke = 14f
                 val dd = size.minDimension - stroke
                 val tl = Offset((size.width - dd) / 2f, (size.height - dd) / 2f)
                 val arcSize = Size(dd, dd)
