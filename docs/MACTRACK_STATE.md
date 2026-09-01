@@ -309,7 +309,39 @@ the MacroFactor-style rings screen (a weekly day strip of progress rings, the ma
 moved off the dashboard to the food log. This is the reference in the session screenshots. It's
 a meaningful redesign of `DashboardScreen` (no data-model change) — do it as its own focused step.
 
+## Session tail (2026-08-31, big feedback loop) — SHIPPED
+
+Priorities Dirac picked: day navigation + More restructure (hold accounts). Shipped, all verified:
+- Dark-blue theme (dynamic color off) `0e82ec3`; dashboard Calories bar + title `96099c1`;
+  security assessment `docs/SECURITY.md`.
+- **Food log day navigation** (`cf8d554`): shared `LogDateStore`, week strip + date arrows,
+  logging targets the viewed day. RUNTIME-heavy — build and exercise this first.
+- **Profile screen** (`ca107a2`): tappable More block + dashboard avatar -> Profile screen.
+- **Advanced goal types** (`c136471`): recomp/-250, maingain/+100, lean bulk/+250 behind a toggle.
+- **Default landing screen** setting (`f9c419c`): Dashboard vs Food Log, persisted.
+
+Remaining from "More restructure": Export/Import (JSON) is the last piece (not started).
+
 ## Captured backlog (feedback firehose 2026-08-31 late) — not yet built
+
+New asks to fold in (mostly need schema or are bigger features):
+- **Favorites/heart**: heart foods; a Favorites section in search AFTER Recent, before Common.
+  Needs a `favorites` table keyed by (sourceType, sourceId) [+ optional nickname/icon/serving] ->
+  SCHEMA. Reference screenshots saved (MacroFactor favorites banner + Add Favorite sheet).
+- **Notifications**: opt-in food-log reminders, off by default, toggle in More. Needs
+  POST_NOTIFICATIONS (Android 13+) + a scheduler (WorkManager). A pref, no schema.
+- **Weight**: drop steps/weigh-in; collapse weight logging to a button; only bodyweight + date;
+  a weight trend graph with 1M / 3M / 1Y / All sorting (see the Magnesium-style trend screenshot).
+- **Dashboard rings redesign** (MacroFirst "Weekly Nutrition": a weekday strip of macro/cal rings,
+  Consumed/Remaining toggle) + Insights (Expenditure / Weight Trend mini-graphs).
+- **Trends screen**: macro card taps in; period selector 1W/1M/3M/6M/1Y/All; daily line/bar +
+  a Consumed donut (Cronometer-style). Weekly AVERAGES on the dashboard macro card.
+- **Nutrient detail screens** (Cronometer/MacroFactor): per-nutrient trend (Yesterday/Past Week/
+  Past Month) with Floor/Target/Ceiling + an "All Contributors" list. Bigger; later.
+- AI (after foundation, needs the Gemini key guide): photo->macros, photo+weight, paste-a-list
+  match, and menu-photo recommendations tuned to cutting/bulking. Review-before-save always.
+
+
 
 Shipped this round already: search rounded rows + create FAB (`3d9a3c1`); dark-blue theme
 (`0e82ec3`); dashboard Calories bar + "Cals + Macros" title (`96099c1`); security assessment
