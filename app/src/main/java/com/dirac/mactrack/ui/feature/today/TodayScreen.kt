@@ -1,10 +1,14 @@
 package com.dirac.mactrack.ui.feature.today
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -38,17 +42,15 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,8 +58,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.MealEntry
@@ -69,6 +73,7 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 private val CalorieColor = Color(0xFFFF9800)
 private val ProteinColor = Color(0xFFE91E63)
@@ -409,12 +414,14 @@ private fun DayNavigator(
 // the selected day is shown; swiping moves in one-week jumps.
 @Composable
 private fun DayStrip(selected: LocalDate, today: LocalDate, onSelect: (LocalDate) -> Unit) {
-    val anchorMonday = remember(today) { today.with(java.time.DayOfWeek.MONDAY) }
+    // Weeks start on Sunday.
+    val sunday = java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.SUNDAY)
+    val anchorSunday = remember(today) { today.with(sunday) }
     val pageCount = 209            // ~2 years back and forward, in weeks
     val todayPage = 104
-    val selectedMonday = selected.with(java.time.DayOfWeek.MONDAY)
+    val selectedSunday = selected.with(sunday)
     val selectedPage = remember(selected) {
-        (todayPage + java.time.temporal.ChronoUnit.WEEKS.between(anchorMonday, selectedMonday).toInt())
+        (todayPage + java.time.temporal.ChronoUnit.WEEKS.between(anchorSunday, selectedSunday).toInt())
             .coerceIn(0, pageCount - 1)
     }
     val pagerState = rememberPagerState(initialPage = selectedPage) { pageCount }
@@ -422,10 +429,10 @@ private fun DayStrip(selected: LocalDate, today: LocalDate, onSelect: (LocalDate
         if (pagerState.currentPage != selectedPage) pagerState.animateScrollToPage(selectedPage)
     }
     HorizontalPager(state = pagerState, modifier = Modifier.fillMaxWidth()) { page ->
-        val weekMonday = anchorMonday.plusWeeks((page - todayPage).toLong())
+        val weekSunday = anchorSunday.plusWeeks((page - todayPage).toLong())
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             (0L..6L).forEach { i ->
-                val d = weekMonday.plusDays(i)
+                val d = weekSunday.plusDays(i)
                 DayCell(d, d == selected, d == today, Modifier.weight(1f)) { onSelect(d) }
             }
         }
@@ -461,28 +468,26 @@ private fun DayCell(d: LocalDate, isSel: Boolean, isToday: Boolean, modifier: Mo
     }
 }
 
-// Swipe a row left to reveal a red delete panel; releasing past the threshold removes it. No inline
-// trash icon anymore.
-@OptIn(ExperimentalMaterial3Api::class)
+// Swipe a row left to REVEAL a red delete panel and rest there; tap the trash to confirm the delete.
+// Tapping the row while it's open just closes it; tapping while closed opens the entry. No auto-delete.
 @Composable
 private fun FoodCard(entry: MealEntry, onClick: () -> Unit, onDelete: () -> Unit) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { target ->
-            if (target == SwipeToDismissBoxValue.EndToStart) { onDelete(); true } else false
-        }
-    )
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.errorContainer)
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
+    val revealPx = with(LocalDensity.current) { 76.dp.toPx() }
+    val offsetX = remember(entry.id) { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    val dragState = rememberDraggableState { delta ->
+        scope.launch { offsetX.snapTo((offsetX.value + delta).coerceIn(-revealPx, 0f)) }
+    }
+    Box(modifier = Modifier.fillMaxWidth()) {
+        // Red delete panel behind the row; its trash button is the confirm action.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.errorContainer),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            IconButton(onClick = onDelete, modifier = Modifier.padding(end = 12.dp)) {
                 Icon(
                     Icons.Filled.Delete,
                     contentDescription = "Delete ${entry.foodName}",
@@ -490,8 +495,22 @@ private fun FoodCard(entry: MealEntry, onClick: () -> Unit, onDelete: () -> Unit
                 )
             }
         }
-    ) {
-        Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .draggable(
+                    orientation = Orientation.Horizontal,
+                    state = dragState,
+                    onDragStopped = {
+                        val target = if (offsetX.value < -revealPx / 2f) -revealPx else 0f
+                        offsetX.animateTo(target)
+                    }
+                )
+                .clickable {
+                    if (offsetX.value != 0f) scope.launch { offsetX.animateTo(0f) } else onClick()
+                }
+        ) {
             Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(foodEmoji(entry.foodName), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {

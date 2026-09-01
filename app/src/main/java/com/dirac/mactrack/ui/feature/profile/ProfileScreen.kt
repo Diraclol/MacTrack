@@ -97,7 +97,7 @@ fun ProfileScreen(onBack: () -> Unit = {}, onReassessGoals: () -> Unit = {}, mod
                         InfoRow("Sex", pretty(p.sex))
                         InfoRow("Age", "${p.age}")
                         InfoRow("Weight", "${p.weightKg} kg")
-                        InfoRow("Height", "${p.heightCm} cm")
+                        InfoRow("Height", "${p.heightCm} cm", last = true)
                     }
                 }
             }
