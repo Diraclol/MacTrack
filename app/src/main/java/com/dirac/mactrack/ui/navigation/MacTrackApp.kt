@@ -49,6 +49,8 @@ import com.dirac.mactrack.ui.feature.foodsearch.FoodDetailScreen
 import com.dirac.mactrack.ui.feature.weight.WeightScreen
 import com.dirac.mactrack.ui.feature.trends.TrendsScreen
 import com.dirac.mactrack.ui.feature.nutrient.NutrientDetailScreen
+import com.dirac.mactrack.ui.feature.ai.AiScreen
+import com.dirac.mactrack.ui.feature.ai.AiSettingsScreen
 
 @Composable
 fun MacTrackApp() {
@@ -153,6 +155,12 @@ fun MacTrackApp() {
             ) { backStackEntry ->
                 val nutrient = backStackEntry.arguments?.getString("nutrient") ?: "sodium"
                 NutrientDetailScreen(nutrientKey = nutrient, onBack = { navController.popBackStack() })
+            }
+            composable(Destination.AI.route) {
+                AiScreen(onOpenSettings = { navController.navigate("ai_settings") })
+            }
+            composable("ai_settings") {
+                AiSettingsScreen(onBack = { navController.popBackStack() })
             }
             composable(Destination.MORE.route) {
                 MoreScreen(

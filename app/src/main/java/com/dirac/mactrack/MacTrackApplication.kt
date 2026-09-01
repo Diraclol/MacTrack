@@ -15,6 +15,8 @@ import com.dirac.mactrack.data.backup.BackupManager
 import com.dirac.mactrack.data.cnf.CnfRepository
 import com.dirac.mactrack.data.cart.CartRepository
 import com.dirac.mactrack.data.builder.IngredientBuilderRepository
+import com.dirac.mactrack.data.ai.AiSettingsStore
+import com.dirac.mactrack.data.ai.AiClient
 import com.dirac.mactrack.data.off.OpenFoodFactsRepository
 import com.dirac.mactrack.data.session.LogDateStore
 import com.dirac.mactrack.data.MIGRATION_1_2
@@ -78,6 +80,14 @@ class MacTrackApplication : Application() {
 
     val logDateStore: LogDateStore by lazy {
         LogDateStore()
+    }
+
+    val aiSettingsStore: AiSettingsStore by lazy {
+        AiSettingsStore(this)
+    }
+
+    val aiClient: AiClient by lazy {
+        AiClient()
     }
 
 }
