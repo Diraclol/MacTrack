@@ -30,15 +30,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.ui.common.BackBar
+import com.dirac.mactrack.ui.common.IngredientPicker
 
 @Composable
-fun MealsScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBar: Boolean = true) {
+fun MealsScreen(
+    modifier: Modifier = Modifier,
+    onBack: () -> Unit = {},
+    onCreateFood: () -> Unit = {},
+    showBar: Boolean = true
+) {
     val viewModel: MealsViewModel = viewModel(factory = MealsViewModel.Factory)
     val foods by viewModel.foods.collectAsState()
     val templates by viewModel.templates.collectAsState()
 
     var mealName by remember { mutableStateOf("") }
-    val selected = remember { mutableStateMapOf<String, Boolean>() }
+    val amounts = remember { mutableStateMapOf<String, String>() }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(16.dp),
@@ -78,20 +84,22 @@ fun MealsScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBar:
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Text("Pick foods (1 serving each):", style = MaterialTheme.typography.bodySmall)
-                    foods.forEach { food ->
-                        FilterChip(
-                            selected = selected[food.id] == true,
-                            onClick = { selected[food.id] = !(selected[food.id] ?: false) },
-                            label = { Text(food.name) }
-                        )
-                    }
+                    Text("Foods in this meal:", style = MaterialTheme.typography.bodySmall)
+                    IngredientPicker(
+                        foods = foods,
+                        amounts = amounts,
+                        onCreateFood = onCreateFood,
+                        amountUnit = "servings"
+                    )
                     Button(
                         onClick = {
-                            val items = selected.filterValues { it }.keys.map { it to 1.0 }
+                            val items = amounts.mapNotNull { (id, txt) ->
+                                val v = txt.toDoubleOrNull() ?: 1.0
+                                if (v > 0.0) id to v else null
+                            }
                             viewModel.saveTemplate(mealName, items)
                             mealName = ""
-                            selected.clear()
+                            amounts.clear()
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {

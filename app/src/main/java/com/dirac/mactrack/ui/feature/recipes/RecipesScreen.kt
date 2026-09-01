@@ -27,9 +27,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.ui.common.BackBar
+import com.dirac.mactrack.ui.common.IngredientPicker
 
 @Composable
-fun RecipesScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBar: Boolean = true) {
+fun RecipesScreen(
+    modifier: Modifier = Modifier,
+    onBack: () -> Unit = {},
+    onCreateFood: () -> Unit = {},
+    showBar: Boolean = true
+) {
     val viewModel: RecipesViewModel = viewModel(factory = RecipesViewModel.Factory)
     val foods by viewModel.foods.collectAsState()
 
@@ -79,24 +85,12 @@ fun RecipesScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, showBa
         item { Text("Ingredients", style = MaterialTheme.typography.titleMedium) }
 
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                foods.forEach { food ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(food.name, modifier = Modifier.weight(1f))
-                        OutlinedTextField(
-                            value = amounts[food.id] ?: "",
-                            onValueChange = { amounts[food.id] = it },
-                            label = { Text("servings") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.width(120.dp)
-                        )
-                    }
-                }
-            }
+            IngredientPicker(
+                foods = foods,
+                amounts = amounts,
+                onCreateFood = onCreateFood,
+                amountUnit = "servings"
+            )
         }
 
         item {

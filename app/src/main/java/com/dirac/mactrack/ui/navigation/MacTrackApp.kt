@@ -169,8 +169,20 @@ fun MacTrackApp() {
                     onSaved = { navController.popBackStack() }
                 )
             }
-            composable("create_meal") { MealsScreen(onBack = { navController.popBackStack() }, showBar = true) }
-            composable("create_recipe") { RecipesScreen(onBack = { navController.popBackStack() }, showBar = true) }
+            composable("create_meal") {
+                MealsScreen(
+                    onBack = { navController.popBackStack() },
+                    onCreateFood = { navController.navigate("create_food") },
+                    showBar = true
+                )
+            }
+            composable("create_recipe") {
+                RecipesScreen(
+                    onBack = { navController.popBackStack() },
+                    onCreateFood = { navController.navigate("create_food") },
+                    showBar = true
+                )
+            }
             composable("goals") {
                 GoalsScreen(
                     onBack = { navController.popBackStack() },
