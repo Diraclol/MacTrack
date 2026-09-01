@@ -10,8 +10,10 @@ data class MealTemplate(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val name: String,
     val createdAt: Long = System.currentTimeMillis(),
-    // Optional meal type (Breakfast / Lunch / Dinner / Snack). Nullable, so the migration adds it
-    // without a DEFAULT and no @ColumnInfo is needed.
+    // DORMANT: added in DB v7 (MIGRATION_6_7) for a meal-type feature that was then dropped — a
+    // meal is just a labeled batch of foods, so the label is the name. Kept (always null) so the
+    // entity still matches the shipped schema; do not reuse without a plan. Dropping it needs a
+    // separate migration.
     val mealType: String? = null
 )
 
