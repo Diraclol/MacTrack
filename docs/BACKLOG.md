@@ -15,7 +15,7 @@ The running narrative log is [MACTRACK_STATE.md](MACTRACK_STATE.md); the archite
 ## Schema-migration-gated
 
 Each item needs a `Migration(N-1, N)` in `data/Migrations.kt`, a version bump on the database, and a
-device build so KSP regenerates `app/schemas/.../N.json` (currently at **v2**) — which must be
+device build so KSP regenerates `app/schemas/.../N.json` (currently at **v8**) — which must be
 committed. Do these **one migration at a time**, building after each, per the migration rules in
 ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
 
@@ -52,7 +52,13 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
 - [x] **SCHEMA-6: Bodyfat on the profile.** SHIPPED (DB v8). Nullable `UserProfile.bodyFatPct` via
       `MIGRATION_7_8`; a tap-to-edit "Body fat" box on Profile (0–100, blank clears). Preserved across
       `saveProfile()` — onboarding/reassess don't wipe it — via a merge in the repository plus a
-      dedicated `setBodyFat()`. **This closes the schema-migration-gated backlog** (all of SCHEMA-1..6).
+      dedicated `setBodyFat()`. (SCHEMA-1..6 shipped; SCHEMA-7 below reopened this bucket.)
+- [ ] **SCHEMA-7: Recipe preparation instructions.** The Create Recipe reference has a "Preparation
+      Instructions / Describe the preparation" box; MacTrack's `Recipe` has no notes field, so the
+      redesigned Create Recipe screen ships without it for now. Add a nullable `Recipe.instructions`
+      TEXT column via `MIGRATION_8_9` (nullable, so no `@ColumnInfo` default needed), bump the DB to v9,
+      build on device so KSP regenerates `9.json`, and commit it. Then show a prep-notes field on Create
+      Recipe and the recipe detail. Low-risk (nullable text), but device-build-gated like every migration.
 
 ---
 
@@ -61,9 +67,11 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
 - [x] **UI-1: Export / Import data (JSON).** SHIPPED. `data/backup/BackupManager` serializes every
       table to JSON (org.json, no new dep) and restores by upsert; Export/Import buttons in More via the
       Storage Access Framework. Round-trips export → wipe → import.
-- [ ] **UI-2: Dashboard rings redesign.** The dashboard macro card is bars today (now showing the 7-day
-      average, UI-3). Rebuild as MacroFactor-style weekly nutrition **rings** with a Consumed/Remaining
-      toggle. NEEDS A VISUAL REFERENCE before building — deferred pending Dirac's input on the look.
+- [ ] **UI-2: Macro rings on the food log (swipe view).** NOT the dashboard — Dirac confirmed the
+      dashboard stays as-is. On the food log's swipeable totals row, add a **rings** view as another
+      swipe state (same gesture as the existing totals / goal-tick swipe): one circular progress ring per
+      macro (calories / protein / carbs / fat) filling toward the day's goal, MacroFactor-style, with a
+      Consumed/Remaining sense. Reuses the day's existing numbers — just a new way to draw them.
 - [x] **UI-3: Trends screen.** SHIPPED. TrendsScreen (metric + period selectors, daily-average card,
       Canvas daily bar chart with goal line); `DailyTotals` aggregation via `GROUP BY date`; the
       dashboard "Cals + Macros" card shows the rolling 7-day average and taps through to Trends.
@@ -77,20 +85,26 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
 - [ ] **UI-6: Drag-to-reorder log items between time blocks.** Hold + drag a logged row up/down to
       move it to another hour block. Gesture-heavy (device testing) AND moving between blocks means
       rewriting the row's `timeMinutes` — decide that data behavior before building.
-- [~] **UI-7: Ingredient picker for Create Recipe / Create Meal.** SHIPPED the shared
-      `ui/common/IngredientPicker` (search your saved foods, tap to add, amount per ingredient, remove,
-      and a "Create a new food" shortcut for the empty case) — fixes "nowhere to add ingredients". Both
-      screens use it. **Remaining:** ingredients are still saved foods (`food_items`) only; adding
-      CNF/common foods to a meal/recipe needs a schema change (a source ref on the item rows) — a
-      separate decision. Also a recipe **icon picker** (reuse `EmojiPickerDialog` + `FOOD_EMOJIS`).
+- [x] **UI-7: Ingredient picker for Create Recipe / Create Meal.** SHIPPED and reworked to match the
+      MacroFactor reference. Create Meal and Create Recipe are now pure creation forms; their "+" / Add
+      buttons open the existing food-search screen in a **picker mode** (`UnifiedSearchScreen(picker=…)`)
+      that searches the whole catalog (custom + Common/CNF). Picks land in a shared in-memory
+      `IngredientBuilderRepository` that survives the navigation round-trip (same idea as the Cart), and
+      CNF foods are imported into `food_items` by their `cnf_<code>` id so ingredients stay food_items-
+      backed. Since Create Meal became a pure form, meal delete moved to the Kitchen (long-press).
+      Follow-ups: storing CNF/branded ingredients "properly" (a source ref on the item rows, a schema
+      decision) instead of the food_items import; a recipe **icon picker**; recipe prep notes (SCHEMA-7).
 - [x] **UI-8: Nutrient detail screens.** SHIPPED. Tapping a micronutrient card on the food log opens
       `ui/feature/nutrient/NutrientDetailScreen`: today's total vs a reference target, a 30-day Canvas
       bar chart with a target line, and today's contributors (foods summed by that nutrient). Covers the
       four box nutrients (sodium/potassium/fiber/caffeine).
 - [ ] **UI-9: Barcode camera scanning.** Manual barcode lookup works; camera scanning needs new deps
       (CameraX + ML Kit barcode) + the CAMERA permission + a scanner screen.
-- [ ] **UI-10: Instrumented Compose tests.** No UI tests exist; the day strip, swipe-to-delete, and
-      swipe-toggle totals are only verified by screenshot. Add a first `androidTest` pass for the food log.
+- [~] **UI-10: Automated tests.** JVM unit tests added (JUnit4, no new deps): the calc engine
+      (pre-existing), plus `IngredientBuilderRepository`, `Nutrients` arithmetic, and the FoodModels
+      mappers (`asFoodItem` / `foodItemDetail` / `mealEntryDetail` / `recipeDetail` / `stagePortion`).
+      Run with `./gradlew :app:testDebugUnitTest`. **Remaining:** instrumented Compose tests (day strip,
+      swipe-to-delete, swipe-toggle totals) — need a working emulator/device.
 - [x] **UI-11: Onboarding overhaul.** SHIPPED. Rebuilt into a stepped, MacroFactor-style wizard with a
       progress bar: Sex → Age → Height → Weight → Activity (the app's **5** levels) → **TDEE reveal** →
       Goal (Lose/Maintain/Gain, which shows the adjusted daily target) → Fat preference → Protein
