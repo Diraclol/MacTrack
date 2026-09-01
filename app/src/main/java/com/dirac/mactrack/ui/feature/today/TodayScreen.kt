@@ -269,17 +269,21 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text("${(live?.protein ?: 0.0).roundToInt()}P", style = MaterialTheme.typography.bodyMedium, color = ProteinColor)
+                    Text("${(live?.carb ?: 0.0).roundToInt()}C", style = MaterialTheme.typography.bodyMedium, color = CarbColor)
+                    Text("${(live?.fat ?: 0.0).roundToInt()}F", style = MaterialTheme.typography.bodyMedium, color = FatColor)
+                }
                 Text(
                     "${(live?.kcal ?: 0.0).roundToInt()} cal",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
+                    fontWeight = FontWeight.Bold
                 )
-                Text("${(live?.protein ?: 0.0).roundToInt()}P", style = MaterialTheme.typography.bodyMedium, color = ProteinColor)
-                Text("${(live?.carb ?: 0.0).roundToInt()}C", style = MaterialTheme.typography.bodyMedium, color = CarbColor)
-                Text("${(live?.fat ?: 0.0).roundToInt()}F", style = MaterialTheme.typography.bodyMedium, color = FatColor)
             }
             NumberPad(
                 value = amount,
