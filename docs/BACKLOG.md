@@ -52,13 +52,10 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
 - [x] **SCHEMA-6: Bodyfat on the profile.** SHIPPED (DB v8). Nullable `UserProfile.bodyFatPct` via
       `MIGRATION_7_8`; a tap-to-edit "Body fat" box on Profile (0–100, blank clears). Preserved across
       `saveProfile()` — onboarding/reassess don't wipe it — via a merge in the repository plus a
-      dedicated `setBodyFat()`. (SCHEMA-1..6 shipped; SCHEMA-7 below reopened this bucket.)
-- [ ] **SCHEMA-7: Recipe preparation instructions.** The Create Recipe reference has a "Preparation
-      Instructions / Describe the preparation" box; MacTrack's `Recipe` has no notes field, so the
-      redesigned Create Recipe screen ships without it for now. Add a nullable `Recipe.instructions`
-      TEXT column via `MIGRATION_8_9` (nullable, so no `@ColumnInfo` default needed), bump the DB to v9,
-      build on device so KSP regenerates `9.json`, and commit it. Then show a prep-notes field on Create
-      Recipe and the recipe detail. Low-risk (nullable text), but device-build-gated like every migration.
+      dedicated `setBodyFat()`. **This closes the schema-migration-gated backlog** (all of SCHEMA-1..6).
+
+_(Recipe "preparation instructions" — the notes box in the Create Recipe reference — was considered
+and dropped at Dirac's call: not needed. The redesigned Create Recipe screen intentionally omits it.)_
 
 ---
 
@@ -93,7 +90,7 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
       CNF foods are imported into `food_items` by their `cnf_<code>` id so ingredients stay food_items-
       backed. Since Create Meal became a pure form, meal delete moved to the Kitchen (long-press).
       Follow-ups: storing CNF/branded ingredients "properly" (a source ref on the item rows, a schema
-      decision) instead of the food_items import; a recipe **icon picker**; recipe prep notes (SCHEMA-7).
+      decision) instead of the food_items import; a recipe **icon picker**.
 - [x] **UI-8: Nutrient detail screens.** SHIPPED. Tapping a micronutrient card on the food log opens
       `ui/feature/nutrient/NutrientDetailScreen`: today's total vs a reference target, a 30-day Canvas
       bar chart with a target line, and today's contributors (foods summed by that nutrient). Covers the
