@@ -4,19 +4,25 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -32,8 +38,11 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -107,6 +117,8 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
     val byHour = entries.groupBy { it.timeMinutes / 60 }.toSortedMap()
 
     var editing by remember { mutableStateOf<MealEntry?>(null) }
+    // false = totals show "remaining"; true = totals show "eaten / goal". Swipe the row to toggle.
+    var statTotalMode by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         DayNavigator(
@@ -118,13 +130,25 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
         )
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp)
+                .pointerInput(Unit) {
+                    var acc = 0f
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (kotlin.math.abs(acc) > 40f) statTotalMode = !statTotalMode
+                            acc = 0f
+                        },
+                        onDragCancel = { acc = 0f }
+                    ) { _, dragAmount -> acc += dragAmount }
+                },
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            TotalStat(Modifier.weight(1f), "Cal", totalCal, goal?.calorieGoal ?: 0.0, CalorieColor)
-            TotalStat(Modifier.weight(1f), "P", totalP, goal?.proteinGoalG ?: 0.0, ProteinColor)
-            TotalStat(Modifier.weight(1f), "F", totalF, goal?.fatGoalG ?: 0.0, FatColor)
-            TotalStat(Modifier.weight(1f), "C", totalC, goal?.carbGoalG ?: 0.0, CarbColor)
+            TotalStat(Modifier.weight(1f), "Cal", totalCal, goal?.calorieGoal ?: 0.0, CalorieColor, statTotalMode)
+            TotalStat(Modifier.weight(1f), "P", totalP, goal?.proteinGoalG ?: 0.0, ProteinColor, statTotalMode)
+            TotalStat(Modifier.weight(1f), "F", totalF, goal?.fatGoalG ?: 0.0, FatColor, statTotalMode)
+            TotalStat(Modifier.weight(1f), "C", totalC, goal?.carbGoalG ?: 0.0, CarbColor, statTotalMode)
         }
 
         LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -252,15 +276,37 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
 }
 
 @Composable
-private fun TotalStat(modifier: Modifier, label: String, consumed: Double, goal: Double, color: Color) {
+private fun TotalStat(modifier: Modifier, label: String, consumed: Double, goal: Double, color: Color, totalMode: Boolean) {
     val has = goal > 0.0
-    val frac = if (has) (consumed / goal).coerceIn(0.0, 1.0).toFloat() else 0f
     val left = (goal - consumed).roundToInt()
+    // Number and its word share one line, e.g. "2654 left" / "2654 eaten" / "2654/3000".
+    val line = when {
+        !has -> "${consumed.roundToInt()} eaten"
+        totalMode -> "${consumed.roundToInt()}/${goal.roundToInt()}"
+        else -> "$left left"
+    }
+    // Bar scaled so the goal sits at 80% of the width; a perpendicular tick marks the goal, and the
+    // fill runs past it (turning red) once you're over.
+    val scaleMax = if (has) goal * 1.25 else 1.0
+    val fillFrac = if (has) (consumed / scaleMax).coerceIn(0.0, 1.0).toFloat() else 0f
+    val over = has && consumed > goal
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(if (has) "$left" else "${consumed.roundToInt()}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text(if (has) "left" else "eaten", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        LinearProgressIndicator(progress = { frac }, color = color, modifier = Modifier.fillMaxWidth().height(4.dp))
+        Text(line, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth(fillFrac).fillMaxHeight().clip(RoundedCornerShape(3.dp))
+                    .background(if (over) MaterialTheme.colorScheme.error else color)
+            )
+            if (has) {
+                Box(
+                    modifier = Modifier.offset(x = maxWidth * 0.8f).width(2.dp).fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.onSurface)
+                )
+            }
+        }
     }
 }
 
@@ -359,72 +405,115 @@ private fun DayNavigator(
     }
 }
 
+// Week-block strip: pages a whole week at a time (Mon-Sun) instead of a free scroll. The page holding
+// the selected day is shown; swiping moves in one-week jumps.
 @Composable
 private fun DayStrip(selected: LocalDate, today: LocalDate, onSelect: (LocalDate) -> Unit) {
-    val days = remember(today) { (-42L..7L).map { today.plusDays(it) } }
-    val selIndex = days.indexOf(selected)
-    val state = rememberLazyListState(
-        initialFirstVisibleItemIndex = (if (selIndex >= 0) selIndex - 3 else days.lastIndex - 10).coerceAtLeast(0)
-    )
-    LaunchedEffect(selected) {
-        val i = days.indexOf(selected)
-        if (i >= 0) state.animateScrollToItem((i - 3).coerceAtLeast(0))
+    val anchorMonday = remember(today) { today.with(java.time.DayOfWeek.MONDAY) }
+    val pageCount = 209            // ~2 years back and forward, in weeks
+    val todayPage = 104
+    val selectedMonday = selected.with(java.time.DayOfWeek.MONDAY)
+    val selectedPage = remember(selected) {
+        (todayPage + java.time.temporal.ChronoUnit.WEEKS.between(anchorMonday, selectedMonday).toInt())
+            .coerceIn(0, pageCount - 1)
     }
-    LazyRow(state = state, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        items(items = days, key = { it.toString() }) { d ->
-            val isSel = d == selected
-            val cell = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .then(
-                    if (isSel) Modifier.background(MaterialTheme.colorScheme.primary)
-                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
-                )
-                .clickable { onSelect(d) }
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-            Column(modifier = cell, horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    d.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    "${d.dayOfMonth}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                )
+    val pagerState = rememberPagerState(initialPage = selectedPage) { pageCount }
+    LaunchedEffect(selectedPage) {
+        if (pagerState.currentPage != selectedPage) pagerState.animateScrollToPage(selectedPage)
+    }
+    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxWidth()) { page ->
+        val weekMonday = anchorMonday.plusWeeks((page - todayPage).toLong())
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+            (0L..6L).forEach { i ->
+                val d = weekMonday.plusDays(i)
+                DayCell(d, d == selected, d == today, Modifier.weight(1f)) { onSelect(d) }
             }
         }
     }
 }
 
 @Composable
+private fun DayCell(d: LocalDate, isSel: Boolean, isToday: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val skin = when {
+        isSel -> Modifier.background(MaterialTheme.colorScheme.primary)
+        isToday -> Modifier.border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+        else -> Modifier.border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
+    }
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .then(skin)
+            .clickable { onClick() }
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            d.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()),
+            style = MaterialTheme.typography.labelSmall,
+            color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            "${d.dayOfMonth}",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+// Swipe a row left to reveal a red delete panel; releasing past the threshold removes it. No inline
+// trash icon anymore.
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun FoodCard(entry: MealEntry, onClick: () -> Unit, onDelete: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
-        Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(foodEmoji(entry.foodName), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    entry.foodName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    "${entry.proteinG.roundToInt()}P ${entry.fatG.roundToInt()}F ${entry.carbG.roundToInt()}C · ${servings(entry.quantity)} ${entry.unit}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { target ->
+            if (target == SwipeToDismissBoxValue.EndToStart) { onDelete(); true } else false
+        }
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = "Delete ${entry.foodName}",
+                    tint = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
-            Text(
-                "${entry.calories.roundToInt()} cal",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, contentDescription = "Remove ${entry.foodName}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    ) {
+        Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
+            Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(foodEmoji(entry.foodName), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        entry.foodName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        "${entry.proteinG.roundToInt()}P ${entry.fatG.roundToInt()}F ${entry.carbG.roundToInt()}C · ${servings(entry.quantity)} ${entry.unit}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    "${entry.calories.roundToInt()} cal",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
             }
         }
     }
