@@ -96,10 +96,20 @@ This whole track is scheduled **last**.
       roles with server-side claims / row-level security. Never hardcode the admin credential anywhere.
 - [ ] **ACCT-2: Shared food database.** The database Btesters grow. Needs validation, moderation, and
       rate-limiting so shared entries can't poison everyone's search.
-- [ ] **AI-1: Gemini features (separate, opt-in).** Photo → estimate macros; photo + a weight → more
-      accurate; paste an item list (brands optional) → match/calculate against CNF + saved foods;
-      menu photo → cutting/bulking recommendation. All go through review-before-save. A user adds
-      their own key via an in-app step-by-step guide; keys are never embedded in the app.
+- [ ] **AI-1: Vision features (separate, opt-in, BYO-key).** Photo → estimate macros; photo + a
+      weight → more accurate; paste an item list (brands optional) → match/calculate against CNF +
+      saved foods; menu photo → cutting/bulking recommendation. All go through review-before-save.
+      **Provider decision:** default **Gemini Flash** — for a bring-your-own-key app the deciding
+      factor is friction, and Gemini's AI Studio key is free and needs no card, with usable free
+      RPM/RPD and native structured (JSON schema) output. **OpenAI is an optional second provider,
+      and must use a *mini* model** (e.g. gpt-5.4-mini class), never the flagship — the flagship's
+      entry-tier limits (~3 RPM / 10K TPM) choke on image inputs, while mini gets ~10 RPM / 100K TPM
+      and is cheaper. Skip NVIDIA NIM for v1 (weaker vision fit, more setup). Architect behind one
+      `NutritionAiProvider` interface (Gemini impl first; OpenAI a second impl), user picks in-app.
+      Keys live in EncryptedSharedPreferences / Keystore, never embedded in the app or committed.
+      Model/vision quality shifts fast and newer OpenAI models are unverified here — settle the
+      Gemini-vs-mini choice empirically by running ~10 food photos through both and comparing macro
+      estimates before committing UI copy to one.
 
 ---
 
