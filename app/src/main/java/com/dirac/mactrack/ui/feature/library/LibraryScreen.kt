@@ -1,78 +1,152 @@
 package com.dirac.mactrack.ui.feature.library
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.data.entity.FoodItem
+import com.dirac.mactrack.data.entity.MealTemplate
+import com.dirac.mactrack.data.food.foodEmoji
 import com.dirac.mactrack.ui.common.BackBar
-import com.dirac.mactrack.ui.feature.food.FoodLogScreen
-import com.dirac.mactrack.ui.feature.meals.MealsScreen
-import com.dirac.mactrack.ui.feature.recipes.RecipesScreen
+import kotlin.math.roundToInt
 
-// The Kitchen: Foods, Recipes, and Meals as tabs, with a "+" that opens a create menu
-// (Create Food / Meal / Recipe). Each tab hosts its existing screen with its back bar hidden.
-@OptIn(ExperimentalMaterial3Api::class)
+private val ProteinColor = Color(0xFFE91E63)
+private val CarbColor = Color(0xFF2196F3)
+private val FatColor = Color(0xFF4CAF50)
+
+private val KITCHEN_TABS = listOf("All", "Recipes", "Meals", "Foods")
+
+private fun servingText(x: Double): String =
+    if (x % 1.0 == 0.0) x.toInt().toString() else x.toString()
+
+// The Kitchen: browse saved foods and meals with pill tabs, a docked search, and a "+" that
+// opens a create menu (Create Food / Meal / Recipe).
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun LibraryScreen(
     onBack: () -> Unit = {},
     onCreateFood: () -> Unit = {},
     onCreateMeal: () -> Unit = {},
     onCreateRecipe: () -> Unit = {},
+    onOpenFood: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val viewModel: KitchenViewModel = viewModel(factory = KitchenViewModel.Factory)
+    val query by viewModel.query.collectAsState()
+    val foods by viewModel.foods.collectAsState()
+    val meals by viewModel.meals.collectAsState()
+
     var tab by remember { mutableStateOf(0) }
     var showCreate by remember { mutableStateOf(false) }
-    val titles = listOf("Foods", "Recipes", "Meals")
+    var pendingDelete by remember { mutableStateOf<FoodItem?>(null) }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize()) {
-            BackBar("Kitchen", onBack, modifier = Modifier.padding(horizontal = 16.dp))
-            TabRow(selectedTabIndex = tab) {
-                titles.forEachIndexed { i, title ->
-                    Tab(selected = tab == i, onClick = { tab = i }, text = { Text(title) })
-                }
-            }
-            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                when (tab) {
-                    0 -> FoodLogScreen(showBar = false)
-                    1 -> RecipesScreen(showBar = false)
-                    else -> MealsScreen(showBar = false)
-                }
+    val showFoods = tab == 0 || tab == 3
+    val showMeals = tab == 0 || tab == 2
+
+    Column(modifier = modifier.fillMaxSize().imePadding()) {
+        BackBar("Kitchen", onBack, modifier = Modifier.padding(horizontal = 16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            KITCHEN_TABS.forEachIndexed { i, title ->
+                FilterChip(
+                    selected = tab == i,
+                    onClick = { tab = i },
+                    label = { Text(title) },
+                    shape = RoundedCornerShape(50)
+                )
             }
         }
 
-        FloatingActionButton(
-            onClick = { showCreate = true },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(24.dp)
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Icon(Icons.Filled.Add, contentDescription = "Create")
+            item { Text("Saved", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(vertical = 4.dp)) }
+
+            if (showFoods) {
+                items(items = foods, key = { "f_" + it.id }) { food ->
+                    FoodRow(food = food, onOpen = { onOpenFood(food.id) }, onLongPress = { pendingDelete = food })
+                }
+            }
+            if (showMeals) {
+                items(items = meals, key = { "m_" + it.id }) { meal ->
+                    MealRow(meal)
+                }
+            }
+            when (tab) {
+                1 -> item { EmptyHint("Recipes are coming soon.") }
+                2 -> if (meals.isEmpty()) item { EmptyHint("No saved meals yet. Tap + to create one.") }
+                3 -> if (foods.isEmpty()) item { EmptyHint("No saved foods yet. Tap + to create one.") }
+                else -> if (foods.isEmpty() && meals.isEmpty()) item { EmptyHint("Nothing saved yet. Tap + to create a food, meal, or recipe.") }
+            }
+        }
+
+        // Docked search + create FAB.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { viewModel.onQueryChange(it) },
+                placeholder = { Text("Search food") },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                shape = RoundedCornerShape(28.dp),
+                singleLine = true,
+                modifier = Modifier.weight(1f)
+            )
+            FloatingActionButton(onClick = { showCreate = true }) {
+                Icon(Icons.Filled.Add, contentDescription = "Create")
+            }
         }
     }
 
@@ -87,6 +161,66 @@ fun LibraryScreen(
             Spacer(Modifier.height(24.dp))
         }
     }
+
+    val toDelete = pendingDelete
+    if (toDelete != null) {
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("Delete food?") },
+            text = { Text("Remove \"${toDelete.name}\" from your saved foods? Past logs of it are kept.") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.deleteFood(toDelete); pendingDelete = null }) { Text("Delete") }
+            },
+            dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text("Cancel") } }
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun FoodRow(food: FoodItem, onOpen: () -> Unit, onLongPress: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().combinedClickable(onClick = onOpen, onLongClick = onLongPress).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(foodEmoji(food.name), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(food.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("${servingText(food.servingSize)} ${food.servingUnit}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("P${food.proteinG.roundToInt()}", style = MaterialTheme.typography.labelMedium, color = ProteinColor)
+                Text("C${food.carbG.roundToInt()}", style = MaterialTheme.typography.labelMedium, color = CarbColor)
+                Text("F${food.fatG.roundToInt()}", style = MaterialTheme.typography.labelMedium, color = FatColor)
+            }
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text("${food.calories.roundToInt()}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("cal", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+    HorizontalDivider()
+}
+
+@Composable
+private fun MealRow(meal: MealTemplate) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("🍱", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(meal.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("Meal", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+    HorizontalDivider()
+}
+
+@Composable
+private fun EmptyHint(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(vertical = 12.dp)
+    )
 }
 
 @Composable
@@ -96,6 +230,6 @@ private fun CreateMenuItem(icon: ImageVector, label: String, onClick: () -> Unit
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(icon, contentDescription = null, modifier = Modifier.padding(end = 20.dp))
-        Text(label, style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+        Text(label, style = MaterialTheme.typography.titleMedium)
     }
 }

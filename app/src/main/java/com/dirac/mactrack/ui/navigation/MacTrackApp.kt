@@ -123,7 +123,8 @@ fun MacTrackApp() {
                     onBack = { navController.popBackStack() },
                     onCreateFood = { navController.navigate("create_food") },
                     onCreateMeal = { navController.navigate("create_meal") },
-                    onCreateRecipe = { navController.navigate("create_recipe") }
+                    onCreateRecipe = { navController.navigate("create_recipe") },
+                    onOpenFood = { id -> navController.navigate("food_detail/custom/$id") }
                 )
             }
             composable("create_food") {
