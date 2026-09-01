@@ -22,6 +22,7 @@ data class FoodItem(
     val sodiumMg: Double = 0.0,
     val potassiumMg: Double = 0.0,
     val cholesterolMg: Double = 0.0,
+    @ColumnInfo(defaultValue = "0") val caffeineMg: Double = 0.0,
     val servingSize: Double = 1.0,
     val servingUnit: String = "serving",
     // Whether the user has hearted this food. Stored as INTEGER 0/1; the migration's DEFAULT 0

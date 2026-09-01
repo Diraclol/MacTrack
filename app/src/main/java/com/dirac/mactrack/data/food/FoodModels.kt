@@ -8,11 +8,13 @@ import com.dirac.mactrack.data.entity.MealEntry
 data class Nutrients(
     val kcal: Double, val protein: Double, val carb: Double, val fat: Double,
     val fiber: Double, val sugar: Double, val satFat: Double,
-    val sodium: Double, val potassium: Double, val cholesterol: Double
+    val sodium: Double, val potassium: Double, val cholesterol: Double,
+    // Defaulted so sources without caffeine data (CNF, Open Food Facts) need no change.
+    val caffeine: Double = 0.0
 ) {
     operator fun times(m: Double) = Nutrients(
         kcal * m, protein * m, carb * m, fat * m, fiber * m, sugar * m,
-        satFat * m, sodium * m, potassium * m, cholesterol * m
+        satFat * m, sodium * m, potassium * m, cholesterol * m, caffeine * m
     )
 }
 
@@ -65,7 +67,7 @@ fun cnfFoodDetail(food: CnfFood, measures: List<CnfMeasure>): FoodDetail {
 fun foodItemDetail(food: FoodItem): FoodDetail {
     val perServing = Nutrients(
         food.calories, food.proteinG, food.carbG, food.fatG, food.fiberG, food.sugarG,
-        food.satFatG, food.sodiumMg, food.potassiumMg, food.cholesterolMg
+        food.satFatG, food.sodiumMg, food.potassiumMg, food.cholesterolMg, food.caffeineMg
     )
     val gramsPerServing = if (food.servingUnit == "g" || food.servingUnit == "ml") food.servingSize else null
     val units = buildList {
@@ -83,7 +85,7 @@ fun mealEntryDetail(entry: MealEntry): FoodDetail {
     val amt = if (entry.amount > 0.0) entry.amount else 1.0
     val perUnit = Nutrients(
         entry.calories, entry.proteinG, entry.carbG, entry.fatG, entry.fiberG, entry.sugarG,
-        entry.satFatG, entry.sodiumMg, entry.potassiumMg, entry.cholesterolMg
+        entry.satFatG, entry.sodiumMg, entry.potassiumMg, entry.cholesterolMg, entry.caffeineMg
     ) * (1.0 / amt)
     val label = entry.unitLabel ?: entry.unit
     val units = listOf(PortionUnit(label, perUnit, grams = null))

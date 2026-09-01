@@ -25,6 +25,7 @@ data class MealEntry(
     val sodiumMg: Double = 0.0,
     val potassiumMg: Double = 0.0,
     val cholesterolMg: Double = 0.0,
+    @ColumnInfo(defaultValue = "0") val caffeineMg: Double = 0.0,
     val createdAt: Long = System.currentTimeMillis(),
     // Where this logged food came from, so it can be reopened, re-logged, and analysed later.
     @ColumnInfo(defaultValue = "unknown")

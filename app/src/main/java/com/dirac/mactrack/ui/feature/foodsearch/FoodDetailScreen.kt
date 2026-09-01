@@ -153,6 +153,7 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onAdded: 
                 MicroRow("Sodium", s.sodium, "mg")
                 MicroRow("Potassium", s.potassium, "mg")
                 MicroRow("Cholesterol", s.cholesterol, "mg")
+                MicroRow("Caffeine", s.caffeine, "mg")
             }
 
             // docked bottom bar

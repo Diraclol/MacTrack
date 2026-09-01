@@ -73,6 +73,7 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
     var sodium by remember { mutableStateOf("") }
     var potassium by remember { mutableStateOf("") }
     var cholesterol by remember { mutableStateOf("") }
+    var caffeine by remember { mutableStateOf("") }
     var servingSize by remember { mutableStateOf("1") }
     var servingUnit by remember { mutableStateOf("serving") }
     var showMicros by remember { mutableStateOf(false) }
@@ -96,6 +97,7 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
             sodiumMg = sodium.toDoubleOrNull() ?: 0.0,
             potassiumMg = potassium.toDoubleOrNull() ?: 0.0,
             cholesterolMg = cholesterol.toDoubleOrNull() ?: 0.0,
+            caffeineMg = caffeine.toDoubleOrNull() ?: 0.0,
             servingSize = servingSize.toDoubleOrNull() ?: 1.0,
             servingUnit = servingUnit,
             brand = brand.ifBlank { null }
@@ -216,6 +218,7 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
                 item { NutrientField(sodium, { sodium = it }, "Sodium (mg)") }
                 item { NutrientField(potassium, { potassium = it }, "Potassium (mg)") }
                 item { NutrientField(cholesterol, { cholesterol = it }, "Cholesterol (mg)") }
+                item { NutrientField(caffeine, { caffeine = it }, "Caffeine (mg)") }
             }
 
             item { Box(Modifier.size(8.dp)) }

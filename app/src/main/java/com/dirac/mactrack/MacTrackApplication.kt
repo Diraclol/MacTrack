@@ -16,11 +16,12 @@ import com.dirac.mactrack.data.off.OpenFoodFactsRepository
 import com.dirac.mactrack.data.session.LogDateStore
 import com.dirac.mactrack.data.MIGRATION_1_2
 import com.dirac.mactrack.data.MIGRATION_2_3
+import com.dirac.mactrack.data.MIGRATION_3_4
 
 class MacTrackApplication : Application() {
     val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, "mactrack.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
     }
     val foodRepository: FoodRepository by lazy {

@@ -107,6 +107,7 @@ class FoodDetailViewModel(
                     calories = s.kcal, proteinG = s.protein, carbG = s.carb, fatG = s.fat,
                     fiberG = s.fiber, sugarG = s.sugar, satFatG = s.satFat,
                     sodiumMg = s.sodium, potassiumMg = s.potassium, cholesterolMg = s.cholesterol,
+                    caffeineMg = s.caffeine,
                     sourceType = loadedSourceType, sourceId = loadedSourceId, unitLabel = unit.label,
                     updatedAt = System.currentTimeMillis()
                 )
@@ -133,6 +134,7 @@ class FoodDetailViewModel(
                     calories = s.kcal, proteinG = s.protein, carbG = s.carb, fatG = s.fat,
                     fiberG = s.fiber, sugarG = s.sugar, satFatG = s.satFat,
                     sodiumMg = s.sodium, potassiumMg = s.potassium, cholesterolMg = s.cholesterol,
+                    caffeineMg = s.caffeine,
                     unitLabel = unit.label,
                     updatedAt = System.currentTimeMillis()
                 )

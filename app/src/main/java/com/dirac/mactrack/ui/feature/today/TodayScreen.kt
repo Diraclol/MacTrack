@@ -116,8 +116,7 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
     val totalSodium = entries.sumOf { it.sodiumMg }
     val totalPotassium = entries.sumOf { it.potassiumMg }
     val totalFiber = entries.sumOf { it.fiberG }
-    // Caffeine isn't a tracked column yet (needs a schema field); shows 0 until that lands.
-    val totalCaffeine = 0.0
+    val totalCaffeine = entries.sumOf { it.caffeineMg }
 
     val byHour = entries.groupBy { it.timeMinutes / 60 }.toSortedMap()
 

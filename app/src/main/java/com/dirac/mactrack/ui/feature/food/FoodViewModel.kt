@@ -35,6 +35,7 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
         sodiumMg: Double = 0.0,
         potassiumMg: Double = 0.0,
         cholesterolMg: Double = 0.0,
+        caffeineMg: Double = 0.0,
         servingSize: Double,
         servingUnit: String,
         brand: String? = null
@@ -54,6 +55,7 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
                     sodiumMg = sodiumMg,
                     potassiumMg = potassiumMg,
                     cholesterolMg = cholesterolMg,
+                    caffeineMg = caffeineMg,
                     servingSize = servingSize,
                     servingUnit = servingUnit
                 )
