@@ -1,5 +1,6 @@
 package com.dirac.mactrack.ui.navigation
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -71,6 +72,7 @@ fun MacTrackApp() {
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp),
                     color = Color.Transparent,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     shadowElevation = 0.dp,
                     tonalElevation = 0.dp
                 ) {

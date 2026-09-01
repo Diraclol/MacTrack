@@ -33,6 +33,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -217,12 +218,13 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(Icons.Filled.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("Search for a food", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Search for a food", modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan or enter a barcode", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -249,6 +251,24 @@ fun TodayScreen(onOpenSearch: () -> Unit, onOpenEntry: (String) -> Unit, modifie
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
+            // Live totals: recompute as the amount or unit changes, and show the chosen unit
+            // (not grams). unit.per is per one of the selected unit; amount is how many.
+            val liveUnit = detail.units.find { it.label == selectedUnit } ?: detail.units.firstOrNull()
+            val liveAmt = amount.toDoubleOrNull() ?: 0.0
+            val live = liveUnit?.let { it.per * liveAmt }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("${(live?.kcal ?: 0.0).roundToInt()} cal", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("${amount.ifEmpty { "0" }} $selectedUnit", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Text("${(live?.protein ?: 0.0).roundToInt()}P", style = MaterialTheme.typography.bodyMedium, color = ProteinColor)
+                Text("${(live?.carb ?: 0.0).roundToInt()}C", style = MaterialTheme.typography.bodyMedium, color = CarbColor)
+                Text("${(live?.fat ?: 0.0).roundToInt()}F", style = MaterialTheme.typography.bodyMedium, color = FatColor)
+            }
             NumberPad(
                 value = amount,
                 onValueChange = { new ->
@@ -521,7 +541,7 @@ private fun FoodCard(entry: MealEntry, onClick: () -> Unit, onDelete: () -> Unit
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        "${entry.proteinG.roundToInt()}P ${entry.fatG.roundToInt()}F ${entry.carbG.roundToInt()}C · ${servings(entry.quantity)} ${entry.unit}",
+                        "${entry.proteinG.roundToInt()}P ${entry.fatG.roundToInt()}F ${entry.carbG.roundToInt()}C · ${servings(entry.amount)} ${entry.unitLabel ?: entry.unit}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
