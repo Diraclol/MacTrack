@@ -33,6 +33,25 @@ val NavySurfaceContainer = Color(0xFF161719)
 val NavySurfaceContainerHigh = Color(0xFF1E2023)
 val NavySurfaceContainerHighest = Color(0xFF26282C)
 
-// Light dark-blue accent (for the optional light theme).
-val BluePrimaryLight = Color(0xFF1565C0)
-val BlueSecondaryLight = Color(0xFF1976D2)
+// Light theme: white / light-grey surfaces with the SAME blue accent as the dark theme (not Material's
+// default purple). Every role is set so selected states — e.g. the nav's "blue block"
+// (secondaryContainer) — read blue in light mode too.
+val LightPrimary = Color(0xFF1565C0)
+val LightOnPrimary = Color(0xFFFFFFFF)
+val LightPrimaryContainer = Color(0xFFD6E3FF)
+val LightOnPrimaryContainer = Color(0xFF001B3D)
+val LightSecondary = Color(0xFF1976D2)
+val LightOnSecondary = Color(0xFFFFFFFF)
+val LightSecondaryContainer = Color(0xFFD3E3FF)
+val LightOnSecondaryContainer = Color(0xFF0A3055)
+val LightTertiary = Color(0xFF3B82F6)
+val LightBackground = Color(0xFFF7F9FC)
+val LightOnBackground = Color(0xFF1A1C1E)
+val LightSurface = Color(0xFFFFFFFF)
+val LightOnSurface = Color(0xFF1A1C1E)
+val LightSurfaceVariant = Color(0xFFDEE3EC)
+val LightOnSurfaceVariant = Color(0xFF44474E)
+val LightOutline = Color(0xFF74777F)
+val LightSurfaceContainer = Color(0xFFF0F2F7)
+val LightSurfaceContainerHigh = Color(0xFFEAECF2)
+val LightSurfaceContainerHighest = Color(0xFFE3E6EC)
