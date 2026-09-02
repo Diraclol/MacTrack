@@ -63,24 +63,24 @@ plain, unit-testable Kotlin.
   new Recipe or MealTemplate, skipping+reporting anything unresolved (saves nothing if none resolve).
   Reviewed; device-tested.
 
-- **[TODO — DIRAC] Stage 4 — wire into `AiViewModel`.** This is deliberately left for you: it changes
-  the AI chat's behaviour (a design-sensitive surface) and its result can't be verified without the
-  live model + a device, and it depends on the open questions below. Concrete spec:
-  1. **Construction:** give `AiViewModel` an `IngredientResolver` + `RecipeMealBuilder` (add
-     `foodRepository`, `cnfRepository`, `openFoodFactsRepository`, `recipeRepository`,
-     `mealTemplateRepository` — all already `lazy val`s on `MacTrackApplication` — through
-     `AiViewModel.Factory`, and build the two collaborators there).
-  2. **Prompt:** extend `SYSTEM_PROMPT` so that WHEN (and only when) the user asks to save an
-     ingredient list as a recipe or meal, the model replies with ONLY the JSON object
-     `{ "target": "recipe"|"meal", "name": "...", "ingredients": [ {"name","quantity","unit"} ] }`,
-     quantities in grams where reasonable, `unit` = "serving" for countable items it can't gram.
-  3. **Dispatch:** in `send()`, after the reply completes, `RecipeRequestParser.parse(reply)`. If
-     non-null, call `RecipeMealBuilder.build(request)` and replace/append an assistant bubble with a
-     summary: "Saved {recipe|meal} 'X' — {kcal} cal, {P}/{C}/{F} g. Couldn't match: {names}." If
-     null, treat the reply as an ordinary chat message (today's behaviour).
-  4. **`UiMessage`/history:** the build JSON turn is machine-facing; consider hiding the raw JSON from
-     the chat (show only the friendly summary).
-  Everything Stage 4 calls is already on `main` and compile-clean.
+- **[BUILT — needs on-device test] Stage 4 — wired into `AiViewModel`.** Chosen behaviour:
+  **preview first, save on confirm** (Dirac). Flow, as shipped:
+  1. `SYSTEM_PROMPT` now tells the model to answer a "make a recipe/meal from these" request with ONLY
+     the JSON object `{ "target": "recipe"|"meal", "name", "ingredients": [ {name, quantity, unit} ] }`
+     (grams where reasonable; "serving" for countable items). Ambiguous -> "meal".
+  2. `send()` accumulates the reply, hides raw JSON behind a "Putting that together..." placeholder
+     while it streams, then `RecipeRequestParser.parse(reply)`. If it's a build request, it calls
+     `RecipeMealBuilder.preview(request)` (resolves + totals, **does not save**) and shows a summary
+     bubble ("Recipe 'X': 1200 cal, 90P/100C/40F, from N ingredients. Couldn't match: ...").
+  3. `AiScreen` renders a **Save as recipe/meal** button under that bubble; tapping it calls
+     `AiViewModel.commitBuild(...)` -> `RecipeMealBuilder.commit(preview)` (saves the Recipe/MealTemplate)
+     and turns the bubble into "Saved ... Find it in your Kitchen."
+  4. Non-build replies behave exactly as before (the "Log this" estimate button still works).
+  **What to test on device (needs a Gemini key):** ask e.g. "make a recipe from 2 eggs, 100 g chicken,
+  1 cup rice" -> confirm a clean preview (no raw JSON flash), sensible macros, unmatched items listed,
+  and that Save actually creates the recipe/meal in the Kitchen. Tune `SYSTEM_PROMPT` if the model is
+  inconsistent about emitting bare JSON. Defaults chosen for the open questions below: recipe-vs-meal
+  from wording (else meal); `makesServings = 1.0`; unmatched ingredients skipped + reported.
 
 ## Open questions for Dirac (please weigh in)
 

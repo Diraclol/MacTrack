@@ -127,6 +127,20 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       gallery-import icon (bottom-left, PickVisualMedia -> `InputImage.fromFilePath` -> same ML Kit
       scanner) so a barcode can be read from an existing photo without the camera.
       **Still to do (offline):** a scan -> saved-food offline match (`food_items.barcode` before OFF).
+- [ ] **UI-19: Scan button in the food editor's barcode field.** CONFIRMED (Dirac). In Create/Edit Food,
+      put a small barcode/scan icon inside (trailing) the barcode text field so the user can open the
+      camera scanner and auto-fill the code instead of typing digits. Reuse the existing `scanner` route +
+      `create_food?barcode=` fill path.
+- [ ] **SCAN-1: Scan stabilization.** CONFIRMED (Dirac: "the barcode is slightly inaccurate; maybe a
+      small wait after lining it up"). A single ML Kit frame can misread a digit. Require the SAME code
+      across N consecutive frames (or a short settle, ~300-500 ms) before accepting, in
+      `BarcodeScannerScreen`'s `MlKitAnalyzer` callback -- debounce so a transient misread doesn't fire.
+- [ ] **RESEARCH-2: Other barcode nutrition databases?** (Dirac asked.) Options: **Open Food Facts**
+      (current -- free, no key, global/crowd-sourced; best fit for an offline, keyless, Canada-leaning
+      app). **USDA FoodData Central "Branded"** has GTIN/UPC + nutrients, free, but needs an API key and
+      is US-centric. **Nutritionix / Barcode Lookup / Go-UPC / Edamam** are commercial (keys, paid tiers).
+      Conclusion: keep OFF primary; consider USDA FDC Branded as an optional fallback when OFF misses a
+      code (extra micros too), accepting the key + US-bias caveats. No change needed now.
 - [~] **UI-10: Automated tests.** JVM unit tests added (JUnit4, no new deps): the calc engine
       (pre-existing), plus `IngredientBuilderRepository`, `Nutrients` arithmetic, and the FoodModels
       mappers (`asFoodItem` / `foodItemDetail` / `mealEntryDetail` / `recipeDetail` / `stagePortion`).
@@ -283,10 +297,12 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
       or `MealTemplate` -- avoids the untestable function-calling path. **Deterministic core DONE +
       pushed** (all in `data/ai/recipe/`, reviewed): Stage 1 domain model +
       `servingsFor` (unit-tested), Stage 2 `IngredientResolver`, Stage 3 `RecipeRequestParser` +
-      `RecipeMealBuilder`. **Stage 4 (wire into `AiViewModel`) is left for Dirac** -- it changes the AI
-      chat UX (a design decision) and can't be verified without the live model + a device; exact spec +
-      open product questions (recipe-vs-meal default, makesServings, skip-vs-refuse unresolved,
-      auto-save vs confirm) are in AI4_PLAN.md.
+      `RecipeMealBuilder`. **Stage 4 WIRED** (Dirac chose preview-first / save-on-confirm): the AI
+      returns build JSON, the app resolves + shows a preview bubble (totals + unmatched), and a
+      Save-as-recipe/meal button commits it; raw JSON hidden behind a streaming placeholder.
+      Reviewed. **STILL NEEDS on-device testing with a Gemini key** (model JSON
+      consistency, the placeholder, the Save write) -- see AI4_PLAN.md "what to test". Defaults:
+      recipe-vs-meal from wording (else meal), makesServings=1, unmatched skipped+reported.
 
 ---
 
