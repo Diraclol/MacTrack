@@ -1,9 +1,10 @@
-# Backend research — Supabase vs Neon (for ACCT-1)
+# Backend research — Supabase vs Neon vs Convex (for ACCT-1)
 
 **Question:** MacTrack will eventually need accounts, roles (admin / Btester / regular), a shared food
-database, and cloud sync. Is **Neon** a better backend than **Supabase** for that?
+database, and cloud sync. Is **Neon** or **Convex** a better backend than **Supabase** for that?
 
-**Short answer: Supabase.** For MacTrack's shape — a local-first Android app, ≤5 users, that needs
+**Short answer: Supabase** (Neon evaluated below; Convex evaluated in its own section at the end —
+still Supabase). For MacTrack's shape — a local-first Android app, ≤5 users, that needs
 auth + **server-side role enforcement** + an API with almost no backend of its own — Supabase gives you
 all of that out of the box. Neon is an excellent *serverless Postgres*, but it is only the database; it
 would force you to build and host the auth layer, the API layer, and the role-enforcement layer
@@ -82,3 +83,35 @@ demands, plus auth and an auto API with a Kotlin SDK, so the amount of backend y
 stays small — the right trade for a solo dev and ≤5 users. Revisit Neon only if the app later outgrows
 Supabase's model or needs DB branching. The BYO-key/offline-first architecture we're already committed
 to keeps this reversible: the backend is a sync layer bolted onto a Room-first app, not its foundation.
+
+---
+
+## Also considered: Convex (researched 2026-09)
+
+**Verdict: still Supabase.** Convex is a genuinely strong, modern reactive backend (its online real-time
+DX is excellent, and unlike `supabase-kt` it publishes a *first-party* Android SDK). But it doesn't beat
+Supabase on any axis that matters for MacTrack, and loses on the ones that do:
+
+| Factor (most important first) | Convex | Supabase | Better here |
+|---|---|---|---|
+| **Offline / local-first fit** | Connection-oriented (WebSocket); no durable on-device cache, no offline write queue across restarts, and — unlike its React client — **no optimistic updates on Android**. True offline needs PowerSync (experimental, Android support unconfirmed). | Also not turnkey offline, but stateless REST bridges to Room naturally; existing Kotlin+Room references exist. | **Supabase** |
+| Android/Kotlin SDK | First-party `dev.convex:android-convexmobile`, but pre-1.0 (~v0.8, wraps a Rust client, occasional breaking changes). | `supabase-kt` community-maintained but mature 3.x, broad, lots of Android material. | Supabase (mature); Convex only "officially published" |
+| Accounts + roles | Auth in beta; polished mobile path wants 3rd-party Clerk/Auth0. Roles = hand-written TS authz in every function. | Auth built in, free; roles = declarative Postgres RLS. | **Supabase** |
+| Shared writable food DB | Document model + manual joins; every read/write via TS functions you write. | Relational Postgres (natural for the tabular CNF/food data); "all read / admins write" = a couple of RLS policies + auto REST API. | **Supabase** |
+| Free tier | ~1M calls, 0.5 GB DB; no documented inactivity pause. | 500 MB DB, 50k MAU; **pauses after 7 days idle** (data kept). | ~tie (Convex avoids the pause; Supabase has more headroom) |
+| Lock-in | Proprietary reactive/document model; FSL-1.1 (source-available, Apache after 2 yrs); self-host is Docker-based. | "Just Postgres" — pg dump/restore, self-hostable, lowest lock-in. | **Supabase** |
+| Beginner learning curve | Adds a TypeScript server + Convex model + Node tooling + wiring 3rd-party mobile auth. | Stays in SQL (kin to the SQLite already shipped) + the Kotlin SDK. | **Supabase** |
+
+**Why, in plain terms:** the app already lives in Room and that doesn't change — whichever backend we
+pick, we hand-write the "pull server → Room, push local edits → server" sync layer ourselves. Convex's
+headline feature (live reactive queries over a socket) never reaches Room automatically, so we'd pay its
+complexity for a benefit an offline-first app can't use — and its Android client is *actively worse*
+offline. Meanwhile the shared food DB is relational (a fit for Postgres), and "all read, admins write"
+is nearly free on Supabase's RLS versus imperative role checks in every Convex function.
+
+**Convex would only pull ahead** if MacTrack pivoted to live online collaboration as the core and you
+were willing to learn TypeScript — not where it is today.
+
+*Unconfirmed by the research (don't treat as settled): the exact current `supabase-kt` version; whether
+Convex formally guarantees no free-tier pause; whether the experimental PowerSync–Convex connector
+supports Android at all.*
