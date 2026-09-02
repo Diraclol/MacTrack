@@ -240,6 +240,13 @@ fun MoreScreen(
                         }
                         Switch(checked = aiEnabled, onCheckedChange = { themeViewModel.setAiEnabled(it) })
                     }
+                    Text(
+                        "If you've added a Gemini key, you can remove it any time from AI settings (the AI " +
+                            "tab). For full safety, also revoke that key in Google AI Studio at " +
+                            "aistudio.google.com so it can no longer be used.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
