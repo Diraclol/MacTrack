@@ -17,7 +17,7 @@ import java.time.LocalDate
 data class LogStats(val activeStreak: Int, val longestStreak: Int, val totalTracked: Int)
 
 // Food-logging streak stats for the More profile header, derived from the distinct logged
-// dates. A day is a query, not a record (per NOTES.md) -- this computes over the dates flow.
+// dates. A day is a query, not a record -- this computes over the dates flow.
 class MoreStatsViewModel(mealEntryRepository: MealEntryRepository) : ViewModel() {
 
     val stats: StateFlow<LogStats> = mealEntryRepository.getLoggedDates("0000-01-01")
