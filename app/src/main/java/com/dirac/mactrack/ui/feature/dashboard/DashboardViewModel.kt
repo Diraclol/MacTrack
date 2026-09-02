@@ -9,8 +9,10 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dirac.mactrack.MacTrackApplication
 import com.dirac.mactrack.data.entity.Goal
 import com.dirac.mactrack.data.entity.MealEntry
+import com.dirac.mactrack.data.entity.WeightEntry
 import com.dirac.mactrack.data.repository.GoalRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
+import com.dirac.mactrack.data.repository.WeightRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -31,8 +33,13 @@ data class NutrientAvg(
 
 class DashboardViewModel(
     goalRepository: GoalRepository,
-    mealEntryRepository: MealEntryRepository
+    mealEntryRepository: MealEntryRepository,
+    weightRepository: WeightRepository
 ) : ViewModel() {
+
+    // All weigh-ins (oldest -> newest), for the optional dashboard weight-trend card.
+    val weights: StateFlow<List<WeightEntry>> = weightRepository.getAllWeights()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val today: String = LocalDate.now().toString()
     private val since: String = LocalDate.now().minusDays(29).toString()
@@ -82,7 +89,7 @@ class DashboardViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                DashboardViewModel(app.goalRepository, app.mealEntryRepository)
+                DashboardViewModel(app.goalRepository, app.mealEntryRepository, app.weightRepository)
             }
         }
     }

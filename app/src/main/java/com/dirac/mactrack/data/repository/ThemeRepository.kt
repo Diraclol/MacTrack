@@ -42,6 +42,15 @@ class ThemeRepository(context: Context) {
         _aiEnabled.value = enabled
     }
 
+    // Show a weight-trend graph card on the dashboard. Off by default (keeps the dashboard to one page).
+    private val _dashboardWeightGraph = MutableStateFlow(prefs.getBoolean("dashboard_weight_graph", false))
+    val dashboardWeightGraph: StateFlow<Boolean> = _dashboardWeightGraph.asStateFlow()
+
+    fun setDashboardWeightGraph(enabled: Boolean) {
+        prefs.edit().putBoolean("dashboard_weight_graph", enabled).apply()
+        _dashboardWeightGraph.value = enabled
+    }
+
     private fun load(): ThemeMode =
         runCatching {
             ThemeMode.valueOf(prefs.getString("theme_mode", ThemeMode.SYSTEM.name) ?: ThemeMode.SYSTEM.name)

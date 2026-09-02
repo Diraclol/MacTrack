@@ -29,12 +29,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.Goal
+import com.dirac.mactrack.data.entity.WeightEntry
 import com.dirac.mactrack.ui.theme.ThemeViewModel
 import java.time.LocalDate
 import kotlin.math.roundToInt
@@ -70,10 +72,12 @@ fun DashboardScreen(
     val weeklyAvg by viewModel.weeklyAvg.collectAsState()
     val weeklyNutrientAvg by viewModel.weeklyNutrientAvg.collectAsState()
     val loggedDates by viewModel.loggedDates.collectAsState()
+    val weights by viewModel.weights.collectAsState()
+    val showWeightGraph by themeViewModel.dashboardWeightGraph.collectAsState()
 
     LazyColumn(
-        modifier = modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
             val today = LocalDate.now()
@@ -101,6 +105,9 @@ fun DashboardScreen(
         item { MacroCard(avg = weeklyAvg, goal = goal, onClick = onOpenTrends) }
         item { NutrientCard(avg = weeklyNutrientAvg, onOpenNutrient = onOpenNutrient) }
         item { FoodStreakCard(loggedDates = loggedDates.toSet()) }
+        if (showWeightGraph) {
+            item { WeightTrendCard(weights = weights) }
+        }
     }
 }
 
@@ -159,8 +166,8 @@ private fun CalorieRing(consumed: Double, target: Double) {
 private fun MacroCard(avg: WeeklyAvg, goal: Goal?, onClick: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -202,8 +209,8 @@ private fun NutrientCard(avg: NutrientAvg, onOpenNutrient: (String) -> Unit) {
     )
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().clickable { onOpenNutrient("sodium") },
@@ -274,8 +281,8 @@ private fun MacroBar(label: String, current: Double, goal: Double, color: Color,
 private fun FoodStreakCard(loggedDates: Set<String>) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text("Food Logging", style = MaterialTheme.typography.titleMedium)
             Text("Last 30 days", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -284,11 +291,11 @@ private fun FoodStreakCard(loggedDates: Set<String>) {
             val filled = MaterialTheme.colorScheme.primary
             val empty = MaterialTheme.colorScheme.surfaceVariant
             days.chunked(10).forEach { rowDays ->
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     rowDays.forEach { d ->
                         Box(
                             modifier = Modifier
-                                .size(22.dp)
+                                .size(18.dp)
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(if (d in loggedDates) filled else empty)
                         )
@@ -298,5 +305,76 @@ private fun FoodStreakCard(loggedDates: Set<String>) {
             val count = days.count { it in loggedDates }
             Text("$count / 30 days logged", style = MaterialTheme.typography.bodySmall)
         }
+    }
+}
+
+private fun oneDecimal(x: Double): String = (Math.round(x * 10.0) / 10.0).toString()
+
+// Optional dashboard card (toggled in More -> Display): current weight + a compact trend line.
+@Composable
+private fun WeightTrendCard(weights: List<WeightEntry>) {
+    val sorted = weights.sortedBy { it.date }
+    val latest = sorted.lastOrNull()
+    val prev = if (sorted.size >= 2) sorted[sorted.size - 2] else null
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Weight", style = MaterialTheme.typography.titleMedium)
+                latest?.let {
+                    Text("${oneDecimal(it.weightKg)} kg", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+            }
+            if (sorted.size < 2) {
+                Text(
+                    "Log at least two weigh-ins to see a trend.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                val lineColor = MaterialTheme.colorScheme.primary
+                Box(modifier = Modifier.fillMaxWidth().height(90.dp)) {
+                    WeightSparkline(sorted, lineColor, Modifier.fillMaxSize())
+                }
+                prev?.let {
+                    val delta = latest!!.weightKg - it.weightKg
+                    val sign = if (delta > 0) "+" else ""
+                    Text(
+                        "$sign${oneDecimal(delta)} kg since last",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeightSparkline(points: List<WeightEntry>, color: Color, modifier: Modifier) {
+    val days = points.map { LocalDate.parse(it.date).toEpochDay() }
+    val minW = points.minOf { it.weightKg }
+    val maxW = points.maxOf { it.weightKg }
+    val span = (maxW - minW).takeIf { it > 0.0 } ?: 1.0
+    val minX = days.min()
+    val maxX = days.max()
+    val xSpan = (maxX - minX).takeIf { it > 0L } ?: 1L
+    Canvas(modifier = modifier) {
+        val pad = 6.dp.toPx()
+        val w = size.width - 2 * pad
+        val h = size.height - 2 * pad
+        val path = Path()
+        points.indices.forEach { i ->
+            val x = pad + (days[i] - minX).toFloat() / xSpan * w
+            val y = pad + (1f - ((points[i].weightKg - minW) / span).toFloat()) * h
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        drawPath(path, color = color, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
     }
 }

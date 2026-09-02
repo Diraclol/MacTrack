@@ -99,6 +99,7 @@ fun MoreScreen(
 
     val reminderEnabled by themeViewModel.reminderEnabled.collectAsState()
     val aiEnabled by themeViewModel.aiEnabled.collectAsState()
+    val dashboardWeightGraph by themeViewModel.dashboardWeightGraph.collectAsState()
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -239,6 +240,37 @@ fun MoreScreen(
                         }
                         Switch(checked = aiEnabled, onCheckedChange = { themeViewModel.setAiEnabled(it) })
                     }
+                }
+            }
+        }
+        // Display preferences
+        item {
+            Text(
+                "DISPLAY",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Weight trend on dashboard", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Show a weight trend graph card on the dashboard",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = dashboardWeightGraph,
+                        onCheckedChange = { themeViewModel.setDashboardWeightGraph(it) }
+                    )
                 }
             }
         }
