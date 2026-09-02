@@ -137,6 +137,14 @@ fun FoodDetailScreen(
     fun doDone() { if (amt > 0.0) viewModel.updateEntry(amt, unit, onLogged) else onLogged() }
     val isEntry = source == "entry"
 
+    // Show the gram weight next to a named serving (e.g. "1 thigh (68 g)") so the size is legible.
+    // Gram/millilitre base units and unknown-weight units are shown as-is. This only affects display;
+    // the stored unit label stays the plain key.
+    fun labelWithWeight(label: String): String {
+        val g = d.units.find { it.label == label }?.grams
+        return if (g != null && g > 0.0 && label != "g" && label != "ml") "$label (${g.roundToInt()} g)" else label
+    }
+
     // First key press after the pad opens replaces the prefilled amount instead of appending.
     fun onPadValue(new: String) {
         val next = if (amountFresh && new.length > amount.length) new.drop(amount.length) else new
@@ -232,7 +240,7 @@ fun FoodDetailScreen(
                     ) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(amount.ifEmpty { "0" }, fontWeight = FontWeight.Bold)
-                            Text(unitLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(labelWithWeight(unitLabel), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     if (isEntry) {
@@ -264,6 +272,7 @@ fun FoodDetailScreen(
                     units = d.units.map { it.label },
                     selectedUnit = unitLabel,
                     onUnitSelect = { unitLabel = it },
+                    unitDisplay = { labelWithWeight(it) },
                     actions = if (isEntry) listOf(
                         PadAction("Done", primary = true, onClick = { doDone() })
                     ) else listOf(

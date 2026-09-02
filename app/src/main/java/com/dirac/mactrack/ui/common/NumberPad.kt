@@ -40,7 +40,9 @@ fun NumberPad(
     selectedUnit: String,
     onUnitSelect: (String) -> Unit,
     actions: List<PadAction>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Maps a unit key to how it should read (e.g. "1 thigh" -> "1 thigh (68 g)"). Default: unchanged.
+    unitDisplay: (String) -> String = { it }
 ) {
     fun press(key: String) {
         when (key) {
@@ -75,7 +77,7 @@ fun NumberPad(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f)
             )
-            Text(selectedUnit, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(unitDisplay(selectedUnit), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         // unit chips
@@ -85,7 +87,7 @@ fun NumberPad(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 units.forEach { u ->
-                    FilterChip(selected = selectedUnit == u, onClick = { onUnitSelect(u) }, label = { Text(u) })
+                    FilterChip(selected = selectedUnit == u, onClick = { onUnitSelect(u) }, label = { Text(unitDisplay(u)) })
                 }
             }
         }
