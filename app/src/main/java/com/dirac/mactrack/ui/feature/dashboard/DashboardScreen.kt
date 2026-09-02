@@ -43,14 +43,30 @@ private val ProteinColor = Color(0xFFE91E63)
 private val CarbColor = Color(0xFF2196F3)
 private val FatColor = Color(0xFF4CAF50)
 private val CalorieColor = Color(0xFFFF9800)
+private val SodiumColor = Color(0xFF26A69A)
+private val PotassiumColor = Color(0xFF66BB6A)
+private val FiberColor = Color(0xFF42A5F5)
+private val CaffeineColor = Color(0xFFAB47BC)
+
+// Soft daily references for the nutrient bars (a scale, not a user goal) — same as the food log.
+private const val SodiumRefMg = 2300.0
+private const val PotassiumRefMg = 3400.0
+private const val FiberRefG = 28.0
+private const val CaffeineRefMg = 400.0
 
 @Composable
-fun DashboardScreen(modifier: Modifier = Modifier, onOpenProfile: () -> Unit = {}, onOpenTrends: () -> Unit = {}) {
+fun DashboardScreen(
+    modifier: Modifier = Modifier,
+    onOpenProfile: () -> Unit = {},
+    onOpenTrends: () -> Unit = {},
+    onOpenNutrient: (String) -> Unit = {}
+) {
     val viewModel: DashboardViewModel = viewModel(factory = DashboardViewModel.Factory)
     val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
     val goal by viewModel.goal.collectAsState()
     val avatar by themeViewModel.avatar.collectAsState()
     val weeklyAvg by viewModel.weeklyAvg.collectAsState()
+    val weeklyNutrientAvg by viewModel.weeklyNutrientAvg.collectAsState()
     val loggedDates by viewModel.loggedDates.collectAsState()
 
     LazyColumn(
@@ -81,6 +97,7 @@ fun DashboardScreen(modifier: Modifier = Modifier, onOpenProfile: () -> Unit = {
             }
         }
         item { MacroCard(avg = weeklyAvg, goal = goal, onClick = onOpenTrends) }
+        item { NutrientCard(avg = weeklyNutrientAvg, onClick = { onOpenNutrient("sodium") }) }
         item { FoodStreakCard(loggedDates = loggedDates.toSet()) }
     }
 }
@@ -149,7 +166,7 @@ private fun MacroCard(avg: WeeklyAvg, goal: Goal?, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Cals + Macros", style = MaterialTheme.typography.titleMedium)
-                Text("7-day avg ›", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Text("See more ›", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             }
             MacroBar("Calories", avg.cal, goal?.calorieGoal ?: 0.0, CalorieColor, unit = "cal")
             MacroBar("Protein", avg.p, goal?.proteinGoalG ?: 0.0, ProteinColor)
@@ -158,6 +175,38 @@ private fun MacroCard(avg: WeeklyAvg, goal: Goal?, onClick: () -> Unit) {
             if (avg.days == 0) {
                 Text(
                     "Log food to see your weekly average.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+// Mirrors MacroCard: one card, a "See more ›" affordance, four rows of the tracked micronutrients
+// averaged over the last 7 logged days, each against its soft daily reference.
+@Composable
+private fun NutrientCard(avg: NutrientAvg, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Nutrients", style = MaterialTheme.typography.titleMedium)
+                Text("See more ›", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            }
+            MacroBar("Sodium", avg.sodiumMg, SodiumRefMg, SodiumColor, unit = "mg")
+            MacroBar("Potassium", avg.potassiumMg, PotassiumRefMg, PotassiumColor, unit = "mg")
+            MacroBar("Dietary Fiber", avg.fiberG, FiberRefG, FiberColor, unit = "g")
+            MacroBar("Caffeine", avg.caffeineMg, CaffeineRefMg, CaffeineColor, unit = "mg")
+            if (avg.days == 0) {
+                Text(
+                    "Log food to see your weekly nutrient average.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

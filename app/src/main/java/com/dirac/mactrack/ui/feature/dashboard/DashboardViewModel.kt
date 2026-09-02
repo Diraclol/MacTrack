@@ -20,6 +20,15 @@ import java.time.LocalDate
 // Rolling 7-day daily average of cals/macros, plus how many of those days had any log.
 data class WeeklyAvg(val cal: Double, val p: Double, val c: Double, val f: Double, val days: Int)
 
+// Rolling 7-day daily average of the tracked micronutrients (same "days with a log" denominator).
+data class NutrientAvg(
+    val sodiumMg: Double,
+    val potassiumMg: Double,
+    val fiberG: Double,
+    val caffeineMg: Double,
+    val days: Int
+)
+
 class DashboardViewModel(
     goalRepository: GoalRepository,
     mealEntryRepository: MealEntryRepository
@@ -51,6 +60,23 @@ class DashboardViewModel(
                 )
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), WeeklyAvg(0.0, 0.0, 0.0, 0.0, 0))
+
+    // Micronutrient 7-day average. getDailyTotals only sums cals/macros, so this reads the raw
+    // entries since 6 days ago and averages per logged day (a day is a query, not a stored total).
+    val weeklyNutrientAvg: StateFlow<NutrientAvg> =
+        mealEntryRepository.getEntriesSince(LocalDate.now().minusDays(6).toString())
+            .map { entries ->
+                val byDay = entries.groupBy { it.date }
+                val n = byDay.size.coerceAtLeast(1)
+                NutrientAvg(
+                    sodiumMg = entries.sumOf { it.sodiumMg } / n,
+                    potassiumMg = entries.sumOf { it.potassiumMg } / n,
+                    fiberG = entries.sumOf { it.fiberG } / n,
+                    caffeineMg = entries.sumOf { it.caffeineMg } / n,
+                    days = byDay.size
+                )
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NutrientAvg(0.0, 0.0, 0.0, 0.0, 0))
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {

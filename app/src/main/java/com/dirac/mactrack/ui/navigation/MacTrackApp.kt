@@ -151,7 +151,8 @@ fun MacTrackApp() {
             composable(Destination.DASHBOARD.route) {
                 DashboardScreen(
                     onOpenProfile = { navController.navigate("profile") },
-                    onOpenTrends = { navController.navigate("trends") }
+                    onOpenTrends = { navController.navigate("trends") },
+                    onOpenNutrient = { key -> navController.navigate("nutrient_detail/$key") }
                 )
             }
             composable("trends") {
