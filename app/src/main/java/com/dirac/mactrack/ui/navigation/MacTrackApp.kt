@@ -56,6 +56,7 @@ import com.dirac.mactrack.ui.feature.ai.AiScreen
 import com.dirac.mactrack.ui.feature.ai.AiSettingsScreen
 import com.dirac.mactrack.ui.feature.scanner.BarcodeScannerScreen
 import com.dirac.mactrack.ui.feature.about.AboutScreen
+import com.dirac.mactrack.ui.feature.streak.FoodLogCalendarScreen
 
 @Composable
 fun MacTrackApp() {
@@ -154,7 +155,8 @@ fun MacTrackApp() {
                 DashboardScreen(
                     onOpenProfile = { navController.navigate("profile") },
                     onOpenTrends = { navController.navigate("trends") },
-                    onOpenNutrient = { key -> navController.navigate("nutrient_detail/$key") }
+                    onOpenNutrient = { key -> navController.navigate("nutrient_detail/$key") },
+                    onOpenStreak = { navController.navigate("food_calendar") }
                 )
             }
             composable("trends") {
@@ -195,6 +197,9 @@ fun MacTrackApp() {
             }
             composable("about") {
                 AboutScreen(onBack = { navController.popBackStack() })
+            }
+            composable("food_calendar") {
+                FoodLogCalendarScreen(onBack = { navController.popBackStack() })
             }
             composable("library") {
                 LibraryScreen(

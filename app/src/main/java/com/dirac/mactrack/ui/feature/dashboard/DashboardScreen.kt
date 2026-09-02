@@ -68,7 +68,8 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
     onOpenProfile: () -> Unit = {},
     onOpenTrends: () -> Unit = {},
-    onOpenNutrient: (String) -> Unit = {}
+    onOpenNutrient: (String) -> Unit = {},
+    onOpenStreak: () -> Unit = {}
 ) {
     val viewModel: DashboardViewModel = viewModel(factory = DashboardViewModel.Factory)
     val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
@@ -116,7 +117,7 @@ fun DashboardScreen(
         }
         item { MacroCard(avg = weeklyAvg, goal = goal, onClick = onOpenTrends) }
         item { NutrientCard(avg = weeklyNutrientAvg, onOpenNutrient = onOpenNutrient) }
-        item { FoodStreakCard(loggedDates = loggedDates.toSet()) }
+        item { FoodStreakCard(loggedDates = loggedDates.toSet(), onClick = onOpenStreak) }
         if (showWeightGraph) {
             item { WeightTrendCard(weights = weights) }
         }
@@ -290,13 +291,20 @@ private fun MacroBar(label: String, current: Double, goal: Double, color: Color,
 }
 
 @Composable
-private fun FoodStreakCard(loggedDates: Set<String>) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun FoodStreakCard(loggedDates: Set<String>, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text("Food Logging", style = MaterialTheme.typography.titleMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Food Logging", style = MaterialTheme.typography.titleMedium)
+                Text("See more ›", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            }
             Text("Last 30 days", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             val today = LocalDate.now()
             val days = (0 until 30).map { today.minusDays((29 - it).toLong()).toString() }
