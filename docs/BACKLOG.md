@@ -377,8 +377,11 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
       A CircleCI config was briefly added (Android orb, mirroring the same steps) but **removed** -- Dirac
       chose to keep a single CI, and GitHub Actions already covers it. Revisit only if we later want
       CircleCI-specific features (e.g. its APK-artifact UI, on-device/emulator jobs).
-- [ ] **REL-4: Knowledge base / wiki** — seed from the existing docs (ENGINEERING_SUMMARY, BACKLOG,
-      SECURITY, BACKEND_RESEARCH, PWA_IOS_SPIKE) as the backbone.
+- [~] **REL-4: Knowledge base / wiki** — SEEDED. [docs/README.md](README.md) is a navigable index over
+      all project docs (orientation -> product/design -> roadmap/plans -> backend/platform -> security),
+      with a reading order and a one-liner each. This is the backbone; if a GitHub wiki is wanted later,
+      these pages port straight over. **Left for Dirac:** decide whether to keep it as in-repo docs or copy
+      into the GitHub wiki (a separate `.wiki.git` repo).
 - [ ] **REL-5: Pre-public "pre-public cleanup."** Right before the repo goes public, sweep out every trace
       that the app was built with AI/the tool assistance. **This is a LATER task (do it as the last step
       before flipping the repo public), not now.** Current inventory (verified 2026-09-01):
