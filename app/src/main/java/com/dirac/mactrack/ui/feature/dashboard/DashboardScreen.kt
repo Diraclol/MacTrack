@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -292,11 +293,15 @@ private fun FoodStreakCard(loggedDates: Set<String>) {
             val filled = MaterialTheme.colorScheme.primary
             val empty = MaterialTheme.colorScheme.surfaceVariant
             days.chunked(10).forEach { rowDays ->
-                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
                     rowDays.forEach { d ->
                         Box(
                             modifier = Modifier
-                                .size(18.dp)
+                                .weight(1f)
+                                .aspectRatio(1f)
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(if (d in loggedDates) filled else empty)
                         )
