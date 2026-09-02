@@ -7,14 +7,24 @@ Package: `com.dirac.mactrack` · Status: active development (pre-1.0).
 
 ## Screenshots
 
-<p align="center">
-  <img src="docs/screenshots/dashboard.jpeg" width="215" alt="Dashboard">
-  <img src="docs/screenshots/foodlog.jpeg" width="215" alt="Food log">
-  <img src="docs/screenshots/fooddetail.jpeg" width="215" alt="Food detail">
-  <img src="docs/screenshots/foodsearch.jpeg" width="215" alt="Food search">
-</p>
-
-<p align="center"><em>Dashboard &middot; Food log &middot; Food detail &middot; Search</em></p>
+<table align="center">
+  <tr>
+    <td align="center"><img src="docs/screenshots/dashboard.jpeg" width="240" alt="Dashboard"></td>
+    <td align="center"><img src="docs/screenshots/foodlog.jpeg" width="240" alt="Food log"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Dashboard</em></td>
+    <td align="center"><em>Food log</em></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/fooddetail.jpeg" width="240" alt="Food detail"></td>
+    <td align="center"><img src="docs/screenshots/foodsearch.jpeg" width="240" alt="Food search"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Food detail</em></td>
+    <td align="center"><em>Search</em></td>
+  </tr>
+</table>
 
 
 ## What it does
