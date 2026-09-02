@@ -31,9 +31,11 @@ class IngredientResolver(
         val name = ingredient.name.trim()
         if (name.isBlank()) return unresolved(ingredient)
 
-        // 1. Saved foods (no name-query DAO, so match against a snapshot in memory).
+        // 1. Saved foods (no name-query DAO, so match against a snapshot in memory). Prefer an exact
+        // name, then one that starts with the query, then any that merely contains it.
         val saved = foodRepository.getAllFoods().first().let { foods ->
             foods.firstOrNull { it.name.equals(name, ignoreCase = true) }
+                ?: foods.firstOrNull { it.name.startsWith(name, ignoreCase = true) }
                 ?: foods.firstOrNull { it.name.contains(name, ignoreCase = true) }
         }
         if (saved != null) return finalize(ingredient, saved, source = "custom", persist = false)

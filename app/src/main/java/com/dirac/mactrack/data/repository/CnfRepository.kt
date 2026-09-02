@@ -37,14 +37,23 @@ class CnfRepository(private val context: Context) {
     fun search(query: String, limit: Int = 50): List<CnfFood> {
         val q = query.trim()
         if (q.length < 2) return emptyList()
-        val terms = q.split(Regex("\\s+"))
+        // Match on a singular stem so a plural query ("eggs") also finds singular CNF names ("Egg, ...").
+        val terms = q.split(Regex("\\s+")).map { stem(it) }
         val where = terms.joinToString(" AND ") { "name LIKE ?" }
-        val args = terms.map { "%$it%" }.toTypedArray()
-        val sql = "SELECT $cols FROM cnf_food WHERE $where ORDER BY length(name) LIMIT $limit"
+        // Rank a name that STARTS WITH the query's first word above ones that merely contain it, then by
+        // length (shorter = closer). So "eggs" prefers "Egg, chicken, ..." over "Fish, salmon, ..., eggs".
+        val sql = "SELECT $cols FROM cnf_food WHERE $where " +
+            "ORDER BY CASE WHEN name LIKE ? THEN 0 ELSE 1 END, length(name) LIMIT $limit"
+        val args = (terms.map { "%$it%" } + "${terms.first()}%").toTypedArray()
         val out = mutableListOf<CnfFood>()
         open().rawQuery(sql, args).use { c -> while (c.moveToNext()) out.add(readFood(c)) }
         return out
     }
+
+    // A tiny singulariser: drop a trailing "s" (not "ss") from a longer word so "eggs" -> "egg",
+    // "oats" -> "oat". Deliberately naive -- it just widens the LIKE match; ranking still picks the best.
+    private fun stem(term: String): String =
+        if (term.length > 3 && term.endsWith("s") && !term.endsWith("ss")) term.dropLast(1) else term
 
     fun getFood(code: Int): CnfFood? {
         open().rawQuery("SELECT $cols FROM cnf_food WHERE code = ? LIMIT 1", arrayOf(code.toString())).use { c ->

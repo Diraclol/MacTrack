@@ -180,6 +180,11 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       `UnifiedSearchViewModel.kt` (branded/searchingBranded flows + debounced job), `UnifiedSearchScreen.kt`
       (Branded section). NOTE the CNF query is still exact-substring (`name LIKE %term%`), so a typo
       ("cherrios") returns nothing -> an optional fuzzy/typo pass is a separate follow-up.
+- [x] **SEARCH-2: CNF match ranking + plural.** SHIPPED. `CnfRepository.search` now ranks a name that
+      STARTS WITH the query's first word above ones that merely contain it (then by length), and stems a
+      trailing "s" so a plural query ("eggs") also finds singular CNF names ("Egg, ..."). Fixes AI-4
+      resolving "2 eggs" -> "Fish, salmon, ..., eggs" (roe). `IngredientResolver` applies the same
+      exact -> startsWith -> contains order to saved foods. Also improves the food-search screen (same query).
 - [x] **UI-15: Favorite Serving Units (full, incl. volume).** SHIPPED. A More screen "Favorite Serving
       Units" pins up to 2 units to the FRONT of every food's serving picker. Catalog: WEIGHT (g/oz/lb,
       exact conversions) + VOLUME (ml/tsp/tbsp/fl oz/cup) with a standard ~1 g/ml assumption -- volume
