@@ -213,6 +213,19 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
       that project so the free tier is a hard circuit breaker (a retry-loop bug hits 429, not a card).
       Model separation was rejected (it's forgettable and would push Dirac's own study chats to a 20/day
       tier). BYO-key means this generalizes: every MacTrack user brings their own project + quota.
+- [x] **AI-2: Background system prompt.** SHIPPED. The chat is given a richer `system` turn on every
+      request (`AiViewModel.SYSTEM_PROMPT`) explaining what MacTrack is, how the user feeds it info
+      (a plain question, a food photo, a photo + weight, or a pasted item list), that an estimate should
+      read as name + calories + protein/carbs/fat for a stated serving (the app shows a review dialog
+      before logging), and to keep estimates **consistent with** Open Food Facts (branded/barcoded) and
+      the Canadian Nutrient File (common whole foods) plus typical Canadian serving sizes — deferring to
+      the app's own barcode scan for exact label values. Kept honest: this chat has **no live access** to
+      CNF/OFF and is told so, rather than pretending it can query them.
+- [ ] **AI-3: Real tool / function-calling for the assistant.** Give the model actual access instead of
+      just prompt guidance: function-calling (or a retrieval step) so it can look a food up in the CNF
+      asset and Open Food Facts, and read the user's own context (profile, goals, today's remaining
+      calories/macros) to answer "what should I eat to hit my protein." Gated on structured-output /
+      tool-call support on the chosen endpoint; bigger than AI-2 (a string) — it's plumbing.
 
 ---
 
