@@ -217,7 +217,7 @@ private fun NutrientCard(avg: NutrientAvg, onOpenNutrient: (String) -> Unit) {
     val tiles = listOf(
         NutrientTileData("sodium", "Sodium", "${avg.sodiumMg.roundToInt()} mg", (avg.sodiumMg / SodiumRefMg).coerceIn(0.0, 1.0).toFloat(), SodiumColor),
         NutrientTileData("potassium", "Potassium", "${avg.potassiumMg.roundToInt()} mg", (avg.potassiumMg / PotassiumRefMg).coerceIn(0.0, 1.0).toFloat(), PotassiumColor),
-        NutrientTileData("fiber", "Dietary Fiber", "${avg.fiberG.roundToInt()} g", (avg.fiberG / FiberRefG).coerceIn(0.0, 1.0).toFloat(), FiberColor),
+        NutrientTileData("fiber", "Fiber", "${avg.fiberG.roundToInt()} g", (avg.fiberG / FiberRefG).coerceIn(0.0, 1.0).toFloat(), FiberColor),
         NutrientTileData("caffeine", "Caffeine", "${avg.caffeineMg.roundToInt()} mg", (avg.caffeineMg / CaffeineRefMg).coerceIn(0.0, 1.0).toFloat(), CaffeineColor)
     )
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -233,11 +233,11 @@ private fun NutrientCard(avg: NutrientAvg, onOpenNutrient: (String) -> Unit) {
                 Text("Nutrients", style = MaterialTheme.typography.titleMedium)
                 Text("See more ›", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             }
-            tiles.chunked(2).forEach { rowTiles ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    rowTiles.forEach { t ->
-                        NutrientTile(t, Modifier.weight(1f)) { onOpenNutrient(t.key) }
-                    }
+            // One compact row of four (instead of a 2x2 grid) so the card is short enough to leave the
+            // Food Logging card visible on the dashboard.
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                tiles.forEach { t ->
+                    NutrientTile(t, Modifier.weight(1f)) { onOpenNutrient(t.key) }
                 }
             }
             if (avg.days == 0) {
@@ -256,19 +256,19 @@ private fun NutrientTile(d: NutrientTileData, modifier: Modifier, onClick: () ->
     Surface(
         modifier = modifier.clickable { onClick() },
         color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(14.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(d.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-            Text(d.value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(d.label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            Text(d.value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1)
             LinearProgressIndicator(
                 progress = { d.fraction },
                 color = d.color,
                 trackColor = MaterialTheme.colorScheme.surface,
-                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp))
+                modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp))
             )
         }
     }
