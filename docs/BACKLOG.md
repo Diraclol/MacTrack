@@ -255,8 +255,10 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
       features), **Btester** (can add foods to a shared database), **regular** (no extras). Enforce
       roles with server-side claims / row-level security. Never hardcode the admin credential anywhere.
       **DESIGN DONE — see [SUPABASE_PLAN.md](SUPABASE_PLAN.md)** (schema + RLS + optional-auth + the
-      last-write-wins/tombstone sync engine + Room migration 8->9 + a 6-phase rollout). Awaiting Dirac's
-      answers to the "Decisions needed" section before Phase 0 (schema + RLS SQL, no app code).
+      last-write-wins/tombstone sync engine + Room migration 8->9 + a 6-phase rollout). **PARKED post-v1
+      (Dirac 2026-09-02): build accounts/sync AFTER the Android public release**, not before. Key
+      decisions locked: post-v1 timing, `sync_tombstones` table for deletes, periodic + on-open sync.
+      Phase 0 (schema + RLS SQL) is the first step, once the public release is out.
 - [ ] **ACCT-2: Shared food database.** The database Btesters grow. Needs validation, moderation, and
       rate-limiting so shared entries can't poison everyone's search. **Covered in
       [SUPABASE_PLAN.md](SUPABASE_PLAN.md) §2b/§3** (`shared_foods` table + moderation RLS) as Phase 4.

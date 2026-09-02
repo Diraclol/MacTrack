@@ -184,20 +184,26 @@ this design is folded into the codebase, SECURITY.md should be updated to the Su
 - **Clock skew** in LWW — stamp `updated_at` from a monotonic-ish source and tolerate small skew;
   server `now()` on push can be the tiebreaker if needed.
 
-## 10. Decisions needed before Phase 0
+## 10. Decisions
 
-1. **Sync trigger cadence:** on-app-open + after-write + periodic (recommended), or add Realtime for
-   live multi-device now? (Recommend: no Realtime at first.)
-2. **Deletes:** soft-delete column on every table (most robust, touches reads) vs a `sync_tombstones`
-   table (less invasive). (Recommend: start with the tombstone table for minimal churn.)
-3. **Is sync free for everyone or a role/tier thing?** At <=5 users, recommend free for any signed-in
-   user; roles only gate the shared food DB + new-feature flags.
-4. **Sign-out behaviour:** keep local data (recommended — it's the user's, app is local-first) vs clear
-   it. And on account *switch* on one device: clear + re-pull.
-5. **Confirm Cloud-Free-first** (vs paying $25/mo Pro to skip the pause) for the beta. (Existing plan:
-   Cloud Free + keep-alive; self-host later.)
-6. **Order vs the public release:** is accounts/sync in the v1 public release, or a post-v1 addition?
-   (Affects whether Phase 1-3 come before REL-* or after.)
+**Locked (Dirac, 2026-09-02):**
 
-Once 1, 2, 4 (and 3/5/6) are settled, Phase 0 (schema + RLS SQL, no app code) is the first concrete
-step and is fully reversible.
+- **Order vs the public release: POST-v1.** Accounts/sync land *after* the Android public release, as a
+  distinct milestone (and resume showcase). So this whole plan is parked until the local app has
+  shipped publicly — it stays off the release critical path. Do NOT start building it before then.
+- **Deletes: the `sync_tombstones` table** (not per-table soft-delete columns) — keeps existing
+  reads/queries unchanged. So migration 8->9 adds only `updated_at` to the seven tables, plus the new
+  `sync_tombstones` table; no per-table `deleted` flag.
+- **Sync cadence: periodic + on-app-open + after-write.** No Realtime at first (can add later if live
+  multi-device is wanted).
+
+**Still open (defaults fine; confirm when Phase 0 actually starts, post-v1):**
+
+- **Sync free for everyone or tiered?** Default: free for any signed-in user; roles only gate the
+  shared food DB + new-feature flags.
+- **Sign-out behaviour:** default keep local data (it's the user's; app is local-first); on account
+  *switch* on one device, clear + re-pull.
+- **Cloud-Free-first vs Pro:** default Cloud Free + daily keep-alive; self-host later (existing plan).
+
+When the public release is out, Phase 0 (schema + RLS SQL, no app code) is the first concrete,
+reversible step.
