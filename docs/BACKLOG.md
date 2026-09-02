@@ -123,8 +123,10 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       both the food log and food search now open the camera directly (manual-entry dialog removed); an
       unrecognized code shows a dialog to Scan again or Create food (prefilled with the barcode, via a
       `create_food?barcode=` arg); the scanner has a framed viewfinder + sweeping red line overlay.
-      **Still to do (look polish + offline):** gallery import, flashlight toggle, and a scan -> saved-food
-      offline match (`food_items.barcode` before OFF).
+      **Follow-up SHIPPED (polish):** a flashlight/torch toggle (bottom-right, `enableTorch`) and a
+      gallery-import icon (bottom-left, PickVisualMedia -> `InputImage.fromFilePath` -> same ML Kit
+      scanner) so a barcode can be read from an existing photo without the camera.
+      **Still to do (offline):** a scan -> saved-food offline match (`food_items.barcode` before OFF).
 - [~] **UI-10: Automated tests.** JVM unit tests added (JUnit4, no new deps): the calc engine
       (pre-existing), plus `IngredientBuilderRepository`, `Nutrients` arithmetic, and the FoodModels
       mappers (`asFoodItem` / `foodItemDetail` / `mealEntryDetail` / `recipeDetail` / `stagePortion`).
@@ -139,6 +141,21 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       Recommendation: iOS via **Compose Multiplatform** (share domain/data/most-UI, ship native iOS);
       web via a **thin PWA over the Supabase backend** later (not CMP-wasm); no Flutter/RN rewrite.
       The one discipline to hold now: keep `domain`/`data`/`calc` free of `android.*` imports (they are).
+- [ ] **I18N-1: French localization (fr-CA).** Add a French language option in More. **Parked by Dirac
+      2026-09-01** — captured with a plan, not started, because it is a large multi-step job that must be
+      built in small increments on-device. **Scope:** there is *no* i18n infrastructure today — no
+      `strings.xml`, zero `stringResource`; every user-facing string is a hardcoded literal (~300-400
+      strings: 191 `Text("…")` + 26 `contentDescription` + ~39 titles/labels/placeholders + dialogs/
+      Toasts/BackBar titles, across 24 screens). **Mechanism (decided):** Compose-level switch, no new
+      deps and no base-class change — `MainActivity` is a `ComponentActivity` (not AppCompat), so instead
+      of `AppCompatDelegate.setApplicationLocales`, store the language in `ThemeRepository` (mirroring the
+      theme / dashboard-graph prefs) and provide an overridden `LocalConfiguration`/`LocalContext` at the
+      top of `MacTrackApp` so `stringResource` resolves French. **Phased plan:** (1) build the Language
+      toggle (English/French) + the switch mechanism, and translate the bottom nav + More as a proof it
+      builds and switches on device; (2) fan out screen-by-screen, one buildable commit per few screens,
+      pulling literals into `res/values/strings.xml` + `res/values-fr/strings.xml`. **Out of scope:** food
+      *data* names (CNF, Open Food Facts) are data, not UI — they stay in their source language (CNF does
+      ship French names; wiring that is a separate future item).
 
 ---
 
