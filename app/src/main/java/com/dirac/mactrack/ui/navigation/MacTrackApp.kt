@@ -41,6 +41,7 @@ import com.dirac.mactrack.ui.feature.goals.GoalsScreen
 import com.dirac.mactrack.ui.feature.goals.ReassessGoalsScreen
 import com.dirac.mactrack.ui.feature.profile.ProfileScreen
 import com.dirac.mactrack.ui.feature.more.MoreScreen
+import com.dirac.mactrack.ui.feature.more.FavoriteUnitsScreen
 import com.dirac.mactrack.ui.feature.today.TodayScreen
 import com.dirac.mactrack.ui.feature.food.CreateFoodScreen
 import com.dirac.mactrack.ui.feature.meals.MealsScreen
@@ -190,6 +191,7 @@ fun MacTrackApp() {
                     onOpenProfile = { navController.navigate("profile") },
                     onOpenWeight = { navController.navigate("weight") },
                     onOpenAbout = { navController.navigate("about") },
+                    onOpenFavoriteUnits = { navController.navigate("favorite_units") },
                 )
             }
             composable("weight") {
@@ -197,6 +199,9 @@ fun MacTrackApp() {
             }
             composable("about") {
                 AboutScreen(onBack = { navController.popBackStack() })
+            }
+            composable("favorite_units") {
+                FavoriteUnitsScreen(onBack = { navController.popBackStack() })
             }
             composable("food_calendar") {
                 FoodLogCalendarScreen(onBack = { navController.popBackStack() })

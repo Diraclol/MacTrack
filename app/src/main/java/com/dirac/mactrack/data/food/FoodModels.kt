@@ -155,3 +155,55 @@ fun stagePortion(amount: Double, unit: PortionUnit): Staged {
     val g = unit.grams
     return if (g != null) Staged(round2(amount * g), "g", n) else Staged(round2(amount), unit.label, n)
 }
+
+// ---- Favorite serving units (UI-15) -----------------------------------------------------------
+// A generic weight/volume unit the user can pin to the FRONT of every food's serving picker.
+// `grams` is the weight of ONE of this unit. For VOLUME units it is really the millilitre size under
+// a standard ~1 g/ml assumption (MacTrack stores no per-food density), so those gram figures are
+// estimates. `isVolume` is only used by the settings screen, to label the volume ones as estimates.
+data class GenericServingUnit(
+    val key: String,
+    val label: String,
+    val grams: Double,
+    val isVolume: Boolean
+)
+
+// The catalog offered on the "Favorite Serving Units" screen: exact-conversion weight units first,
+// then volume units (estimated). Keys double as the stored preference values and deliberately match
+// the labels foods already use ("g", "oz", "ml"), so favouriting one of those reuses the food's own
+// unit instead of synthesising a duplicate.
+val FAVORITE_UNIT_CATALOG: List<GenericServingUnit> = listOf(
+    GenericServingUnit("g", "g", 1.0, isVolume = false),
+    GenericServingUnit("oz", "oz", 28.3495, isVolume = false),
+    GenericServingUnit("lb", "lb", 453.592, isVolume = false),
+    GenericServingUnit("ml", "ml", 1.0, isVolume = true),
+    GenericServingUnit("tsp", "tsp", 4.92892, isVolume = true),
+    GenericServingUnit("tbsp", "tbsp", 14.7868, isVolume = true),
+    GenericServingUnit("fl oz", "fl oz", 29.5735, isVolume = true),
+    GenericServingUnit("cup", "cup", 240.0, isVolume = true)
+)
+
+// Return a copy of this FoodDetail with the user's favourite units pulled to the FRONT of the unit
+// list (so they are the first serving chips). A favourite the food already lists is just moved up; a
+// favourite it lacks is synthesised from the food's per-gram nutrients, but only when a gram basis
+// exists (some existing unit whose gram weight is known). A food with no gram basis (e.g. a frozen
+// log snapshot logged in an unknown unit) keeps only the favourites it already lists. The default
+// selected unit is left untouched -- favourites change chip order, not which unit is preselected.
+fun FoodDetail.withFavoriteUnits(favoriteKeys: List<String>): FoodDetail {
+    if (favoriteKeys.isEmpty()) return this
+    val basis = units.firstOrNull { it.grams != null && it.grams > 0.0 }
+    val perGram: Nutrients? = basis?.let { u -> u.grams?.let { g -> u.per * (1.0 / g) } }
+    val ordered = ArrayList(units)
+    // Prepend in reverse so favoriteKeys[0] ends up leftmost.
+    for (key in favoriteKeys.asReversed()) {
+        val existing = ordered.indexOfFirst { it.label == key }
+        if (existing >= 0) {
+            ordered.add(0, ordered.removeAt(existing))
+        } else {
+            val generic = FAVORITE_UNIT_CATALOG.firstOrNull { it.key == key } ?: continue
+            if (perGram == null) continue
+            ordered.add(0, PortionUnit(generic.label, perGram * generic.grams, generic.grams))
+        }
+    }
+    return copy(units = ordered)
+}

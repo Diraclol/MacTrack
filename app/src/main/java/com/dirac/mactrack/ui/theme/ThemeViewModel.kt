@@ -26,6 +26,9 @@ class ThemeViewModel(private val repository: ThemeRepository) : ViewModel() {
     val nutrientOrder: StateFlow<List<String>> = repository.nutrientOrder
     fun setNutrientOrder(order: List<String>) = repository.setNutrientOrder(order)
 
+    val favoriteUnits: StateFlow<List<String>> = repository.favoriteUnits
+    fun setFavoriteUnits(units: List<String>) = repository.setFavoriteUnits(units)
+
     val reminderEnabled: StateFlow<Boolean> = repository.reminderEnabled
     fun setReminderEnabled(enabled: Boolean) = repository.setReminderEnabled(enabled)
 

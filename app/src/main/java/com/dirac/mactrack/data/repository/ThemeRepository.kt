@@ -38,6 +38,11 @@ class ThemeRepository(context: Context) {
     private val _nutrientOrder = MutableStateFlow(loadNutrientOrder())
     val nutrientOrder: StateFlow<List<String>> = _nutrientOrder.asStateFlow()
 
+    // Up to 2 serving units the user pins to the FRONT of every food's serving picker. Stored as CSV
+    // keys (see FAVORITE_UNIT_CATALOG). Empty by default (no favourites pinned).
+    private val _favoriteUnits = MutableStateFlow(loadFavoriteUnits())
+    val favoriteUnits: StateFlow<List<String>> = _favoriteUnits.asStateFlow()
+
     // Daily "log your food" reminder. Off by default.
     private val _reminderEnabled = MutableStateFlow(prefs.getBoolean("reminder_enabled", false))
     val reminderEnabled: StateFlow<Boolean> = _reminderEnabled.asStateFlow()
@@ -98,6 +103,12 @@ class ThemeRepository(context: Context) {
         _nutrientOrder.value = order
     }
 
+    fun setFavoriteUnits(units: List<String>) {
+        val capped = units.take(2)
+        prefs.edit().putString("favorite_units", capped.joinToString(",")).apply()
+        _favoriteUnits.value = capped
+    }
+
     private fun loadNutrientOrder(): List<String> {
         val known = DEFAULT_NUTRIENT_ORDER
         val saved = prefs.getString("nutrient_order", null)
@@ -107,6 +118,11 @@ class ThemeRepository(context: Context) {
         return if (saved.isNullOrEmpty()) known
         else (saved.filter { it in known } + known.filter { it !in saved }).ifEmpty { known }
     }
+
+    private fun loadFavoriteUnits(): List<String> =
+        prefs.getString("favorite_units", null)
+            ?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }?.take(2)
+            ?: emptyList()
 
     companion object {
         val DEFAULT_NUTRIENT_ORDER = listOf("sodium", "potassium", "fiber", "caffeine")

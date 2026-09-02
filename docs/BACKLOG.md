@@ -163,13 +163,19 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       `UnifiedSearchViewModel.kt` (branded/searchingBranded flows + debounced job), `UnifiedSearchScreen.kt`
       (Branded section). NOTE the CNF query is still exact-substring (`name LIKE %term%`), so a typo
       ("cherrios") returns nothing -> an optional fuzzy/typo pass is a separate follow-up.
-- [ ] **UI-15: Favorite Serving Units (full, incl. volume).** CONFIRMED full set (Dirac). A More screen
-      "Favorite Serving Units": pin up to 2 units to the FRONT of the serving-size selector. WEIGHT
-      (g/oz/lb -- exact gram conversions) + VOLUME (ml/tsp/tbsp/fl oz/cup). **Constraint:** MacTrack has no
-      per-food density, so volume->grams uses a standard ~1 g/ml assumption (tsp 5 ml, tbsp 15 ml, fl oz
-      ~29.57 ml, cup 240 ml) -- volume conversions are **estimates**; label them so. Requires: exposing
-      these generic units on every food's unit list (alongside g/oz + CNF measures), a pref storing the
-      <=2 favorites, and reordering the selector so favorites lead. Sizeable.
+- [x] **UI-15: Favorite Serving Units (full, incl. volume).** SHIPPED. A More screen "Favorite Serving
+      Units" pins up to 2 units to the FRONT of every food's serving picker. Catalog: WEIGHT (g/oz/lb,
+      exact conversions) + VOLUME (ml/tsp/tbsp/fl oz/cup) with a standard ~1 g/ml assumption -- volume
+      gram figures are labelled as estimates on the screen. Pref stored as CSV keys, capped at 2 (a 3rd
+      drops the oldest). `FoodDetail.withFavoriteUnits(keys)` (data/food/FoodModels.kt) moves an
+      already-present favourite to the front, or synthesises a missing one from the food's per-gram basis
+      (skipped when the food has no gram basis, e.g. a frozen log snapshot); the default selected unit is
+      unchanged. Applied at both serving selectors -- FoodDetailScreen and the TodayScreen edit sheet.
+      Files: FoodModels.kt (`GenericServingUnit`, `FAVORITE_UNIT_CATALOG`, `withFavoriteUnits`),
+      ThemeRepository/ThemeViewModel (`favoriteUnits` CSV pref), FavoriteUnitsScreen.kt (new), MoreScreen +
+      MacTrackApp wiring. NOTE: because `stagePortion` normalises any gram-bearing unit to grams, logging a
+      volume favourite stores the gram-equivalent (same as oz today); the serving chip still shows e.g.
+      "cup (240 g)". A follow-up could preserve the volume label in history.
 - [ ] **UI-16: Number-pad coloured macro pills.** Render the macro summary (e.g. 18P / 0C / 4F / 109 cal)
       as coloured pills (like the food-log rows) on the logging surface. **PENDING:** confirm which surface
       -- the compact bottom-sheet log editor in Dirac's screenshot differs from the current full-screen

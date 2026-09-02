@@ -52,6 +52,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.food.foodEmoji
+import com.dirac.mactrack.data.food.withFavoriteUnits
+import com.dirac.mactrack.ui.theme.ThemeViewModel
 import com.dirac.mactrack.ui.common.BackBar
 import com.dirac.mactrack.ui.common.NumberPad
 import com.dirac.mactrack.ui.common.PadAction
@@ -79,14 +81,18 @@ fun FoodDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val viewModel: FoodDetailViewModel = viewModel(factory = FoodDetailViewModel.Factory)
+    val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
     val detail by viewModel.detail.collectAsState()
+    val favoriteUnits by themeViewModel.favoriteUnits.collectAsState()
     val loaded by viewModel.loaded.collectAsState()
     val goal by viewModel.goal.collectAsState()
     val todayEntries by viewModel.todayEntries.collectAsState()
 
     LaunchedEffect(source, id) { viewModel.load(source, id) }
 
-    val d = detail
+    // Pull the user's pinned serving units to the front of this food's unit list (favourites feature).
+    // Memoised so `d` stays referentially stable, keeping the amount/unit selection state below intact.
+    val d = remember(detail, favoriteUnits) { detail?.withFavoriteUnits(favoriteUnits) }
     if (d == null || d.units.isEmpty()) {
         Box(modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
             when {

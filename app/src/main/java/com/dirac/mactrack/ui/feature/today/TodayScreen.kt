@@ -79,6 +79,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.MealEntry
 import com.dirac.mactrack.data.food.foodEmoji
 import com.dirac.mactrack.data.food.mealEntryDetail
+import com.dirac.mactrack.data.food.withFavoriteUnits
 import com.dirac.mactrack.ui.common.NumberPad
 import com.dirac.mactrack.ui.common.PadAction
 import com.dirac.mactrack.ui.theme.ThemeViewModel
@@ -139,6 +140,7 @@ fun TodayScreen(
     val goal by viewModel.goal.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
     val nutrientOrder by themeViewModel.nutrientOrder.collectAsState()
+    val favoriteUnits by themeViewModel.favoriteUnits.collectAsState()
 
     val totalCal = entries.sumOf { it.calories }
     val totalP = entries.sumOf { it.proteinG }
@@ -305,7 +307,10 @@ fun TodayScreen(
         val editDetail by viewModel.editDetail.collectAsState()
         // Synchronous snapshot (the single logged unit) shown until the full portion list loads.
         val snapshotDetail = remember(e) { mealEntryDetail(e) }
-        val detail = editDetail ?: snapshotDetail
+        val baseDetail = editDetail ?: snapshotDetail
+        // Pinned serving units first (favourites feature). The snapshot has no gram basis, so it is
+        // unchanged until the full detail loads and real portions arrive.
+        val detail = remember(baseDetail, favoriteUnits) { baseDetail.withFavoriteUnits(favoriteUnits) }
         var amount by remember(e) { mutableStateOf(servings(e.amount)) }
         var selectedUnit by remember(e) { mutableStateOf(e.unitLabel ?: e.unit) }
         // First key press replaces the prefilled amount instead of appending (matches the
