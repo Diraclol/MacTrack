@@ -1,6 +1,8 @@
 package com.dirac.mactrack.ui.feature.nutrient
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,12 +14,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -56,7 +62,8 @@ private fun fmt(x: Double): String = if (x >= 100) x.roundToInt().toString() els
 
 @Composable
 fun NutrientDetailScreen(nutrientKey: String, onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
-    val spec = NUTRIENTS.find { it.key == nutrientKey } ?: NUTRIENTS.first()
+    var selectedKey by remember(nutrientKey) { mutableStateOf(nutrientKey) }
+    val spec = NUTRIENTS.find { it.key == selectedKey } ?: NUTRIENTS.first()
     val vm: NutrientDetailViewModel = viewModel(factory = NutrientDetailViewModel.Factory)
     val entries by vm.entries.collectAsState()
 
@@ -79,7 +86,22 @@ fun NutrientDetailScreen(nutrientKey: String, onBack: () -> Unit = {}, modifier:
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item { BackBar(spec.label, onBack) }
+        item { BackBar("Nutrients", onBack) }
+        item {
+            // Switch between the tracked micronutrients without leaving the screen.
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                NUTRIENTS.forEach { n ->
+                    FilterChip(
+                        selected = n.key == selectedKey,
+                        onClick = { selectedKey = n.key },
+                        label = { Text(n.label) }
+                    )
+                }
+            }
+        }
 
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
