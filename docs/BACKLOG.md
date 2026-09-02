@@ -234,10 +234,16 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
 - [ ] **PROF-1: Profile name.** A name on the local profile/account. Schema-gated: `user_profile.name`
       (nullable) via a `Migration(8,9)` + DB v9 + a device build so KSP regenerates `9.json` (commit it).
       Shown on Profile (editable) and asked for in onboarding. Local — no backend needed.
-- [ ] **PROF-2: Photo profile icon.** Let the avatar be a photo from the camera roll (PickVisualMedia,
-      like the AI image attach), not just an emoji. Persist into app-internal storage (copy the picked
-      file, store the path) and render it in the avatar spots (dashboard header, profile); fall back to
-      the emoji when none. No schema change if the path lives in prefs (ThemeRepository) like the emoji.
+- [x] **PROF-2: Photo profile icon.** SHIPPED. The avatar can be a photo from the gallery, not just an
+      emoji. `data/profile/AvatarStore` copies the picked photo into app-internal storage (downscaled
+      ~256 px JPEG, a fresh timestamped filename each pick so the path string changes and Compose
+      re-decodes, old files cleaned up). `ThemeRepository` stores the path in prefs (`avatar_photo_path`)
+      as `avatarPhotoPath: StateFlow<String?>`; picking an emoji clears it (mutually exclusive). A shared
+      `ui/common/ProfileAvatar` composable renders the photo if set else the emoji, used in all three
+      avatar spots (dashboard header, More header, Profile). On Profile, tapping the avatar opens a
+      chooser: Choose a photo / Choose an emoji / Remove photo. Uses the same PickVisualMedia photo
+      picker as the AI attach (no new permission), decodes with BitmapFactory (no Coil/Glide dep). No
+      schema change.
 - [ ] **PROF-3: Onboarding account choice.** First onboarding screen asks "Create an account" vs
       "Continue without an account". "Continue without" is the current flow. Real sign-up is ACCT-1
       (needs the backend) — until then show it as coming-soon. Leans on the Cloud-Free-then-self-host
