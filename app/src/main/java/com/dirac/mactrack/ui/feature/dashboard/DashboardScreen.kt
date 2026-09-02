@@ -1,6 +1,7 @@
 package com.dirac.mactrack.ui.feature.dashboard
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
@@ -27,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -36,6 +38,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dirac.mactrack.R
 import com.dirac.mactrack.data.entity.Goal
 import com.dirac.mactrack.data.entity.WeightEntry
 import com.dirac.mactrack.ui.common.ProfileAvatar
@@ -93,7 +96,14 @@ fun DashboardScreen(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Text("Dashboard", style = MaterialTheme.typography.headlineSmall)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_mactrack_logo),
+                            contentDescription = null,
+                            modifier = Modifier.size(40.dp)
+                        )
+                        Text("Dashboard", style = MaterialTheme.typography.headlineSmall)
+                    }
                 }
                 ProfileAvatar(
                     emoji = avatar,
