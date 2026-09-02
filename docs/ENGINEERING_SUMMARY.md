@@ -10,12 +10,13 @@
 | | |
 |---|---|
 | **App** | Local-first Android calorie + macro tracker. Offline core, single user, no backend yet. |
-| **Core (calc engine)** | Done, unit-tested. Mifflin–St Jeor BMR → TDEE → macro split. |
+| **Core (calc engine)** | Done, unit-tested. BMR (Katch-McArdle when body fat is set, else Mifflin–St Jeor) → TDEE → macro split; matches tdeecalculator.net. |
 | **Food log + search + dashboard + Kitchen** | Built and running on device. Reviewed by screenshot. |
 | **Data** | Room (`mactrack.db`, **schema v8**) + bundled read-only CNF asset (`cnf.db`). |
 | **AI assistant** | SHIPPED — an opt-in chat tab (BYO-key, OpenAI-compatible, default Gemini): text + food-photo (vision) → macro estimate → review → log. Key encrypted in the Keystore. `data/ai/`, `ui/feature/ai/`. |
-| **Accounts / roles / shared DB** | Not built (scheduled last). Backend decided: **Supabase** (see BACKEND_RESEARCH.md). |
-| **Next up** | Dirac's call: UI-9 barcode camera (needs CameraX+ML Kit deps), UI-6 drag-between-blocks (needs a data decision), UI-10 instrumented tests (needs emulator), or ACCT-1 (Supabase). |
+| **Accounts / roles / shared DB** | Not built (scheduled last). Backend decided: **Supabase** (Neon and Convex both evaluated and rejected; see BACKEND_RESEARCH.md). |
+| **Barcode scanning** | Manual entry + **on-device camera scan** (CameraX 1.6.2 + bundled ML Kit `barcode-scanning:17.3.0`, offline, no key). `ui/feature/scanner/`. |
+| **Next up** | Dirac's call: UI-10 instrumented tests (needs the emulator, now available) or ACCT-1 (Supabase). Barcode (UI-9), drag-between-blocks (UI-6), and Katch-McArdle TDEE all shipped this round. |
 
 **Build gate:** schema changes can't be finished from the editor — they need a device build so KSP regenerates `app/schemas/.../N.json`. Do them one migration at a time. (All of SCHEMA-1..6 shipped; DB is at v8.)
 
@@ -32,6 +33,7 @@
 | Package root | `com.dirac.mactrack` |
 | Bundled data | Canadian Nutrient File — `app/src/main/assets/cnf.db` (~2 MB, read-only) |
 | Network | Open Food Facts (barcode lookup) + OpenAI-compatible AI (default Gemini). Both `HttpURLConnection` + `org.json`, no networking dependency. |
+| Camera | CameraX 1.6.2 + bundled ML Kit `barcode-scanning:17.3.0` (on-device, offline, no API key) for the barcode scanner. 17.3.0 is the 16 KB-aligned build AGP 9 requires. |
 | Secrets | AI API key encrypted with a hardware-backed Android **Keystore** AES-GCM key; only ciphertext in prefs (`data/ai/AiSettingsStore`). No secret is ever hardcoded or committed. |
 | Test devices | Pixel 8a (real) + emulator |
 | Source count | ~95 `.kt` files |

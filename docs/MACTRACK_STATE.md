@@ -39,11 +39,29 @@ compact equal-width bottom nav. Unit tests: calc engine + `IngredientBuilderRepo
 **Docs added.** [BACKEND_RESEARCH.md](BACKEND_RESEARCH.md) → backend decided **Supabase** (not Neon).
 [PWA_IOS_SPIKE.md](PWA_IOS_SPIKE.md) → iOS via Compose Multiplatform, web via a PWA over Supabase.
 
-**What's left (Dirac's call).** UI-9 barcode **camera** scan (needs CameraX + ML Kit deps + CAMERA
-perm); UI-6 drag log rows between time blocks (needs a `timeMinutes` data decision); UI-10
-instrumented Compose tests (needs a working emulator); ACCT-1/2 accounts + roles + shared food DB on
-Supabase (scheduled last). AI follow-ups: chat persistence, a "local server" preset, structured
-extraction instead of regex.
+**Update — 2026-09-01 (post-gym batch, NOT device-verified yet).** Shipped and pushed, statically
+verified clean, awaiting a Pixel/6a-emulator build:
+- **Katch-McArdle TDEE** — reassess uses Katch-McArdle (lean-mass BMR) when a body fat % is set, else
+  Mifflin-St Jeor; matches tdeecalculator.net (their 119 lb / 16% → BMR 1349 reproduces). Harris-
+  Benedict added for reference; unit tests for all three + the selector.
+- **Food log:** cals+macros row wrapped in **one grey box**; **UI-6 drag** — long-press and hold a
+  row, drag up/down, drop snaps it into that hour block (minutes zeroed, per Dirac's data call).
+- **Dashboard:** new **Nutrients** card (7-day avg of sodium/potassium/fiber/caffeine); both dashboard
+  card links relabeled from "7-day avg" to **See more**.
+- **Weight:** graph gains a **kg axis scale** (max/mid/min + gridlines, adapts to range) + date
+  endpoints; Log-weight dialog gains a **date picker** to backfill past days (one weigh-in per day).
+- **Food emoji** map greatly expanded (ground meats, seafood, legumes, grains, sauces, drinks, more
+  fruit/veg), with ordering fixes.
+- **UI-9 barcode camera** scanner — CameraX 1.6.2 + bundled ML Kit `barcode-scanning:17.3.0` (offline,
+  no key; 17.3.0 = the 16 KB-aligned build AGP 9 needs); **Scan with camera** in the barcode dialog →
+  first hit → OFF `branded` lookup. New CAMERA permission; APK +~2.4 MB.
+- **Backend:** **Convex** evaluated vs Supabase → still Supabase (offline/Room fit, relational shared
+  DB, RLS roles, lock-in). See BACKEND_RESEARCH.md.
+
+**What's left (Dirac's call).** UI-10 instrumented Compose tests (emulator now available); ACCT-1/2
+accounts + roles + shared food DB on Supabase (scheduled last). Barcode look-polish (red scan-line
+overlay, gallery import, flashlight) + a scan→saved-food offline match are follow-ups. AI follow-ups:
+chat persistence, a "local server" preset, structured extraction instead of regex.
 
 ---
 

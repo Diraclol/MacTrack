@@ -53,6 +53,10 @@ ENGINEERING_SUMMARY.md. Never `fallbackToDestructiveMigration()`.
       `MIGRATION_7_8`; a tap-to-edit "Body fat" box on Profile (0–100, blank clears). Preserved across
       `saveProfile()` — onboarding/reassess don't wipe it — via a merge in the repository plus a
       dedicated `setBodyFat()`. **This closes the schema-migration-gated backlog** (all of SCHEMA-1..6).
+      **Follow-up SHIPPED:** the TDEE engine now uses **Katch-McArdle** (lean-mass BMR) when a body fat %
+      is set, else Mifflin-St Jeor — matching tdeecalculator.net (verified: their 119 lb / 16% sample
+      gives BMR 1349). `domain/calc/Calculations.kt` (`katchMcArdleBmr`, `harrisBenedictBmr` for
+      reference, `basalMetabolicRate` selector); reassess shows which formula it used; unit tests added.
 
 _(Recipe "preparation instructions" — the notes box in the Create Recipe reference — was considered
 and dropped at Dirac's call: not needed. The redesigned Create Recipe screen intentionally omits it.)_
@@ -68,20 +72,29 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       3-way swipe cycle: "remaining" → "eaten / goal" → **rings** (a `TotalRing` per macro — a Canvas
       progress ring toward the day's goal, over-goal turning red, value in the center). Not the
       dashboard (stays as-is). Follow-up if wanted: a persisted default view and a Consumed/Remaining
-      label on the rings.
+      label on the rings. **Update:** the whole totals row (all three views) is now wrapped in one grey
+      filled box, matching the nutrient cards.
 - [x] **UI-3: Trends screen.** SHIPPED. TrendsScreen (metric + period selectors, daily-average card,
       Canvas daily bar chart with goal line); `DailyTotals` aggregation via `GROUP BY date`; the
       dashboard "Cals + Macros" card shows the rolling 7-day average and taps through to Trends.
 - [x] **UI-4: Weight redesign.** SHIPPED. Dedicated Weight screen (nav card in More): current weight +
       change, Log-weight dialog, 1M/3M/1Y/All range chips, a Canvas trend graph, history with delete.
+      **Update SHIPPED:** the graph now has a real weight axis (max/mid/min kg labels + gridlines, via
+      `TextMeasurer`/`drawText`, adapting to the range) and start/end date labels; the Log-weight dialog
+      has a **date picker** so past weigh-ins can be backfilled, and logging is now one-per-day (a
+      backfilled date replaces via `WeightEntryDao.replaceForDate`).
 - [x] **UI-5: Log-reminder notifications.** SHIPPED (off by default). A "Log reminder" switch in More →
       Preferences schedules a daily 8 PM nudge via `AlarmManager` + a `ReminderReceiver` (no WorkManager
       dep needed). Requests `POST_NOTIFICATIONS` at toggle time on Android 13+. Fixed 8 PM time for now
       (a time picker is a follow-up). NOTE: the actual alarm/notification firing is device-behavior
       dependent — confirm on the Pixel.
-- [ ] **UI-6: Drag-to-reorder log items between time blocks.** Hold + drag a logged row up/down to
-      move it to another hour block. Gesture-heavy (device testing) AND moving between blocks means
-      rewriting the row's `timeMinutes` — decide that data behavior before building.
+- [x] **UI-6: Drag log items between time blocks.** SHIPPED. Long-press and hold a logged food row,
+      then drag up/down; on release it snaps into whichever hour block it was dropped in. Data decision
+      (Dirac): no minute precision — the row's `timeMinutes` is set to the target hour × 60 (top of the
+      hour), since the log only ever groups by hour. `MealLogViewModel.moveEntryToHour`; the drop is
+      resolved against hour-header positions captured via `onGloballyPositioned`. Coexists with the
+      horizontal swipe-to-delete on the same row. Follow-up if the feel is off: tune the hold-vs-swipe
+      gesture split, and lift the dragged card above neighbours (cross-lazy-item zIndex).
 - [x] **UI-7: Ingredient picker for Create Recipe / Create Meal.** SHIPPED and reworked to match the
       MacroFactor reference. Create Meal and Create Recipe are now pure creation forms; their "+" / Add
       buttons open the existing food-search screen in a **picker mode** (`UnifiedSearchScreen(picker=…)`)
@@ -94,9 +107,19 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
 - [x] **UI-8: Nutrient detail screens.** SHIPPED. Tapping a micronutrient card on the food log opens
       `ui/feature/nutrient/NutrientDetailScreen`: today's total vs a reference target, a 30-day Canvas
       bar chart with a target line, and today's contributors (foods summed by that nutrient). Covers the
-      four box nutrients (sodium/potassium/fiber/caffeine).
-- [ ] **UI-9: Barcode camera scanning.** Manual barcode lookup works; camera scanning needs new deps
-      (CameraX + ML Kit barcode) + the CAMERA permission + a scanner screen.
+      four box nutrients (sodium/potassium/fiber/caffeine). **Update SHIPPED:** the dashboard now also
+      carries a **Nutrients** card (7-day average of the four, `DashboardViewModel.weeklyNutrientAvg`)
+      below Cals+Macros, tapping through to the nutrient detail; both dashboard cards' links were
+      relabeled from "7-day avg" to **See more**.
+- [x] **UI-9: Barcode camera scanning.** SHIPPED. On-device, offline camera scanner
+      (`ui/feature/scanner/BarcodeScannerScreen`) using CameraX 1.6.2 (`LifecycleCameraController`) +
+      bundled ML Kit `barcode-scanning:17.3.0` (no API key, no Play Services) via `MlKitAnalyzer`
+      (EAN-13/8, UPC-A/E). The barcode dialog now offers **Scan with camera**; the first hit is looked
+      up in Open Food Facts through the existing `branded` path. New CAMERA permission + `uses-feature
+      camera.any required=false`; APK grows ~2.4 MB for the bundled model. NOTE: 17.3.0 specifically is
+      the version with 16 KB native-lib alignment that AGP 9 enforces — earlier versions fail the build.
+      Deps added to the version catalog (camerax, cameraMlkit, mlkitBarcode, lifecycleRuntimeCompose).
+      Confirm the live preview + a real barcode on the Pixel.
 - [~] **UI-10: Automated tests.** JVM unit tests added (JUnit4, no new deps): the calc engine
       (pre-existing), plus `IngredientBuilderRepository`, `Nutrients` arithmetic, and the FoodModels
       mappers (`asFoodItem` / `foodItemDetail` / `mealEntryDetail` / `recipeDetail` / `stagePortion`).
@@ -120,7 +143,9 @@ Gated on choosing a backend and on the security rules in `docs/SECURITY.md`. Rol
 server-side, never client-trusted. This whole track is scheduled **last**. **Backend decision: Supabase**
 (Postgres + Auth + Row-Level Security + auto API + a Kotlin SDK) — it supplies the server-side role
 enforcement the security model requires with minimal backend to build; Neon was evaluated and rejected
-(DB-only, would force building auth+API+roles ourselves). Rationale in
+(DB-only, would force building auth+API+roles ourselves), and **Convex** was evaluated and rejected too
+(first-party Android SDK but no durable offline cache / no optimistic updates on Android — worse for a
+local-first Room app, and a document model vs the relational shared food DB). Rationale in
 [BACKEND_RESEARCH.md](BACKEND_RESEARCH.md).
 
 - [ ] **ACCT-1: Auth + accounts.** Google sign-in and email/password. Three roles — **admin** (newest
@@ -182,7 +207,7 @@ enforcement the security model requires with minimal backend to build; Neon was 
 - [x] Common food search over the bundled CNF asset (`cnf.db`, read-only, outside Room)
 - [x] Custom foods (Create Food) + Kitchen browse of foods/meals/recipes
 - [x] Unified food search (All / Foods / Meals / Quick add) + in-memory cart + quick add
-- [x] Barcode lookup via Open Food Facts (manual entry)
+- [x] Barcode lookup via Open Food Facts (manual entry + on-device camera scan, CameraX + ML Kit)
 - [x] Food detail with full portion units, contribution-to-remaining card, macro share rings
 - [x] Food log: Sunday-start week strip + date arrows logging to the viewed day; hour blocks with
       macro pills; micronutrient box; one-line swipeable totals with a goal tick; swipe-to-reveal delete
