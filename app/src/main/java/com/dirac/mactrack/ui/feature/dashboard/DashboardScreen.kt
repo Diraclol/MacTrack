@@ -29,8 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -120,57 +118,6 @@ fun DashboardScreen(
         item { FoodStreakCard(loggedDates = loggedDates.toSet(), onClick = onOpenStreak) }
         if (showWeightGraph) {
             item { WeightTrendCard(weights = weights) }
-        }
-    }
-}
-
-@Composable
-private fun CalorieCard(consumed: Double, target: Double) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text("Daily Nutrition", style = MaterialTheme.typography.titleMedium)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val remaining = (target - consumed).roundToInt()
-                StatNumber(value = if (target > 0) remaining.toString() else "—", label = "Remaining")
-                CalorieRing(consumed = consumed, target = target)
-                StatNumber(value = if (target > 0) target.roundToInt().toString() else "—", label = "Target")
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatNumber(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.titleLarge)
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun CalorieRing(consumed: Double, target: Double) {
-    val fraction = if (target > 0.0) (consumed / target).coerceIn(0.0, 1.0).toFloat() else 0f
-    val track = MaterialTheme.colorScheme.surfaceVariant
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(120.dp)) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val stroke = 16f
-            val d = size.minDimension - stroke
-            val tl = Offset((size.width - d) / 2f, (size.height - d) / 2f)
-            val arcSize = Size(d, d)
-            drawArc(color = track, startAngle = 0f, sweepAngle = 360f, useCenter = false, topLeft = tl, size = arcSize, style = Stroke(width = stroke))
-            drawArc(color = CalorieColor, startAngle = -90f, sweepAngle = 360f * fraction, useCenter = false, topLeft = tl, size = arcSize, style = Stroke(width = stroke, cap = StrokeCap.Round))
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("${consumed.roundToInt()}", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("Consumed", style = MaterialTheme.typography.labelSmall)
         }
     }
 }
