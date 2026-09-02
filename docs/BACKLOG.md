@@ -330,14 +330,11 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
       design choice). **iOS icon set: N/A** until an iOS/Compose-Multiplatform
       target exists (RESEARCH-1); the metadata-stripped 1024 master can be regenerated then. The stale green
       density `mipmap-*dpi/*.webp` fallbacks are unused at minSdk 26 and were left in place (removable later).
-- [~] **REL-3: CircleCI** — IN PROGRESS. `.circleci/config.yml` added: uses the official Android orb
-      (`circleci/android@3.2.0`) `android_machine` executor on the always-current `default` image (ships
-      SDK incl. API 36, JDK >= 17, pre-accepted licences), runs `testDebugUnitTest` then `assembleDebug` on
-      every push, caches `~/.gradle`, stores test results + the debug APK artifact. Mirrors the existing
-      GitHub Actions CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) -- note the repo already has
-      GH Actions CI, so CircleCI is a second CI by choice. NEXT: Dirac presses "Set Up Project" on the
-      MacTrack repo in CircleCI and picks "use the config in my repo" on branch `main`. First run may need
-      an image/JDK tweak (bleeding-edge AGP 9.2.1 / compileSdk 36.1); adjust from the failure log.
+- [x] **REL-3: CI — DONE via GitHub Actions.** CI runs on every push/PR to `main`
+      ([.github/workflows/ci.yml](.github/workflows/ci.yml)): JDK 21 + `testDebugUnitTest` + `assembleDebug`.
+      A CircleCI config was briefly added (Android orb, mirroring the same steps) but **removed** -- Dirac
+      chose to keep a single CI, and GitHub Actions already covers it. Revisit only if we later want
+      CircleCI-specific features (e.g. its APK-artifact UI, on-device/emulator jobs).
 - [ ] **REL-4: Knowledge base / wiki** — seed from the existing docs (ENGINEERING_SUMMARY, BACKLOG,
       SECURITY, BACKEND_RESEARCH, PWA_IOS_SPIKE) as the backbone.
 - [ ] **REL-5: Pre-public "pre-public cleanup."** Right before the repo goes public, sweep out every trace
