@@ -109,4 +109,4 @@ Open the project in Android Studio and run the `app` configuration, or from the 
 
 ## Licence
 
-_To be added._ (No licence is granted until a `LICENSE` file is present.)
+Released under the [MIT License](LICENSE) — free to use, modify, and distribute with attribution.
