@@ -137,6 +137,17 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       Goal (Lose/Maintain/Gain, which shows the adjusted daily target) → Fat preference → Protein
       preference → summary → saves profile + goal. Follow-ups: fancier pickers (wheel/ruler like the
       reference) and an optional body-fat step (SCHEMA-6 column exists).
+- [x] **UI-12: Food-detail duplicate & edit.** SHIPPED (food part). A 3-dot overflow menu (top-right of
+      the food detail screen, via a new optional `actions` slot on `BackBar`) offers **Duplicate & edit**
+      for any non-recipe food (Common/CNF, branded/scanned, a logged entry incl. an AI estimate, or an
+      existing custom food): `FoodDetailViewModel.duplicateAsFood` writes a NEW custom `FoodItem` from the
+      shown food's default serving (grams when known; a scanned food carries its barcode onto the copy)
+      and opens it in the food editor (`edit_food/{id}`) to tweak name/macros/icon. The user's own custom
+      food also gets a plain **Edit**. Covers near-match nutrition labels and editing AI-logged items.
+      **Follow-up (not started): recipe duplicate.** Viewing a recipe should offer "Duplicate recipe"
+      that clones the `Recipe` + its `RecipeIngredient`s into a new recipe and opens the recipe editor
+      (`edit_recipe/{id}`) -- the overflow menu is intentionally hidden for `source == "recipe"` until
+      then. Also optional: carry the source food's chosen emoji onto the copy (today it name-derives).
 - [x] **RESEARCH-1: PWA / iOS feasibility spike.** DONE — see [PWA_IOS_SPIKE.md](PWA_IOS_SPIKE.md).
       Recommendation: iOS via **Compose Multiplatform** (share domain/data/most-UI, ship native iOS);
       web via a **thin PWA over the Supabase backend** later (not CMP-wasm); no Flutter/RN rewrite.
