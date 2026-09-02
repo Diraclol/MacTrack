@@ -20,11 +20,12 @@ class WeightViewModel(private val repository: WeightRepository) : ViewModel() {
     val weights: StateFlow<List<WeightEntry>> = repository.getAllWeights()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun logWeight(weightKg: Double) {
+    // date lets the user backfill a past weigh-in; defaults to today from the dialog.
+    fun logWeight(weightKg: Double, date: LocalDate = LocalDate.now()) {
         viewModelScope.launch {
             repository.logWeight(
                 WeightEntry(
-                    date = LocalDate.now().toString(),
+                    date = date.toString(),
                     weightKg = weightKg
                 )
             )

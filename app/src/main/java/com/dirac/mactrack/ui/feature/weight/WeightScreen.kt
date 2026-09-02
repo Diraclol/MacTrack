@@ -17,6 +17,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,9 +40,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.WeightEntry
 import com.dirac.mactrack.ui.common.BackBar
@@ -105,15 +113,27 @@ fun WeightScreen(onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
         }
 
         Card(modifier = Modifier.fillMaxWidth()) {
-            Box(modifier = Modifier.fillMaxWidth().height(200.dp).padding(16.dp), contentAlignment = Alignment.Center) {
-                if (shown.size < 2) {
-                    Text(
-                        "Log at least two weigh-ins to see a trend.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    WeightGraph(shown, modifier = Modifier.fillMaxSize())
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                    if (shown.size < 2) {
+                        Text(
+                            "Log at least two weigh-ins to see a trend.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        WeightGraph(shown, modifier = Modifier.fillMaxSize())
+                    }
+                }
+                // Start / end of the visible window, so the range (1M vs 3M ...) has a time reference.
+                if (shown.size >= 2) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(start = 40.dp, top = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(shown.first().date, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(shown.last().date, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }
@@ -141,7 +161,7 @@ fun WeightScreen(onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
     if (showLog) {
         WeightLogDialog(
             current = latest?.weightKg,
-            onSave = { viewModel.logWeight(it); showLog = false },
+            onSave = { w, d -> viewModel.logWeight(w, d); showLog = false },
             onDismiss = { showLog = false }
         )
     }
@@ -149,43 +169,66 @@ fun WeightScreen(onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
 
 @Composable
 private fun WeightGraph(points: List<WeightEntry>, modifier: Modifier = Modifier) {
-    val line = MaterialTheme.colorScheme.primary
-    val dot = MaterialTheme.colorScheme.primary
+    val lineColor = MaterialTheme.colorScheme.primary
+    val dotColor = MaterialTheme.colorScheme.primary
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
+    val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val measurer = rememberTextMeasurer()
+
     val days = points.map { LocalDate.parse(it.date).toEpochDay() }
     val minW = points.minOf { it.weightKg }
     val maxW = points.maxOf { it.weightKg }
-    val wSpan = (maxW - minW).takeIf { it > 0.0 } ?: 1.0
+    // Pad the weight axis a little so points aren't glued to the top/bottom edges, and so a flat
+    // series (min == max) still draws a readable band.
+    val padW = ((maxW - minW) * 0.1).takeIf { it > 0.0 } ?: 1.0
+    val axisMax = maxW + padW
+    val axisMin = minW - padW
+    val axisSpan = (axisMax - axisMin).takeIf { it > 0.0 } ?: 1.0
     val minX = days.min()
     val maxX = days.max()
     val xSpan = (maxX - minX).takeIf { it > 0L } ?: 1L
 
+    val labelStyle = TextStyle(fontSize = 10.sp, color = labelColor)
+
     Canvas(modifier = modifier) {
-        val pad = 8.dp.toPx()
-        val w = size.width - 2 * pad
-        val h = size.height - 2 * pad
-        fun at(i: Int): Offset {
-            val x = pad + (days[i] - minX).toFloat() / xSpan * w
-            val y = pad + (1f - ((points[i].weightKg - minW) / wSpan).toFloat()) * h
-            return Offset(x, y)
+        val gutter = 40.dp.toPx()          // left space for the weight-axis labels
+        val padV = 8.dp.toPx()
+        val plotW = size.width - gutter
+        val plotH = size.height - 2 * padV
+        fun y(weight: Double): Float = padV + (1f - ((weight - axisMin) / axisSpan).toFloat()) * plotH
+        fun x(i: Int): Float = gutter + (days[i] - minX).toFloat() / xSpan * plotW
+
+        // Three horizontal reference lines with their kg values: max, midpoint, min of the padded axis.
+        listOf(axisMax, (axisMax + axisMin) / 2.0, axisMin).forEach { w ->
+            val gy = y(w)
+            drawLine(gridColor, Offset(gutter, gy), Offset(size.width, gy), strokeWidth = 1.dp.toPx())
+            val tl = measurer.measure(oneDecimal(w), labelStyle)
+            drawText(tl, topLeft = Offset(gutter - tl.size.width - 6.dp.toPx(), gy - tl.size.height / 2f))
         }
+
         val path = Path()
         points.indices.forEach { i ->
-            val o = at(i)
-            if (i == 0) path.moveTo(o.x, o.y) else path.lineTo(o.x, o.y)
+            val px = x(i)
+            val py = y(points[i].weightKg)
+            if (i == 0) path.moveTo(px, py) else path.lineTo(px, py)
         }
-        drawPath(path, color = line, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
-        points.indices.forEach { drawCircle(dot, radius = 4.dp.toPx(), center = at(it)) }
+        drawPath(path, color = lineColor, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
+        points.indices.forEach { drawCircle(dotColor, radius = 4.dp.toPx(), center = Offset(x(it), y(points[it].weightKg))) }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WeightLogDialog(current: Double?, onSave: (Double) -> Unit, onDismiss: () -> Unit) {
+private fun WeightLogDialog(current: Double?, onSave: (Double, LocalDate) -> Unit, onDismiss: () -> Unit) {
     var text by remember { mutableStateOf(current?.let { oneDecimal(it) } ?: "") }
+    var date by remember { mutableStateOf(LocalDate.now()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Log weight") },
         text = {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
@@ -193,14 +236,40 @@ private fun WeightLogDialog(current: Double?, onSave: (Double) -> Unit, onDismis
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
+                // Tap the date to backfill a weigh-in from a past day.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Date", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    TextButton(onClick = { showDatePicker = true }) {
+                        Text(if (date == LocalDate.now()) "Today" else date.toString())
+                    }
+                }
             }
         },
         confirmButton = {
             TextButton(onClick = {
                 val w = text.toDoubleOrNull()
-                if (w != null && w > 0) onSave(w)
+                if (w != null && w > 0) onSave(w, date)
             }) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
+
+    if (showDatePicker) {
+        // The picker works in UTC millis; convert with ZoneOffset.UTC both ways so the day never shifts.
+        val pickerState = rememberDatePickerState(initialSelectedDateMillis = date.toEpochDay() * 86_400_000L)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    pickerState.selectedDateMillis?.let {
+                        date = java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneOffset.UTC).toLocalDate()
+                    }
+                    showDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } }
+        ) {
+            DatePicker(state = pickerState)
+        }
+    }
 }
