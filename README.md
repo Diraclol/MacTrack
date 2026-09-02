@@ -75,6 +75,16 @@ Android Studio, Gradle (Kotlin DSL), Jetpack Compose, Room (via KSP), CameraX, a
 - **Open Food Facts** — queried online for branded and barcoded products; when there is no network,
   search falls back to CNF and your saved foods.
 
+### Data attribution
+
+- Common-food nutrition data is derived from the **Canadian Nutrient File**, published by Health Canada,
+  under the [Open Government Licence – Canada](https://open.canada.ca/en/open-government-licence-canada).
+  MacTrack is not endorsed by or affiliated with Health Canada.
+- Branded product data is from **[Open Food Facts](https://world.openfoodfacts.org)**, available under
+  the Open Database Licence (ODbL).
+
+The MIT licence below applies to MacTrack's own source code, not to these third-party datasets.
+
 ## Gemini API key (optional)
 
 The AI assistant is off by default and requires **your own** Google AI Studio (Gemini) API key, which
