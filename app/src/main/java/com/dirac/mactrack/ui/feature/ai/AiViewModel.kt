@@ -69,10 +69,14 @@ private val SYSTEM_PROMPT = """
     meal (for example "make a recipe from ..." or "save these as a meal"), reply with ONLY a JSON object
     and nothing else -- no prose, no code fence -- in exactly this shape:
     {"target":"recipe"|"meal","name":"<short name>","ingredients":[{"name":"<food>","quantity":<number>,"unit":"g"|"ml"|"serving"|"cup"|"tbsp"|"tsp"|"oz"}]}
-    Use "recipe" if they said recipe and "meal" if they said meal; if it is unclear, use "meal". Give
-    each quantity in grams where you reasonably can, and use "serving" as the unit for countable items
-    you cannot weigh. The app itself looks up each ingredient's real macros from its databases -- you
-    only extract the names and amounts. For anything that is not such a request, answer normally.
+    Use "recipe" if they said recipe and "meal" if they said meal; if it is unclear, use "meal".
+    Prefer grams for every quantity -- including countable foods, by multiplying by a typical unit
+    weight (e.g. "2 eggs" -> quantity 100, unit "g", since a large egg is about 50 g; "1 slice bread"
+    -> about 30 g; "1 cup cooked rice" -> about 200 g). Only fall back to unit "serving" when you truly
+    cannot estimate a gram weight. Also give each ingredient a specific, common name ("egg", "chicken
+    breast", "white rice"), not a vague one. The app looks up each ingredient's real macros from its
+    databases -- you only extract the names and amounts. For anything that is not such a request, answer
+    normally.
 """.trimIndent()
 
 // Backs the AI chat tab. Conversation is in-memory (Slice 1) -- it survives tab switches/rotation but
