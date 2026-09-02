@@ -9,9 +9,11 @@
     <!-- Barcode scanning uses the camera, but the app is fully usable without one. -->
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
+    <!-- allowBackup=false: local-first — keep the on-device food log out of Android cloud
+         Auto-Backup and device-to-device transfer. Data never leaves the device. -->
     <application
         android:name=".MacTrackApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
