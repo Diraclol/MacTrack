@@ -2,7 +2,9 @@ package com.dirac.mactrack.ui.feature.scanner
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.mlkit.vision.MlKitAnalyzer
@@ -25,7 +27,13 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FlashOff
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,6 +56,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.atomic.AtomicBoolean
 
 // Full-screen camera barcode scanner (UI-9). On-device / offline via ML Kit's bundled model. Uses the
@@ -81,6 +90,41 @@ fun BarcodeScannerScreen(
     val handled = remember { AtomicBoolean(false) }   // fire onResult exactly once
     val controller = remember { LifecycleCameraController(context) }
     var scannedCode by remember { mutableStateOf<String?>(null) }
+    var torchOn by remember { mutableStateOf(false) }
+
+    // One scanner client shared by the live analyzer and the gallery-photo path.
+    val scanner = remember {
+        BarcodeScanning.getClient(
+            BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(
+                    Barcode.FORMAT_EAN_13, Barcode.FORMAT_EAN_8,
+                    Barcode.FORMAT_UPC_A, Barcode.FORMAT_UPC_E
+                )
+                .build()
+        )
+    }
+
+    // Pick a photo from the gallery and read a barcode out of it (works even without camera permission).
+    val galleryPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        try {
+            val image = InputImage.fromFilePath(context, uri)
+            scanner.process(image)
+                .addOnSuccessListener { barcodes ->
+                    val raw = barcodes.firstOrNull { !it.rawValue.isNullOrBlank() }?.rawValue
+                    if (raw != null && handled.compareAndSet(false, true)) {
+                        scannedCode = raw
+                    } else {
+                        Toast.makeText(context, "No barcode found in that photo", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .addOnFailureListener {
+                    Toast.makeText(context, "Couldn't read that photo", Toast.LENGTH_SHORT).show()
+                }
+        } catch (e: Exception) {
+            Toast.makeText(context, "Couldn't open that photo", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     // Hand the hit off to the main thread, stop the camera, then report it.
     LaunchedEffect(scannedCode) {
@@ -90,7 +134,10 @@ fun BarcodeScannerScreen(
     }
 
     DisposableEffect(Unit) {
-        onDispose { controller.unbind() }
+        onDispose {
+            controller.unbind()
+            scanner.close()
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
@@ -108,13 +155,6 @@ fun BarcodeScannerScreen(
                 )
                 ScannerOverlay(modifier = Modifier.align(Alignment.Center))
                 LaunchedEffect(controller) {
-                    val options = BarcodeScannerOptions.Builder()
-                        .setBarcodeFormats(
-                            Barcode.FORMAT_EAN_13, Barcode.FORMAT_EAN_8,
-                            Barcode.FORMAT_UPC_A, Barcode.FORMAT_UPC_E
-                        )
-                        .build()
-                    val scanner = BarcodeScanning.getClient(options)
                     val mainExecutor = ContextCompat.getMainExecutor(context)
                     controller.setImageAnalysisAnalyzer(
                         mainExecutor,
@@ -140,11 +180,22 @@ fun BarcodeScannerScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(24.dp)
+                        .padding(bottom = 88.dp)
                         .clip(RoundedCornerShape(50))
                         .background(Color.Black.copy(alpha = 0.5f))
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
+                // Flashlight (torch) toggle, bottom-right.
+                IconButton(
+                    onClick = { torchOn = !torchOn; controller.enableTorch(torchOn) },
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+                ) {
+                    Icon(
+                        if (torchOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
+                        contentDescription = "Toggle flashlight",
+                        tint = Color.White
+                    )
+                }
             }
             permissionDenied -> {
                 Column(
@@ -170,6 +221,14 @@ fun BarcodeScannerScreen(
 
         TextButton(onClick = onBack, modifier = Modifier.align(Alignment.TopStart).padding(8.dp)) {
             Text("Back", color = Color.White)
+        }
+
+        // Pick a photo from the gallery to read a barcode from it (available even without the camera).
+        IconButton(
+            onClick = { galleryPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+            modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)
+        ) {
+            Icon(Icons.Filled.PhotoLibrary, contentDescription = "Scan a barcode from a photo", tint = Color.White)
         }
     }
 }
