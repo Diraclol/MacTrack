@@ -254,8 +254,12 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
 - [ ] **ACCT-1: Auth + accounts.** Google sign-in and email/password. Three roles — **admin** (newest
       features), **Btester** (can add foods to a shared database), **regular** (no extras). Enforce
       roles with server-side claims / row-level security. Never hardcode the admin credential anywhere.
+      **DESIGN DONE — see [SUPABASE_PLAN.md](SUPABASE_PLAN.md)** (schema + RLS + optional-auth + the
+      last-write-wins/tombstone sync engine + Room migration 8->9 + a 6-phase rollout). Awaiting Dirac's
+      answers to the "Decisions needed" section before Phase 0 (schema + RLS SQL, no app code).
 - [ ] **ACCT-2: Shared food database.** The database Btesters grow. Needs validation, moderation, and
-      rate-limiting so shared entries can't poison everyone's search.
+      rate-limiting so shared entries can't poison everyone's search. **Covered in
+      [SUPABASE_PLAN.md](SUPABASE_PLAN.md) §2b/§3** (`shared_foods` table + moderation RLS) as Phase 4.
 - [ ] **AI-1: Vision features (separate, opt-in, BYO-key). Gemini only.** Photo → estimate macros;
       photo + a weight → more accurate; paste an item list (brands optional) → match/calculate against
       CNF + saved foods; menu photo → cutting/bulking recommendation. All go through review-before-save.
