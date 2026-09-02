@@ -154,7 +154,8 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       The one discipline to hold now: keep `domain`/`data`/`calc` free of `android.*` imports (they are).
 - [ ] **I18N-1: French localization (fr-CA).** Add a French language option in More. **Parked by Dirac
       2026-09-01** — captured with a plan, not started, because it is a large multi-step job that must be
-      built in small increments on-device. **Scope:** there is *no* i18n infrastructure today — no
+      built in small increments on-device. **Timing (Dirac): do it as a feature branch once the full
+      public release is out** — not before, so it doesn't churn the pre-release work. **Scope:** there is *no* i18n infrastructure today — no
       `strings.xml`, zero `stringResource`; every user-facing string is a hardcoded literal (~300-400
       strings: 191 `Text("…")` + 26 `contentDescription` + ~39 titles/labels/placeholders + dialogs/
       Toasts/BackBar titles, across 24 screens). **Mechanism (decided):** Compose-level switch, no new
@@ -266,7 +267,21 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
       formatted for, Android dependencies, Gemini-API-key dependency, screenshots (Dirac provides).
       Recommended additions: a `LICENSE`, a short privacy note (BYO-key, local-first, no tracking), a
       `SECURITY.md` pointer, and a one-paragraph architecture blurb. Build in a small worktree.
-- [ ] **REL-2: Logo** — needed before the repo goes public.
+- [~] **REL-2: Logo** — IN PROGRESS. Final monogram (faceted M/T ligature, brand blue #0861AB) delivered
+      by Dirac as `MacTrack Monogram Logo.zip`. **SHIPPED:** the app **launcher icon** (adaptive, white
+      mark on brand-blue, authored as hand-written VectorDrawables — `drawable/ic_launcher_foreground.xml`
+      + `ic_launcher_background.xml` + `@color/mactrack_blue`; the mark also serves the `<monochrome>`
+      themed-icon layer) and a reusable in-app mark (`drawable/ic_mactrack_logo.xml`), used on the new
+      **About** screen (More → About). **SECURITY NOTE:** every supplied file (SVGs *and* PNGs) carried an
+      embedded embedded "metadata" block whose payload decodes to "the tool provided this file…" —
+      i.e. AI-provenance metadata. To honour the no-pre-public cleanup rule, **nothing was copied in verbatim**:
+      the icons are re-authored from the six polygon coordinates as clean VectorDrawables (zero metadata),
+      and no raster from the zip is in the repo. **Still to do:** the splash screen (needs a decision —
+      androidx `core-splashscreen` dep for a proper backported splash vs. platform-only API-31+ splash vs.
+      a simple blue window background; all build-gated) and the app **header** placement (a small mark in
+      a top bar — a visual call to eyeball on device). **iOS icon set: N/A** until an iOS/Compose-Multiplatform
+      target exists (RESEARCH-1); the metadata-stripped 1024 master can be regenerated then. The stale green
+      density `mipmap-*dpi/*.webp` fallbacks are unused at minSdk 26 and were left in place (removable later).
 - [ ] **REL-3: CircleCI** — CI to auto-run `:app:testDebugUnitTest` and build a release APK; wire at
       release time for a full release. (Dirac: "wire it when the product is done".)
 - [ ] **REL-4: Knowledge base / wiki** — seed from the existing docs (ENGINEERING_SUMMARY, BACKLOG,
