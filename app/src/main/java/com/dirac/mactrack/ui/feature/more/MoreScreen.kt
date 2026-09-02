@@ -69,6 +69,7 @@ fun MoreScreen(
     onOpenGoals: () -> Unit = {},
     onOpenProfile: () -> Unit = {},
     onOpenWeight: () -> Unit = {},
+    onOpenAbout: () -> Unit = {},
 ) {
     val profileViewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.Factory)
     val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
@@ -176,6 +177,7 @@ fun MoreScreen(
         item { MoreCard("Kitchen", onOpenLibrary) }
         item { MoreCard("Goals", onOpenGoals) }
         item { MoreCard("Weight", onOpenWeight) }
+        item { MoreCard("About", onOpenAbout) }
         // Preferences
         item {
             Text(

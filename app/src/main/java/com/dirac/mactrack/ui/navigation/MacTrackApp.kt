@@ -55,6 +55,7 @@ import com.dirac.mactrack.ui.feature.nutrient.NutrientDetailScreen
 import com.dirac.mactrack.ui.feature.ai.AiScreen
 import com.dirac.mactrack.ui.feature.ai.AiSettingsScreen
 import com.dirac.mactrack.ui.feature.scanner.BarcodeScannerScreen
+import com.dirac.mactrack.ui.feature.about.AboutScreen
 
 @Composable
 fun MacTrackApp() {
@@ -186,10 +187,14 @@ fun MacTrackApp() {
                     onOpenGoals = { navController.navigate("goals") },
                     onOpenProfile = { navController.navigate("profile") },
                     onOpenWeight = { navController.navigate("weight") },
+                    onOpenAbout = { navController.navigate("about") },
                 )
             }
             composable("weight") {
                 WeightScreen(onBack = { navController.popBackStack() })
+            }
+            composable("about") {
+                AboutScreen(onBack = { navController.popBackStack() })
             }
             composable("library") {
                 LibraryScreen(
