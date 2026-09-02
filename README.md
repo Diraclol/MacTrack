@@ -8,15 +8,13 @@ Package: `com.dirac.mactrack` · Status: active development (pre-1.0).
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/dashboard.png" width="220" alt="Dashboard">
-  <img src="docs/screenshots/food-log.png" width="220" alt="Food log">
-  <img src="docs/screenshots/food-detail.png" width="220" alt="Food detail">
-  <img src="docs/screenshots/search.png" width="220" alt="Food search">
+  <img src="docs/screenshots/dashboard.jpeg" width="215" alt="Dashboard">
+  <img src="docs/screenshots/foodlog.jpeg" width="215" alt="Food log">
+  <img src="docs/screenshots/fooddetail.jpeg" width="215" alt="Food detail">
+  <img src="docs/screenshots/foodsearch.jpeg" width="215" alt="Food search">
 </p>
 
 <p align="center"><em>Dashboard &middot; Food log &middot; Food detail &middot; Search</em></p>
-
-<!-- Drop the PNGs in docs/screenshots/ with the filenames referenced above (and splash.png). -->
 
 
 ## What it does
