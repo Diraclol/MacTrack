@@ -182,6 +182,8 @@ fun TodayScreen(
         Surface(
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surfaceVariant,
+            // Outline so the day's calories + macros box stands out from the food list below it.
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
         ) {
             Row(

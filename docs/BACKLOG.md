@@ -184,9 +184,9 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       switcher + period pills, UI-8/period-pills) "look weird" (Dirac). **PENDING a screenshot** to fix
       precisely -- likely the two stacked FilterChip scroll-rows read cluttered; consider consolidating or
       spacing them.
-- [ ] **UI-18: Cals + Macros outline on the food log (TENTATIVE).** Dirac "might" want an outline/border
-      on the food-log totals box for visibility (like the nutrient boxes). One-line border change; do on
-      confirm.
+- [x] **UI-18: Cals + Macros outline on the food log.** SHIPPED (Dirac confirmed). Added a
+      `BorderStroke(1.dp, outline)` to the food-log totals Surface (TodayScreen) so the day's
+      calories + macros box stands out from the food list below.
 - [x] **RESEARCH-1: PWA / iOS feasibility spike.** DONE — see [PWA_IOS_SPIKE.md](PWA_IOS_SPIKE.md).
       Recommendation: iOS via **Compose Multiplatform** (share domain/data/most-UI, ship native iOS);
       web via a **thin PWA over the Supabase backend** later (not CMP-wasm); no Flutter/RN rewrite.
