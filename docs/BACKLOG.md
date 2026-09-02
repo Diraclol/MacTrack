@@ -276,10 +276,12 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
       embedded embedded "metadata" block whose payload decodes to "the tool provided this file…" —
       i.e. AI-provenance metadata. To honour the no-pre-public cleanup rule, **nothing was copied in verbatim**:
       the icons are re-authored from the six polygon coordinates as clean VectorDrawables (zero metadata),
-      and no raster from the zip is in the repo. **Still to do:** the splash screen (needs a decision —
-      androidx `core-splashscreen` dep for a proper backported splash vs. platform-only API-31+ splash vs.
-      a simple blue window background; all build-gated) and the app **header** placement (a small mark in
-      a top bar — a visual call to eyeball on device). **iOS icon set: N/A** until an iOS/Compose-Multiplatform
+      and no raster from the zip is in the repo. **Splash SHIPPED:** a branded launch screen (blue +
+      centered white monogram) via the androidx `core-splashscreen` dep (Dirac's call), `Theme.MacTrack.Starting`
+      + `installSplashScreen()` in MainActivity — backported to all supported devices (minSdk 26). **Still
+      to do:** the app **header** placement (a small mark in a top bar — a visual/taste call to make with
+      Dirac on device; the app uses per-screen headers, not one global app bar, so where it goes is a
+      design choice). **iOS icon set: N/A** until an iOS/Compose-Multiplatform
       target exists (RESEARCH-1); the metadata-stripped 1024 master can be regenerated then. The stale green
       density `mipmap-*dpi/*.webp` fallbacks are unused at minSdk 26 and were left in place (removable later).
 - [ ] **REL-3: CircleCI** — CI to auto-run `:app:testDebugUnitTest` and build a release APK; wire at
