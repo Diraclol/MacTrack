@@ -220,19 +220,27 @@ fun MacTrackApp() {
             composable(
                 "create_food?barcode={barcode}",
                 arguments = listOf(navArgument("barcode") { type = NavType.StringType; defaultValue = "" })
-            ) {
+            ) { backStackEntry ->
+                val scanned by backStackEntry.savedStateHandle.getStateFlow("scanned_barcode", "").collectAsState()
                 CreateFoodScreen(
                     onBack = { navController.popBackStack() },
-                    onSaved = { navController.popBackStack() }
+                    onSaved = { navController.popBackStack() },
+                    onScanBarcode = { navController.navigate("scanner_for_result") },
+                    scannedBarcode = scanned.ifBlank { null },
+                    onScannedConsumed = { backStackEntry.savedStateHandle["scanned_barcode"] = "" }
                 )
             }
             composable(
                 "edit_food/{id}",
                 arguments = listOf(navArgument("id") { type = NavType.StringType })
-            ) {
+            ) { backStackEntry ->
+                val scanned by backStackEntry.savedStateHandle.getStateFlow("scanned_barcode", "").collectAsState()
                 CreateFoodScreen(
                     onBack = { navController.popBackStack() },
-                    onSaved = { navController.popBackStack() }
+                    onSaved = { navController.popBackStack() },
+                    onScanBarcode = { navController.navigate("scanner_for_result") },
+                    scannedBarcode = scanned.ifBlank { null },
+                    onScannedConsumed = { backStackEntry.savedStateHandle["scanned_barcode"] = "" }
                 )
             }
             composable(
@@ -307,6 +315,17 @@ fun MacTrackApp() {
                         navController.navigate("food_detail/branded/$code") {
                             popUpTo("scanner") { inclusive = true }
                         }
+                    }
+                )
+            }
+            // Same scanner, but it hands the code back to the screen that opened it (the food editor's
+            // barcode field) instead of doing a product lookup.
+            composable("scanner_for_result") {
+                BarcodeScannerScreen(
+                    onBack = { navController.popBackStack() },
+                    onResult = { code ->
+                        navController.previousBackStackEntry?.savedStateHandle?.set("scanned_barcode", code)
+                        navController.popBackStack()
                     }
                 )
             }

@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -36,6 +37,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,34 +75,43 @@ private fun numText(x: Double): String =
 // with entry boxes. Values entered are for ONE serving. Opened from the Kitchen with an id, it edits
 // that food in place (and offers Delete); otherwise it creates a new one.
 @Composable
-fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier = Modifier) {
+fun CreateFoodScreen(
+    onBack: () -> Unit,
+    onSaved: () -> Unit,
+    onScanBarcode: () -> Unit = {},
+    scannedBarcode: String? = null,
+    onScannedConsumed: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     val viewModel: FoodViewModel = viewModel(factory = FoodViewModel.Factory)
     val editing by viewModel.editing.collectAsState()
 
-    var name by remember { mutableStateOf("") }
-    var brand by remember { mutableStateOf("") }
-    var calories by remember { mutableStateOf("") }
-    var protein by remember { mutableStateOf("") }
-    var carb by remember { mutableStateOf("") }
-    var fat by remember { mutableStateOf("") }
-    var fiber by remember { mutableStateOf("") }
-    var sugar by remember { mutableStateOf("") }
-    var satFat by remember { mutableStateOf("") }
-    var sodium by remember { mutableStateOf("") }
-    var potassium by remember { mutableStateOf("") }
-    var cholesterol by remember { mutableStateOf("") }
-    var caffeine by remember { mutableStateOf("") }
-    var servingSize by remember { mutableStateOf("1") }
-    var servingUnit by remember { mutableStateOf("serving") }
-    var showMicros by remember { mutableStateOf(false) }
-    var emoji by remember { mutableStateOf<String?>(null) }
+    // rememberSaveable so the half-filled form survives a rotation AND the trip out to the barcode
+    // scanner and back (the editor stays on the back stack while the scanner is on top).
+    var name by rememberSaveable { mutableStateOf("") }
+    var brand by rememberSaveable { mutableStateOf("") }
+    var calories by rememberSaveable { mutableStateOf("") }
+    var protein by rememberSaveable { mutableStateOf("") }
+    var carb by rememberSaveable { mutableStateOf("") }
+    var fat by rememberSaveable { mutableStateOf("") }
+    var fiber by rememberSaveable { mutableStateOf("") }
+    var sugar by rememberSaveable { mutableStateOf("") }
+    var satFat by rememberSaveable { mutableStateOf("") }
+    var sodium by rememberSaveable { mutableStateOf("") }
+    var potassium by rememberSaveable { mutableStateOf("") }
+    var cholesterol by rememberSaveable { mutableStateOf("") }
+    var caffeine by rememberSaveable { mutableStateOf("") }
+    var servingSize by rememberSaveable { mutableStateOf("1") }
+    var servingUnit by rememberSaveable { mutableStateOf("serving") }
+    var showMicros by rememberSaveable { mutableStateOf(false) }
+    var emoji by rememberSaveable { mutableStateOf<String?>(null) }
     // Prefilled from a scanned-but-unrecognized barcode when creating (blank otherwise; edit mode
     // overwrites it from the loaded food in the seed effect below).
-    var barcode by remember { mutableStateOf(viewModel.initialBarcode ?: "") }
+    var barcode by rememberSaveable { mutableStateOf(viewModel.initialBarcode ?: "") }
     var showIconPicker by remember { mutableStateOf(false) }
 
     // When editing, seed the fields once from the loaded food.
-    var seeded by remember { mutableStateOf(false) }
+    var seeded by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(editing) {
         val e = editing
         if (e != null && !seeded) {
@@ -125,6 +136,14 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
                 e.potassiumMg != 0.0 || e.cholesterolMg != 0.0 || e.caffeineMg != 0.0
             ) showMicros = true
             seeded = true
+        }
+    }
+
+    // A barcode returned from the scanner fills the field, leaving the rest of the form untouched.
+    LaunchedEffect(scannedBarcode) {
+        if (!scannedBarcode.isNullOrBlank()) {
+            barcode = scannedBarcode
+            onScannedConsumed()
         }
     }
 
@@ -228,6 +247,12 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
                                 placeholder = { Text("Optional") },
                                 singleLine = true,
                                 shape = FieldShape,
+                                // Tap to scan a barcode with the camera instead of typing the digits.
+                                trailingIcon = {
+                                    IconButton(onClick = onScanBarcode) {
+                                        Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan barcode")
+                                    }
+                                },
                                 modifier = Modifier.weight(1f)
                             )
                         }

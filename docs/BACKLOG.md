@@ -127,10 +127,12 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       gallery-import icon (bottom-left, PickVisualMedia -> `InputImage.fromFilePath` -> same ML Kit
       scanner) so a barcode can be read from an existing photo without the camera.
       **Still to do (offline):** a scan -> saved-food offline match (`food_items.barcode` before OFF).
-- [ ] **UI-19: Scan button in the food editor's barcode field.** CONFIRMED (Dirac). In Create/Edit Food,
-      put a small barcode/scan icon inside (trailing) the barcode text field so the user can open the
-      camera scanner and auto-fill the code instead of typing digits. Reuse the existing `scanner` route +
-      `create_food?barcode=` fill path.
+- [x] **UI-19: Scan button in the food editor's barcode field.** SHIPPED. The Barcode field in
+      Create/Edit Food has a trailing scan icon (`QrCodeScanner`) that opens the camera; the scanned code
+      is handed back into the field via a new `scanner_for_result` route + the destination's
+      `SavedStateHandle` ("scanned_barcode"), so it fills the field without a product lookup. The editor's
+      form fields were moved to `rememberSaveable` so the half-filled form survives the scanner round-trip
+      (and rotation). Reviewed.
 - [x] **SCAN-1: Scan stabilization.** SHIPPED. The live analyzer now requires the SAME code across
       `REQUIRED_STABLE_FRAMES` (3) consecutive frames before firing (a ~100 ms settle), via a small
       `ScanStability` holder, so a single misread frame no longer accepts a slightly-wrong barcode. The
