@@ -131,10 +131,11 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       put a small barcode/scan icon inside (trailing) the barcode text field so the user can open the
       camera scanner and auto-fill the code instead of typing digits. Reuse the existing `scanner` route +
       `create_food?barcode=` fill path.
-- [ ] **SCAN-1: Scan stabilization.** CONFIRMED (Dirac: "the barcode is slightly inaccurate; maybe a
-      small wait after lining it up"). A single ML Kit frame can misread a digit. Require the SAME code
-      across N consecutive frames (or a short settle, ~300-500 ms) before accepting, in
-      `BarcodeScannerScreen`'s `MlKitAnalyzer` callback -- debounce so a transient misread doesn't fire.
+- [x] **SCAN-1: Scan stabilization.** SHIPPED. The live analyzer now requires the SAME code across
+      `REQUIRED_STABLE_FRAMES` (3) consecutive frames before firing (a ~100 ms settle), via a small
+      `ScanStability` holder, so a single misread frame no longer accepts a slightly-wrong barcode. The
+      gallery/photo path is unchanged (a still image is a single read). Tune the constant if 3 feels
+      too eager/sluggish on the Pixel.
 - [ ] **RESEARCH-2: Other barcode nutrition databases?** (Dirac asked.) Options: **Open Food Facts**
       (current -- free, no key, global/crowd-sourced; best fit for an offline, keyless, Canada-leaning
       app). **USDA FoodData Central "Branded"** has GTIN/UPC + nutrients, free, but needs an API key and

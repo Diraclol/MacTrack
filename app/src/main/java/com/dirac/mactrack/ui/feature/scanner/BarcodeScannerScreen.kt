@@ -59,6 +59,17 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.atomic.AtomicBoolean
 
+// How many consecutive frames must report the SAME code before we accept it, so a single misread frame
+// (a partial or adjacent barcode) doesn't fire. ~3 frames is a brief settle at the camera frame rate.
+private const val REQUIRED_STABLE_FRAMES = 3
+
+// Tiny mutable holder (deliberately NOT Compose state -- it must not trigger recomposition) that counts
+// how many frames in a row have reported the same barcode.
+private class ScanStability {
+    var lastCode: String? = null
+    var count = 0
+}
+
 // Full-screen camera barcode scanner (UI-9). On-device / offline via ML Kit's bundled model. Uses the
 // CameraX LifecycleCameraController + MlKitAnalyzer path, which owns the frame loop, rotation, and
 // image lifecycle for us. On the first readable barcode it fires onResult(code) exactly once; the
@@ -88,6 +99,7 @@ fun BarcodeScannerScreen(
     }
 
     val handled = remember { AtomicBoolean(false) }   // fire onResult exactly once
+    val stability = remember { ScanStability() }      // require a few steady frames before accepting
     val controller = remember { LifecycleCameraController(context) }
     var scannedCode by remember { mutableStateOf<String?>(null) }
     var torchOn by remember { mutableStateOf(false) }
@@ -166,9 +178,19 @@ fun BarcodeScannerScreen(
                             val raw = result.getValue(scanner)
                                 ?.firstOrNull { !it.rawValue.isNullOrBlank() }
                                 ?.rawValue
-                            if (raw != null && handled.compareAndSet(false, true)) {
-                                controller.clearImageAnalysisAnalyzer()
-                                scannedCode = raw
+                            if (raw != null && !handled.get()) {
+                                // Require several consecutive frames with the same code before accepting,
+                                // so a single misread frame doesn't fire a slightly-wrong barcode.
+                                if (raw == stability.lastCode) {
+                                    stability.count++
+                                } else {
+                                    stability.lastCode = raw
+                                    stability.count = 1
+                                }
+                                if (stability.count >= REQUIRED_STABLE_FRAMES && handled.compareAndSet(false, true)) {
+                                    controller.clearImageAnalysisAnalyzer()
+                                    scannedCode = raw
+                                }
                             }
                         }
                     )
