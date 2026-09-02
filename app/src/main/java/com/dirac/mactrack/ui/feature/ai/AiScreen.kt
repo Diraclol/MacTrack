@@ -101,7 +101,7 @@ fun AiScreen(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("AI", style = MaterialTheme.typography.titleLarge)
-                Text(model, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Powered by $model", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (messages.isNotEmpty()) {
                 IconButton(onClick = { vm.clearChat() }) {
