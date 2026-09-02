@@ -51,7 +51,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,6 +61,8 @@ import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.food.foodIcon
 import com.dirac.mactrack.ui.common.BackBar
 import com.dirac.mactrack.ui.common.ClusterIcon
+import com.dirac.mactrack.ui.common.CreateMenuItem
+import com.dirac.mactrack.ui.common.EmptyHint
 import com.dirac.mactrack.ui.theme.CarbColor
 import com.dirac.mactrack.ui.theme.FatColor
 import com.dirac.mactrack.ui.theme.ProteinColor
@@ -295,23 +296,3 @@ private fun MealRow(summary: MealSummary, onOpen: () -> Unit, onDelete: () -> Un
     }
 }
 
-@Composable
-private fun EmptyHint(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(vertical = 12.dp)
-    )
-}
-
-@Composable
-private fun CreateMenuItem(icon: ImageVector, label: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 24.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.padding(end = 20.dp))
-        Text(label, style = MaterialTheme.typography.titleMedium)
-    }
-}

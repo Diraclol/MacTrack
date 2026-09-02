@@ -60,6 +60,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.food.foodIcon
+import com.dirac.mactrack.ui.common.CreateMenuItem
+import com.dirac.mactrack.ui.common.EmptyHint
 import kotlin.math.roundToInt
 
 private fun servingText(amount: Double): String =
@@ -491,16 +493,6 @@ private fun SectionLabel(text: String) {
 }
 
 @Composable
-private fun EmptyHint(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(vertical = 12.dp)
-    )
-}
-
-@Composable
 private fun FoodRow(
     name: String,
     line: String,
@@ -537,13 +529,3 @@ private fun FoodRow(
     }
 }
 
-@Composable
-private fun CreateMenuItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 24.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.padding(end = 20.dp))
-        Text(label, style = MaterialTheme.typography.titleMedium)
-    }
-}
