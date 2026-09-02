@@ -51,7 +51,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -63,12 +62,11 @@ import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.food.foodIcon
 import com.dirac.mactrack.ui.common.BackBar
 import com.dirac.mactrack.ui.common.ClusterIcon
+import com.dirac.mactrack.ui.theme.CarbColor
+import com.dirac.mactrack.ui.theme.FatColor
+import com.dirac.mactrack.ui.theme.ProteinColor
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
-
-private val ProteinColor = Color(0xFFE91E63)
-private val CarbColor = Color(0xFF2196F3)
-private val FatColor = Color(0xFF4CAF50)
 
 private val KITCHEN_TABS = listOf("All", "Recipes", "Meals", "Foods")
 

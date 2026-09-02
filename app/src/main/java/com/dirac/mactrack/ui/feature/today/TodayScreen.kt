@@ -82,21 +82,20 @@ import com.dirac.mactrack.data.food.mealEntryDetail
 import com.dirac.mactrack.data.food.withFavoriteUnits
 import com.dirac.mactrack.ui.common.NumberPad
 import com.dirac.mactrack.ui.common.PadAction
+import com.dirac.mactrack.ui.theme.ProteinColor
+import com.dirac.mactrack.ui.theme.CarbColor
+import com.dirac.mactrack.ui.theme.FatColor
+import com.dirac.mactrack.ui.theme.CalorieColor
+import com.dirac.mactrack.ui.theme.SodiumColor
+import com.dirac.mactrack.ui.theme.PotassiumColor
+import com.dirac.mactrack.ui.theme.FiberColor
+import com.dirac.mactrack.ui.theme.CaffeineColor
 import com.dirac.mactrack.ui.theme.ThemeViewModel
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
-
-private val CalorieColor = Color(0xFFFF9800)
-private val ProteinColor = Color(0xFFE91E63)
-private val FatColor = Color(0xFF4CAF50)
-private val CarbColor = Color(0xFF2196F3)
-private val SodiumColor = Color(0xFF26A69A)
-private val PotassiumColor = Color(0xFF66BB6A)
-private val FiberColor = Color(0xFF42A5F5)
-private val CaffeineColor = Color(0xFFAB47BC)
 
 // Soft daily reference targets for the micronutrient mini-bars (a scale, not a user goal).
 private const val SodiumTargetMg = 2300.0

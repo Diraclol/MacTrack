@@ -39,19 +39,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
+import com.dirac.mactrack.ui.theme.ProteinColor
+import com.dirac.mactrack.ui.theme.CarbColor
+import com.dirac.mactrack.ui.theme.FatColor
+import com.dirac.mactrack.ui.theme.CalorieColor
 import kotlin.math.roundToInt
 
 // Shared building blocks for the Create Meal / Create Recipe screens, so both match the same
 // MacroFactor-style layout: a top bar with a Save action, grouped label/value rows, a section card
 // header with a round "+", an empty state, a macro-summary pill row, a per-serving/total toggle, and
 // tappable ingredient rows showing each food's amount and macro contribution.
-
-// The macro accent colors used across the app (protein/carb/fat/calories), matching the food log and
-// Kitchen rows so the pills read consistently.
-val ProteinColor = Color(0xFFE91E63)
-val CarbColor = Color(0xFF2196F3)
-val FatColor = Color(0xFF4CAF50)
-val CalorieColor = Color(0xFFFF9800)
 
 private fun amountText(x: Double): String =
     if (x % 1.0 == 0.0) x.toInt().toString() else (kotlin.math.round(x * 100.0) / 100.0).toString()

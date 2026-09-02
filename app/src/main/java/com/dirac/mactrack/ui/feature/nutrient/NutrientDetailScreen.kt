@@ -42,13 +42,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.MealEntry
 import com.dirac.mactrack.ui.common.BackBar
 import com.dirac.mactrack.ui.feature.trends.TrendPeriod
+import com.dirac.mactrack.ui.theme.SodiumColor
+import com.dirac.mactrack.ui.theme.PotassiumColor
+import com.dirac.mactrack.ui.theme.FiberColor
+import com.dirac.mactrack.ui.theme.CaffeineColor
 import java.time.LocalDate
 import kotlin.math.roundToInt
-
-private val SodiumColor = Color(0xFF26A69A)
-private val PotassiumColor = Color(0xFF66BB6A)
-private val FiberColor = Color(0xFF42A5F5)
-private val CaffeineColor = Color(0xFFAB47BC)
 
 private data class NutrientSpec(
     val key: String,

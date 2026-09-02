@@ -30,12 +30,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.dao.DailyTotals
 import com.dirac.mactrack.data.entity.Goal
 import com.dirac.mactrack.ui.common.BackBar
+import com.dirac.mactrack.ui.theme.CalorieColor
+import com.dirac.mactrack.ui.theme.CarbColor
+import com.dirac.mactrack.ui.theme.FatColor
+import com.dirac.mactrack.ui.theme.ProteinColor
 import kotlin.math.roundToInt
-
-private val CalorieColor = Color(0xFFFF9800)
-private val ProteinColor = Color(0xFFE91E63)
-private val CarbColor = Color(0xFF2196F3)
-private val FatColor = Color(0xFF4CAF50)
 
 private fun metricValue(d: DailyTotals, m: TrendMetric): Double = when (m) {
     TrendMetric.CALORIES -> d.calories

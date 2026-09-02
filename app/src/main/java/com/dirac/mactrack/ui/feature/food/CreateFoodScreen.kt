@@ -55,12 +55,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.food.foodEmoji
 import com.dirac.mactrack.ui.common.EmojiPickerDialog
 import com.dirac.mactrack.ui.common.FOOD_EMOJIS
+import com.dirac.mactrack.ui.theme.ProteinColor
+import com.dirac.mactrack.ui.theme.CarbColor
+import com.dirac.mactrack.ui.theme.FatColor
+import com.dirac.mactrack.ui.theme.CalorieColor
 import kotlin.math.roundToInt
-
-private val ProteinColor = Color(0xFFE91E63)
-private val CarbColor = Color(0xFF2196F3)
-private val FatColor = Color(0xFF4CAF50)
-private val CalorieColor = Color(0xFFFF9800)
 
 // Shared rounded shape for every entry box on this screen.
 private val FieldShape = RoundedCornerShape(16.dp)
