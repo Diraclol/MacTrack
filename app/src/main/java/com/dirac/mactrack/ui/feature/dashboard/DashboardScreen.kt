@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.Goal
 import com.dirac.mactrack.data.entity.WeightEntry
+import com.dirac.mactrack.ui.common.ProfileAvatar
 import com.dirac.mactrack.ui.theme.ThemeViewModel
 import java.time.LocalDate
 import kotlin.math.roundToInt
@@ -69,6 +70,7 @@ fun DashboardScreen(
     val themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.Factory)
     val goal by viewModel.goal.collectAsState()
     val avatar by themeViewModel.avatar.collectAsState()
+    val avatarPhoto by themeViewModel.avatarPhotoPath.collectAsState()
     val weeklyAvg by viewModel.weeklyAvg.collectAsState()
     val weeklyNutrientAvg by viewModel.weeklyNutrientAvg.collectAsState()
     val loggedDates by viewModel.loggedDates.collectAsState()
@@ -92,14 +94,13 @@ fun DashboardScreen(
                     )
                     Text("Dashboard", style = MaterialTheme.typography.headlineSmall)
                 }
-                Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .clickable { onOpenProfile() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(avatar, style = MaterialTheme.typography.titleLarge)
-                }
+                ProfileAvatar(
+                    emoji = avatar,
+                    photoPath = avatarPhoto,
+                    size = 40.dp,
+                    emojiStyle = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.clickable { onOpenProfile() }
+                )
             }
         }
         item { MacroCard(avg = weeklyAvg, goal = goal, onClick = onOpenTrends) }

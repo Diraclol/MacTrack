@@ -54,6 +54,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.notifications.ReminderScheduler
+import com.dirac.mactrack.ui.common.ProfileAvatar
 import com.dirac.mactrack.ui.feature.profile.ProfileViewModel
 import com.dirac.mactrack.ui.theme.StartScreen
 import com.dirac.mactrack.ui.theme.ThemeMode
@@ -75,6 +76,7 @@ fun MoreScreen(
     val themeMode by themeViewModel.mode.collectAsState()
     val startScreen by themeViewModel.startScreen.collectAsState()
     val avatar by themeViewModel.avatar.collectAsState()
+    val avatarPhoto by themeViewModel.avatarPhotoPath.collectAsState()
     val profile by profileViewModel.profile.collectAsState()
     val stats by statsViewModel.stats.collectAsState()
     val context = LocalContext.current
@@ -138,13 +140,12 @@ fun MoreScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier.size(48.dp).clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(avatar, style = MaterialTheme.typography.titleLarge)
-                        }
+                        ProfileAvatar(
+                            emoji = avatar,
+                            photoPath = avatarPhoto,
+                            size = 48.dp,
+                            emojiStyle = MaterialTheme.typography.titleLarge
+                        )
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Your profile", style = MaterialTheme.typography.titleMedium)

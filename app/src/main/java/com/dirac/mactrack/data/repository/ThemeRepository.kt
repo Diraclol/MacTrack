@@ -19,6 +19,21 @@ class ThemeRepository(context: Context) {
     private val _avatar = MutableStateFlow(prefs.getString("avatar_emoji", "🧑") ?: "🧑")
     val avatar: StateFlow<String> = _avatar.asStateFlow()
 
+    // An optional profile photo (a file path written by AvatarStore). When set it takes priority over
+    // the emoji avatar; picking an emoji clears it, so the two never both apply.
+    private val _avatarPhotoPath = MutableStateFlow(prefs.getString("avatar_photo_path", null))
+    val avatarPhotoPath: StateFlow<String?> = _avatarPhotoPath.asStateFlow()
+
+    fun setAvatarPhoto(path: String) {
+        prefs.edit().putString("avatar_photo_path", path).apply()
+        _avatarPhotoPath.value = path
+    }
+
+    fun clearAvatarPhoto() {
+        prefs.edit().remove("avatar_photo_path").apply()
+        _avatarPhotoPath.value = null
+    }
+
     // The order of the food-log micronutrient cards (user-draggable). Stored as CSV keys.
     private val _nutrientOrder = MutableStateFlow(loadNutrientOrder())
     val nutrientOrder: StateFlow<List<String>> = _nutrientOrder.asStateFlow()
@@ -72,8 +87,10 @@ class ThemeRepository(context: Context) {
     }
 
     fun setAvatar(emoji: String) {
-        prefs.edit().putString("avatar_emoji", emoji).apply()
+        // Choosing an emoji also clears any photo, so the emoji becomes the shown avatar.
+        prefs.edit().putString("avatar_emoji", emoji).remove("avatar_photo_path").apply()
         _avatar.value = emoji
+        _avatarPhotoPath.value = null
     }
 
     fun setNutrientOrder(order: List<String>) {

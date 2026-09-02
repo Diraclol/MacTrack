@@ -35,11 +35,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import com.dirac.mactrack.data.profile.AvatarStore
 import com.dirac.mactrack.ui.common.AVATAR_EMOJIS
+import com.dirac.mactrack.ui.common.ProfileAvatar
 import com.dirac.mactrack.ui.common.BackBar
 import com.dirac.mactrack.ui.common.EmojiPickerDialog
 import com.dirac.mactrack.ui.feature.more.MoreStatsViewModel
 import com.dirac.mactrack.ui.theme.ThemeViewModel
+import kotlinx.coroutines.launch
 
 private fun pretty(name: String) = name.lowercase().replaceFirstChar { it.uppercase() }
 
@@ -82,8 +90,21 @@ fun ProfileScreen(onBack: () -> Unit = {}, onReassessGoals: () -> Unit = {}, mod
     val profile by profileViewModel.profile.collectAsState()
     val stats by statsViewModel.stats.collectAsState()
     val avatar by themeViewModel.avatar.collectAsState()
+    val avatarPhoto by themeViewModel.avatarPhotoPath.collectAsState()
     var showAvatarPicker by remember { mutableStateOf(false) }
+    var showAvatarChooser by remember { mutableStateOf(false) }
     var showBodyFatDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    // Pick a photo from the gallery, copy it into app storage, and use it as the avatar.
+    val photoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val path = AvatarStore.save(context, uri)
+                if (path != null) themeViewModel.setAvatarPhoto(path)
+            }
+        }
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(16.dp),
@@ -93,14 +114,13 @@ fun ProfileScreen(onBack: () -> Unit = {}, onReassessGoals: () -> Unit = {}, mod
 
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(64.dp).clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .clickable { showAvatarPicker = true },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(avatar, style = MaterialTheme.typography.headlineMedium)
-                }
+                ProfileAvatar(
+                    emoji = avatar,
+                    photoPath = avatarPhoto,
+                    size = 64.dp,
+                    emojiStyle = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.clickable { showAvatarChooser = true }
+                )
                 Spacer(Modifier.width(16.dp))
                 Column {
                     Text("You", style = MaterialTheme.typography.titleLarge)
@@ -174,6 +194,38 @@ fun ProfileScreen(onBack: () -> Unit = {}, onReassessGoals: () -> Unit = {}, mod
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+
+    if (showAvatarChooser) {
+        AlertDialog(
+            onDismissRequest = { showAvatarChooser = false },
+            title = { Text("Change avatar") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(
+                        onClick = {
+                            showAvatarChooser = false
+                            photoLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Choose a photo") }
+                    TextButton(
+                        onClick = { showAvatarChooser = false; showAvatarPicker = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Choose an emoji") }
+                    if (avatarPhoto != null) {
+                        TextButton(
+                            onClick = { themeViewModel.clearAvatarPhoto(); showAvatarChooser = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Remove photo") }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showAvatarChooser = false }) { Text("Cancel") } }
+        )
     }
 
     if (showAvatarPicker) {

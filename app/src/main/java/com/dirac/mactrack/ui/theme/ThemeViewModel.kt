@@ -19,6 +19,10 @@ class ThemeViewModel(private val repository: ThemeRepository) : ViewModel() {
     val avatar: StateFlow<String> = repository.avatar
     fun setAvatar(emoji: String) = repository.setAvatar(emoji)
 
+    val avatarPhotoPath: StateFlow<String?> = repository.avatarPhotoPath
+    fun setAvatarPhoto(path: String) = repository.setAvatarPhoto(path)
+    fun clearAvatarPhoto() = repository.clearAvatarPhoto()
+
     val nutrientOrder: StateFlow<List<String>> = repository.nutrientOrder
     fun setNutrientOrder(order: List<String>) = repository.setNutrientOrder(order)
 
