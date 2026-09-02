@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.MealEntry
 import com.dirac.mactrack.ui.common.BackBar
+import com.dirac.mactrack.ui.feature.trends.TrendPeriod
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
@@ -58,11 +59,16 @@ private val NUTRIENTS = listOf(
     NutrientSpec("caffeine", "Caffeine", "mg", 400.0, CaffeineColor) { it.caffeineMg }
 )
 
+// Time-range pills for the chart, mirroring the Trends (Cals + Macros) screen (no "All": the ViewModel
+// loads a year).
+private val NUTRIENT_PERIODS = listOf(TrendPeriod.W1, TrendPeriod.M1, TrendPeriod.M3, TrendPeriod.M6, TrendPeriod.Y1)
+
 private fun fmt(x: Double): String = if (x >= 100) x.roundToInt().toString() else (Math.round(x * 10.0) / 10.0).toString()
 
 @Composable
 fun NutrientDetailScreen(nutrientKey: String, onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
     var selectedKey by remember(nutrientKey) { mutableStateOf(nutrientKey) }
+    var period by remember { mutableStateOf(TrendPeriod.M1) }
     val spec = NUTRIENTS.find { it.key == selectedKey } ?: NUTRIENTS.first()
     val vm: NutrientDetailViewModel = viewModel(factory = NutrientDetailViewModel.Factory)
     val entries by vm.entries.collectAsState()
@@ -70,10 +76,11 @@ fun NutrientDetailScreen(nutrientKey: String, onBack: () -> Unit = {}, modifier:
     val today = LocalDate.now().toString()
     val todayTotal = entries.filter { it.date == today }.sumOf { spec.selector(it) }
 
-    // 30-day daily series (missing days filled with 0), oldest -> newest.
+    // Daily series over the selected period (missing days filled with 0), oldest -> newest.
     val byDate = entries.groupBy { it.date }.mapValues { (_, list) -> list.sumOf { spec.selector(it) } }
-    val series = (0 until 30).map { i ->
-        byDate[LocalDate.now().minusDays((29 - i).toLong()).toString()] ?: 0.0
+    val days = (period.days ?: 365L).toInt()
+    val series = (0 until days).map { i ->
+        byDate[LocalDate.now().minusDays(days - 1L - i).toString()] ?: 0.0
     }
 
     // Today's contributors, summed per food, biggest first.
@@ -122,7 +129,17 @@ fun NutrientDetailScreen(nutrientKey: String, onBack: () -> Unit = {}, modifier:
             }
         }
 
-        item { Text("Last 30 days", style = MaterialTheme.typography.titleSmall) }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                NUTRIENT_PERIODS.forEach { p ->
+                    FilterChip(selected = period == p, onClick = { period = p }, label = { Text(p.label) })
+                }
+            }
+        }
+        item { Text("Daily total", style = MaterialTheme.typography.titleSmall) }
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Box(modifier = Modifier.fillMaxWidth().height(180.dp).padding(16.dp)) {
@@ -161,7 +178,7 @@ private fun NutrientBarChart(series: List<Double>, target: Double, color: Color,
         if (series.isEmpty()) return@Canvas
         val maxV = maxOf(series.max(), target, 1.0)
         val n = series.size
-        val gap = 2.dp.toPx()
+        val gap = if (n <= 60) 2.dp.toPx() else 0f
         val barW = ((size.width - gap * (n - 1)) / n).coerceAtLeast(1f)
         series.forEachIndexed { i, v ->
             val h = (v / maxV).toFloat() * size.height

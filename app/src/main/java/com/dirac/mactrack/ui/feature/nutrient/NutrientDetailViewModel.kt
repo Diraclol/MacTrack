@@ -14,11 +14,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDate
 
-// The last 30 days of logged entries; the screen slices them per selected nutrient.
+// The last year of logged entries; the screen slices them per selected nutrient and time period.
 class NutrientDetailViewModel(mealEntryRepository: MealEntryRepository) : ViewModel() {
 
     val entries: StateFlow<List<MealEntry>> =
-        mealEntryRepository.getEntriesSince(LocalDate.now().minusDays(29).toString())
+        mealEntryRepository.getEntriesSince(LocalDate.now().minusDays(364).toString())
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     companion object {
