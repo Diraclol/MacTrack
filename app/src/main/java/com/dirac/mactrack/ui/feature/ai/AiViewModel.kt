@@ -10,6 +10,11 @@ import com.dirac.mactrack.MacTrackApplication
 import com.dirac.mactrack.data.ai.AiClient
 import com.dirac.mactrack.data.ai.AiSettingsStore
 import com.dirac.mactrack.data.ai.ChatMessage
+import com.dirac.mactrack.data.ai.recipe.BuildPreview
+import com.dirac.mactrack.data.ai.recipe.BuildTarget
+import com.dirac.mactrack.data.ai.recipe.IngredientResolver
+import com.dirac.mactrack.data.ai.recipe.RecipeMealBuilder
+import com.dirac.mactrack.data.ai.recipe.RecipeRequestParser
 import com.dirac.mactrack.data.entity.MealEntry
 import com.dirac.mactrack.data.repository.MealEntryRepository
 import com.dirac.mactrack.data.session.LogDateStore
@@ -18,6 +23,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalTime
+import kotlin.math.roundToInt
 
 // One message in the chat, as shown. `error = true` renders it as an error notice rather than a reply;
 // `imageDataUrl` is an attached photo on a user turn.
@@ -26,7 +32,9 @@ data class UiMessage(
     val role: String,   // "user" | "assistant"
     val text: String,
     val error: Boolean = false,
-    val imageDataUrl: String? = null
+    val imageDataUrl: String? = null,
+    // When set, this assistant message is a resolved recipe/meal awaiting the user's Save tap (AI-4).
+    val build: BuildPreview? = null
 )
 
 // Injected as the "system" turn on every request (the background brief the model is given the moment
@@ -56,6 +64,15 @@ private val SYSTEM_PROMPT = """
     Style: concise and practical, metric by default (grams, millilitres) but accept ounces and cups.
     Stay focused on food and nutrition. You cannot see the user's logged foods, goals, or daily totals
     unless they tell you in the chat.
+
+    Building a recipe or meal: if the user asks you to turn a list of ingredients into a recipe or a
+    meal (for example "make a recipe from ..." or "save these as a meal"), reply with ONLY a JSON object
+    and nothing else -- no prose, no code fence -- in exactly this shape:
+    {"target":"recipe"|"meal","name":"<short name>","ingredients":[{"name":"<food>","quantity":<number>,"unit":"g"|"ml"|"serving"|"cup"|"tbsp"|"tsp"|"oz"}]}
+    Use "recipe" if they said recipe and "meal" if they said meal; if it is unclear, use "meal". Give
+    each quantity in grams where you reasonably can, and use "serving" as the unit for countable items
+    you cannot weigh. The app itself looks up each ingredient's real macros from its databases -- you
+    only extract the names and amounts. For anything that is not such a request, answer normally.
 """.trimIndent()
 
 // Backs the AI chat tab. Conversation is in-memory (Slice 1) -- it survives tab switches/rotation but
@@ -64,7 +81,8 @@ class AiViewModel(
     private val client: AiClient,
     private val settings: AiSettingsStore,
     private val mealEntryRepository: MealEntryRepository,
-    private val logDateStore: LogDateStore
+    private val logDateStore: LogDateStore,
+    private val builder: RecipeMealBuilder
 ) : ViewModel() {
 
     private val _messages = MutableStateFlow<List<UiMessage>>(emptyList())
@@ -116,15 +134,30 @@ class AiViewModel(
 
         _isStreaming.value = true
         viewModelScope.launch {
+            val raw = StringBuilder()
             try {
                 client.stream(url, key ?: "", modelName, history).collect { delta ->
+                    raw.append(delta)
+                    // A recipe/meal build reply is a bare JSON object; show a placeholder while it
+                    // streams instead of the raw JSON.
+                    val display = if (raw.toString().trimStart().startsWith("{")) "Putting that together…"
+                    else raw.toString()
                     _messages.value = _messages.value.map {
-                        if (it.id == assistantId) it.copy(text = it.text + delta) else it
+                        if (it.id == assistantId) it.copy(text = display) else it
                     }
                 }
-                // If nothing streamed back, show a gentle placeholder rather than an empty bubble.
-                _messages.value = _messages.value.map {
-                    if (it.id == assistantId && it.text.isBlank()) it.copy(text = "(no response)") else it
+                // Read the reply as a recipe/meal build request if it is one; else it's a normal message.
+                val request = RecipeRequestParser.parse(raw.toString())
+                if (request != null) {
+                    val preview = builder.preview(request)
+                    _messages.value = _messages.value.map {
+                        if (it.id == assistantId) it.copy(text = summarize(preview), build = preview) else it
+                    }
+                } else {
+                    val finalText = raw.toString().ifBlank { "(no response)" }
+                    _messages.value = _messages.value.map {
+                        if (it.id == assistantId) it.copy(text = finalText) else it
+                    }
                 }
             } catch (e: Exception) {
                 val msg = e.message ?: "Something went wrong."
@@ -134,6 +167,40 @@ class AiViewModel(
             } finally {
                 _isStreaming.value = false
             }
+        }
+    }
+
+    // A short, human summary of a resolved recipe/meal, shown in the bubble above the Save button.
+    private fun summarize(p: BuildPreview): String {
+        if (!p.canSave) {
+            val unmatched = if (p.skipped.isNotEmpty())
+                " (couldn't match: " + p.skipped.joinToString(", ") { it.parsed.name } + ")" else ""
+            return "I couldn't match any of those ingredients to a food, so there's nothing to save$unmatched."
+        }
+        val kind = if (p.target == BuildTarget.RECIPE) "Recipe" else "Meal"
+        val t = p.total
+        val n = p.resolved.size
+        val head = "$kind \"${p.name}\": ${t.kcal.roundToInt()} cal, " +
+            "${t.protein.roundToInt()}P ${t.carb.roundToInt()}C ${t.fat.roundToInt()}F, " +
+            "from $n ingredient${if (n == 1) "" else "s"}."
+        val unmatched = if (p.skipped.isNotEmpty())
+            " Couldn't match: " + p.skipped.joinToString(", ") { it.parsed.name } + "." else ""
+        return "$head$unmatched\n\nReview and tap Save below."
+    }
+
+    // Persist a previewed recipe/meal (the user tapped Save), then turn the bubble into a confirmation.
+    fun commitBuild(messageId: Long, onSaved: () -> Unit = {}) {
+        val message = _messages.value.firstOrNull { it.id == messageId } ?: return
+        val preview = message.build ?: return
+        viewModelScope.launch {
+            builder.commit(preview)
+            val kind = if (preview.target == BuildTarget.RECIPE) "recipe" else "meal"
+            _messages.value = _messages.value.map {
+                if (it.id == messageId)
+                    it.copy(text = "Saved $kind \"${preview.name}\". Find it in your Kitchen.", build = null)
+                else it
+            }
+            onSaved()
         }
     }
 
@@ -194,7 +261,9 @@ class AiViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                AiViewModel(app.aiClient, app.aiSettingsStore, app.mealEntryRepository, app.logDateStore)
+                val resolver = IngredientResolver(app.foodRepository, app.cnfRepository, app.openFoodFactsRepository)
+                val builder = RecipeMealBuilder(resolver, app.recipeRepository, app.mealTemplateRepository)
+                AiViewModel(app.aiClient, app.aiSettingsStore, app.mealEntryRepository, app.logDateStore, builder)
             }
         }
     }

@@ -59,6 +59,7 @@ import android.widget.Toast
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.ai.ImageEncoder
 import com.dirac.mactrack.data.ai.MacroParser
+import com.dirac.mactrack.data.ai.recipe.BuildTarget
 import com.dirac.mactrack.ui.common.DataUrlImage
 import com.dirac.mactrack.ui.common.MarkdownText
 import kotlinx.coroutines.launch
@@ -124,8 +125,20 @@ fun AiScreen(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
             ) {
                 items(items = messages, key = { it.id }) { m ->
                     MessageBubble(m)
-                    // Offer to log a parsed estimate under assistant replies that contain macros.
-                    if (m.role == "assistant" && !m.error && m.text.isNotBlank()) {
+                    val build = m.build
+                    if (build != null) {
+                        // A resolved recipe/meal awaiting confirmation: save on tap (AI-4).
+                        if (build.canSave) {
+                            FilledTonalButton(onClick = {
+                                vm.commitBuild(m.id) {
+                                    Toast.makeText(context, "Saved to your Kitchen", Toast.LENGTH_SHORT).show()
+                                }
+                            }) {
+                                Text(if (build.target == BuildTarget.RECIPE) "Save as recipe" else "Save as meal")
+                            }
+                        }
+                    } else if (m.role == "assistant" && !m.error && m.text.isNotBlank()) {
+                        // Offer to log a parsed estimate under normal assistant replies that contain macros.
                         val est = remember(m.text) { MacroParser.parse(m.text) }
                         if (est.hasAny) {
                             TextButton(onClick = { review = est }) { Text("Log this") }
