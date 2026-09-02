@@ -1,7 +1,7 @@
 # MacTrack — Engineering Summary
 
 *Last updated: 2026-09-01*
-*Engineering status + the rules and decisions that shape the code. Architecture and "why", not step-by-step how-to. The running work log lives in [MACTRACK_STATE.md](MACTRACK_STATE.md); deferred work in [BACKLOG.md](BACKLOG.md); day-to-day guardrails in [../NOTES.md](../NOTES.md); threat model in [SECURITY.md](SECURITY.md).*
+*Engineering status plus the rules and decisions that shape the code — architecture and "why", not step-by-step how-to. Current status lives in [MACTRACK_STATE.md](MACTRACK_STATE.md); deferred work in [BACKLOG.md](BACKLOG.md); the threat model in [SECURITY.md](SECURITY.md).*
 
 ---
 
@@ -16,7 +16,7 @@
 | **AI assistant** | SHIPPED — an opt-in chat tab (BYO-key, OpenAI-compatible, default Gemini): text + food-photo (vision) → macro estimate → review → log. Key encrypted in the Keystore. `data/ai/`, `ui/feature/ai/`. |
 | **Accounts / roles / shared DB** | Not built (scheduled last). Backend decided: **Supabase** (Neon and Convex both evaluated and rejected; see BACKEND_RESEARCH.md). |
 | **Barcode scanning** | Manual entry + **on-device camera scan** (CameraX 1.6.2 + bundled ML Kit `barcode-scanning:17.3.0`, offline, no key). `ui/feature/scanner/`. |
-| **Next up** | Dirac's call: UI-10 instrumented tests (needs the emulator, now available) or ACCT-1 (Supabase). Barcode (UI-9), drag-between-blocks (UI-6), and Katch-McArdle TDEE all shipped this round. |
+| **Next up** | UI-10 instrumented tests (needs the emulator, now available) or ACCT-1 (Supabase). Barcode (UI-9), drag-between-blocks (UI-6), and Katch-McArdle TDEE all shipped this round. |
 
 **Build gate:** schema changes can't be finished from the editor — they need a device build so KSP regenerates `app/schemas/.../N.json`. Do them one migration at a time. (All of SCHEMA-1..6 shipped; DB is at v8.)
 
@@ -67,7 +67,7 @@ adb logcat                          # device logs
             ▼                      ▼                ▼                ▼         "settings" prefs)
    Room (mactrack.db)      CNF asset (cnf.db,   Open Food Facts   SharedPreferences
    entities + DAOs         read-only, opened    barcode lookup    (theme, start screen, avatar)
-   (schema v2)             OUTSIDE Room)        (network)
+   (schema v8)             OUTSIDE Room)        (network)
 ```
 
 ### File / package layout
@@ -78,8 +78,8 @@ adb logcat                          # device logs
 | [MainActivity.kt](app/src/main/java/com/dirac/mactrack/MainActivity.kt) | Single activity; sets Compose content + theme |
 | `ui/navigation/` | `MacTrackApp.kt` — the one `NavHost`, floating bottom nav, all route wiring |
 | `ui/feature/` | One package per screen: `today`, `dashboard`, `foodsearch`, `food`, `library`, `meals`, `recipes`, `goals`, `profile`, `more`, `onboarding` — each a Composable + its ViewModel |
-| `ui/common/` | Shared UI — `BackBar`, `NumberPad` (stateless shared pad) |
-| `ui/theme/` | `Color`/`Theme`/`Type`, `StartScreen`, `ThemeViewModel` ← `ThemeRepository` (prefs) |
+| `ui/common/` | Shared UI + helpers — `BackBar`, the stateless `NumberPad`, `EmptyHint`/`CreateMenuItem`, `NutrientTargets`, and the `oneDecimal` formatter |
+| `ui/theme/` | `Color`/`Theme`/`Type`, the shared `MacroColors` palette, `StartScreen`, `ThemeViewModel` ← `ThemeRepository` (prefs) |
 | `data/entity/` | Room `@Entity`: `FoodItem`, `Goal`, `MealEntry`, `MealTemplate`(+`MealTemplateItem`), `UserProfile`, `WeightEntry` |
 | `data/dao/` | Room DAOs — all queries return `Flow` |
 | `data/repository/` | Repositories wrapping DAOs; expose `Flow`s |
@@ -169,7 +169,6 @@ No instrumented UI tests                          → known gap; UI-10 in BACKLO
 | File | What it is |
 |------|------------|
 | [BACKLOG.md](BACKLOG.md) | Deferred work, bucketed by what blocks it. The task queue. |
-| [MACTRACK_STATE.md](MACTRACK_STATE.md) | Running narrative log — what shipped each session, and why. |
+| [MACTRACK_STATE.md](MACTRACK_STATE.md) | Project status: what is built, what is in flight, and what is next. |
 | [SECURITY.md](SECURITY.md) | Threat model + current posture; the plan for accounts/roles/AI. |
 | [MACROFACTOR_REFERENCE.md](MACROFACTOR_REFERENCE.md) | The visual/interaction target the UI is chasing. |
-| [../NOTES.md](../NOTES.md) | Day-to-day working rules and the hard constraints, restated for contributors. |

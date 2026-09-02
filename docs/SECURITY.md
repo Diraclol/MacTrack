@@ -1,7 +1,7 @@
 # MacTrack — security assessment
 
 Scope: the current local-first app, plus the threat model for the planned features (accounts +
-roles, a shared food database, import/export, and AI). No emojis, per house style.
+roles, a shared food database, import/export, and AI).
 
 ## 1. Current posture — small and solid
 
@@ -75,7 +75,7 @@ Export is low-risk. Import parses a file the user (or someone) hands the app.
   can instantiate arbitrary classes.
 
 ### 2.4 AI / API keys (Gemini) — key exposure
-`MacTrack.txt` already lists "putting API keys directly in the app" as a top mistake. Hold that line.
+One of the project's founding rules is that API keys never go directly in the app. Hold that line.
 
 - **The admin's shared Gemini key must never be embedded in the client** (APKs decompile trivially).
   Put it behind a server-side proxy (a Supabase Edge Function) that holds the key and enforces the

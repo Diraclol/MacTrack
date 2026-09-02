@@ -76,7 +76,7 @@ Total multiplier = general factor + exercise add (e.g. sedentary job + lifting 5
 
 ## Requested refinements to the search overhaul (state doc task 4)
 
-From Dirac, to fold in when task 4 is built:
+To fold in when the search overhaul (task 4) is built:
 - Top-right: a control to commit staged foods to the food log (their check button).
 - Beside it: calories added-so-far out of the day's remaining/total budget (their `X / 2500`).
 - Quick Add reachable from this screen.

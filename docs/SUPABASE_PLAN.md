@@ -71,8 +71,8 @@ Phase-4 item; it does not block personal sync.
 
 A `role` value per user — `admin` | `btester` | `regular` — carried as a custom JWT claim
 (`app_metadata.role`, set server-side), read by RLS. Admin is created once in the console and gated by
-its user id / claim; the password is never in the repo. (This maps SECURITY.md's Firebase-era
-"custom claims" onto Supabase — see §8.)
+its user id / claim; the password is never in the repo. (This is the server-side "custom claims"
+model — see §8.)
 
 ## 3. Row-Level Security (the real access gate)
 
@@ -159,10 +159,10 @@ code — it just starts stamping `updated_at`, which is harmless until sync exis
   Tunnel, API gateway only, Postgres never exposed, Studio LAN/Tailscale-only). RLS/Auth/JWTs are
   identical, so roles behave the same — "shared ops, not extra ops."
 
-## 8. Security notes / SECURITY.md mapping
+## 8. Security notes / Firebase-to-Supabase mapping
 
-SECURITY.md predates this decision and still names **Firebase**; its **threat model and principles stay
-authoritative**, but the technology names map onto Supabase:
+[SECURITY.md](SECURITY.md) and this plan are written in Supabase terms. For anyone coming from a
+Firebase background, the concepts map across directly:
 
 - Firebase Auth + custom claims -> **GoTrue auth + a `role` claim in `app_metadata`**.
 - Firestore/RTDB security rules -> **Postgres Row-Level Security policies**.
@@ -170,8 +170,7 @@ authoritative**, but the technology names map onto Supabase:
 
 Unchanged rules: never trust the client for authz; roles server-side only; **no hardcoded admin
 password ever** (it lands in the APK + git history forever); a shared/admin key, if ever needed, sits
-behind a server-side proxy (an Edge Function), never in the client; HTTPS only; deny-by-default. When
-this design is folded into the codebase, SECURITY.md should be updated to the Supabase terms.
+behind a server-side proxy (an Edge Function), never in the client; HTTPS only; deny-by-default.
 
 ## 9. Risks (going in with eyes open)
 
@@ -186,7 +185,7 @@ this design is folded into the codebase, SECURITY.md should be updated to the Su
 
 ## 10. Decisions
 
-**Locked (Dirac, 2026-09-02):**
+**Locked (2026-09-02):**
 
 - **Order vs the public release: POST-v1.** Accounts/sync land *after* the Android public release, as a
   distinct milestone (and resume showcase). So this whole plan is parked until the local app has

@@ -60,7 +60,7 @@ this choice — they stay as-is.
 - **RLS has a learning curve.** Policies must be written carefully — a wrong policy leaks or locks data.
   Test every policy with a non-owner account before trusting it.
 - **New dependency set.** `supabase-kt` (GoTrue / Postgrest / Realtime modules) lands when ACCT-1 starts
-  — a deliberate addition, gated behind the NOTES.md "ask before adding deps" rule.
+  — a deliberate addition; I confirm any new dependency before adding it.
 - **Free-tier pause.** A Supabase project pauses after ~7 days of zero activity; daily use keeps it
   awake, and one dashboard click un-pauses it. Not a concern for an active user.
 - **Sync is still the hard part.** Supabase gives you the pipes (auth, RLS, API, realtime), not a
@@ -120,8 +120,8 @@ supports Android at all.*
 
 ## Self-host on the home lab vs Supabase Cloud (researched 2026-09)
 
-Dirac runs a home lab and asked whether to self-host the Supabase Docker stack there instead of using
-the cloud (prompted by the free tier pausing after 7 days idle).
+I run a home lab, so the question was whether to self-host the Supabase Docker stack there instead of
+using the cloud (prompted by the free tier pausing after 7 days idle).
 
 **Decision: Cloud Free + a daily keep-alive ping for the beta; self-host later, co-located with the AI
 box.** The deciding factors:

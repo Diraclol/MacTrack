@@ -1,12 +1,12 @@
 # AI-4 — Ingredient list -> macros -> save as Recipe or Meal
 
-Dirac's ask: when someone gives the AI a list of ingredients, resolve each ingredient's macros
+The goal: when someone gives the AI a list of ingredients, resolve each ingredient's macros
 (branded -> use the branded macros; else the Canadian Nutrient File; else Open Food Facts), do the
 reasonable calculations, and save the result as a **new Recipe or a new Meal** depending on what the
 user asked for.
 
-This doc records the chosen architecture and the staged build, so it can be reviewed/redirected. It
-was drafted during the focused session; nothing here is wired into a screen yet.
+This doc records the chosen architecture and the staged build. The deterministic core is built and the
+flow is wired into the AI tab; what remains is on-device testing with a real Gemini key.
 
 ## Architecture decision: AI parses -> app resolves + saves (NOT model function-calling)
 
@@ -23,7 +23,7 @@ Instead:
    "quantity": <number>, "unit": "g|ml|serving|cup|..." } ] }`. It expresses quantities in grams
    where it reasonably can (it knows a large egg is ~50 g), because gram amounts resolve cleanly.
 2. **The app does resolution + math + persistence, deterministically, against the real sources** —
-   which is what Dirac asked for and keeps the numbers honest (the model never invents macros here).
+   which keeps the numbers honest (the model never invents macros here).
    For each ingredient: resolve saved food -> CNF -> Open Food Facts, materialise a `food_items`
    row (recipe/meal ingredients must reference a saved FoodItem), compute the amount in *servings*
    of that food, then save via `RecipeRepository.saveRecipe(...)` or
@@ -57,14 +57,14 @@ plain, unit-testable Kotlin.
 - **[DONE] Stage 2 — `IngredientResolver`.** `suspend resolve(ParsedIngredient) ->
   ResolvedIngredient`, priority saved -> CNF -> OFF, upserting a FoodItem for CNF/OFF hits
   (`cnf_<code>` / `off_<code>`, idempotent), computing `servings` via `servingsFor`, persisting only
-  when the unit converts. Reviewed; device-tested.
+  when the unit converts. Device-tested.
 - **[DONE] Stage 3 — `RecipeRequestParser` + `RecipeMealBuilder`.** Parser lifts the JSON object out
   of the model reply and validates it; builder resolves every ingredient, sums macros, and saves a
   new Recipe or MealTemplate, skipping+reporting anything unresolved (saves nothing if none resolve).
-  Reviewed; device-tested.
+  Device-tested.
 
 - **[BUILT — needs on-device test] Stage 4 — wired into `AiViewModel`.** Chosen behaviour:
-  **preview first, save on confirm** (Dirac). Flow, as shipped:
+  **preview first, save on confirm**. Flow, as shipped:
   1. `SYSTEM_PROMPT` now tells the model to answer a "make a recipe/meal from these" request with ONLY
      the JSON object `{ "target": "recipe"|"meal", "name", "ingredients": [ {name, quantity, unit} ] }`
      (grams where reasonable; "serving" for countable items). Ambiguous -> "meal".
@@ -82,7 +82,7 @@ plain, unit-testable Kotlin.
   inconsistent about emitting bare JSON. Defaults chosen for the open questions below: recipe-vs-meal
   from wording (else meal); `makesServings = 1.0`; unmatched ingredients skipped + reported.
 
-## Open questions for Dirac (please weigh in)
+## Design decisions (the earlier open questions, now resolved)
 
 1. **Recipe vs meal default** when the user is ambiguous ("save these as ...")? Current plan: the
    model picks from the wording; default to **meal** if unclear (a meal is the lighter construct).
@@ -91,5 +91,5 @@ plain, unit-testable Kotlin.
 3. **Unresolvable ingredients** (a name nothing matches, or a piece unit like "2 eggs" against a
    gram-only food): current plan is to **skip and report** them, saving the rest. OK, or should it
    refuse and ask?
-4. **Auto-save vs confirm**: save immediately, or show a preview the user confirms first? Current
-   plan: save, then tell the user (they can edit/delete). A confirm step is safer but needs UI.
+4. **Auto-save vs confirm**: RESOLVED — **preview first, save on confirm** (Stage 4). The build shows a
+   preview bubble with totals and unmatched items; a Save button commits it. Safer than auto-save.

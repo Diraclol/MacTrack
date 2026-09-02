@@ -1,42 +1,37 @@
-# MacTrack docs — knowledge base
+# MacTrack docs
 
-Index of the project's documentation. New here? Read **MACTRACK_STATE** then **ENGINEERING_SUMMARY**
-first; everything else is reference you can reach for as needed.
+Index of the project's documentation. New here? Read **MACTRACK_STATE** for where things stand, then
+**ENGINEERING_SUMMARY** for how the app is built; everything else is reference.
 
-## Start here — orientation
+## Status & architecture
 
 | Doc | What it is |
 |---|---|
-| [MACTRACK_STATE.md](MACTRACK_STATE.md) | Where the project is right now: current position, the data-model rationale, and the ordered task queue (the exact next task). The single "state of the world" doc. |
-| [ENGINEERING_SUMMARY.md](ENGINEERING_SUMMARY.md) | Architecture overview for an engineer picking the app up: layers, conventions, and the load-bearing rules. |
+| [MACTRACK_STATE.md](MACTRACK_STATE.md) | Project status: what is built, what is in flight, and what is next. Start here. |
+| [ENGINEERING_SUMMARY.md](ENGINEERING_SUMMARY.md) | Architecture overview: layers, conventions, the hard rules, and the key design decisions (and why). |
+| [BACKLOG.md](BACKLOG.md) | The task backlog — open work in detail, shipped work as a checklist. |
 
 ## Product & design
 
 | Doc | What it is |
 |---|---|
-| [MACROFACTOR_REFERENCE.md](MACROFACTOR_REFERENCE.md) | The visual and interaction reference the app targets, captured as concrete notes. |
-
-## Roadmap & feature plans
-
-| Doc | What it is |
-|---|---|
-| [BACKLOG.md](BACKLOG.md) | The full task backlog — everything shipped and everything open, with rationale. The working task list. |
-| [AI4_PLAN.md](AI4_PLAN.md) | Design + staged build for turning an ingredient list into a saved recipe or meal (the AI assistant's build flow). |
+| [MACROFACTOR_REFERENCE.md](MACROFACTOR_REFERENCE.md) | The visual and interaction reference the UI targets, captured as notes. |
+| [AI4_PLAN.md](AI4_PLAN.md) | Design + staged build for turning an ingredient list into a saved recipe or meal. |
 
 ## Backend & platform (future work)
 
 | Doc | What it is |
 |---|---|
-| [BACKEND_RESEARCH.md](BACKEND_RESEARCH.md) | Backend evaluation (Supabase vs Neon vs Convex) and the chosen path: Supabase, Cloud-Free-first then self-host. |
-| [SUPABASE_PLAN.md](SUPABASE_PLAN.md) | Concrete design for accounts + per-user cloud sync + the shared food database: schema, RLS, the sync engine, and the phased rollout. Parked until after the public release. |
-| [PWA_IOS_SPIKE.md](PWA_IOS_SPIKE.md) | Feasibility spike for iOS and web: recommendation (Compose Multiplatform for iOS, a thin PWA for web) and the one discipline to hold now. |
+| [BACKEND_RESEARCH.md](BACKEND_RESEARCH.md) | Backend evaluation (Supabase vs Neon vs Convex) and the chosen path: Supabase, cloud-free first then self-host. |
+| [SUPABASE_PLAN.md](SUPABASE_PLAN.md) | Concrete design for accounts + per-user sync + a shared food database: schema, RLS, the sync engine, and the phased rollout. Parked until after the public release. |
+| [PWA_IOS_SPIKE.md](PWA_IOS_SPIKE.md) | Feasibility spike for iOS (Compose Multiplatform) and web (a thin PWA). |
 
 ## Security
 
 | Doc | What it is |
 |---|---|
-| [SECURITY.md](SECURITY.md) | Security and threat model. NOTE: its principles are authoritative, but it predates the backend decision and still names Firebase in places — see [SUPABASE_PLAN.md](SUPABASE_PLAN.md) §8 for the Firebase to Supabase mapping. |
+| [SECURITY.md](SECURITY.md) | Security and threat model for the current app and the planned accounts/roles/sync backend. Written in Supabase terms. |
 
 ---
 
-The public-facing project overview is the repo-root [README.md](../README.md).
+The public-facing overview is the repo-root [README.md](../README.md).
