@@ -6,6 +6,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -65,6 +67,7 @@ private val NUTRIENT_PERIODS = listOf(TrendPeriod.W1, TrendPeriod.M1, TrendPerio
 
 private fun fmt(x: Double): String = if (x >= 100) x.roundToInt().toString() else (Math.round(x * 10.0) / 10.0).toString()
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NutrientDetailScreen(nutrientKey: String, onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
     var selectedKey by remember(nutrientKey) { mutableStateOf(nutrientKey) }
@@ -95,10 +98,12 @@ fun NutrientDetailScreen(nutrientKey: String, onBack: () -> Unit = {}, modifier:
     ) {
         item { BackBar("Nutrients", onBack) }
         item {
-            // Switch between the tracked micronutrients without leaving the screen.
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Switch between the tracked micronutrients without leaving the screen. FlowRow wraps to a
+            // second line so every nutrient chip stays visible instead of a scroll row clipping the last.
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 NUTRIENTS.forEach { n ->
                     FilterChip(
