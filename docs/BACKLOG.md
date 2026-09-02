@@ -197,10 +197,11 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       **edit-sheet number pad** (TodayScreen ModalBottomSheet). The live macro summary above the pad now
       renders P/C/F and calories as `MacroPill`s (the same outlined pills used on the food-log hour rows /
       FoodCard) instead of plain coloured text; calories gets the flame icon.
-- [x] **UI-17: Nutrient-detail pill polish.** SHIPPED. Dirac's screenshot showed the nutrient selector
-      (Sodium/Potassium/Dietary Fiber/Caffeine) clipping the last chip in a horizontal-scroll row. Switched
-      that row to a `FlowRow` so all four chips wrap to a second line and none is cut off. The period pills
-      (1W-1Y) already fit, so they stay a single row.
+- [x] **UI-17: Nutrient-detail pill polish.** SHIPPED (revised). First tried a `FlowRow` (wrapped Caffeine
+      to a 2nd line) but Dirac wanted them on ONE line -- so the nutrient selector now uses a compact custom
+      `NutrientChip` (smaller than a Material FilterChip), four sharing one row via `weight(1f)`, with
+      "Dietary Fiber" shortened to "Fiber" so they all fit without wrapping or scrolling. Period pills
+      (1W-1Y) unchanged.
 - [x] **UI-18: Cals + Macros outline on the food log.** SHIPPED (Dirac confirmed). Added a
       `BorderStroke(1.dp, outline)` to the food-log totals Surface (TodayScreen) so the day's
       calories + macros box stands out from the food list below.

@@ -1,14 +1,16 @@
 package com.dirac.mactrack.ui.feature.nutrient
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,10 +30,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.MealEntry
@@ -57,7 +62,7 @@ private data class NutrientSpec(
 private val NUTRIENTS = listOf(
     NutrientSpec("sodium", "Sodium", "mg", 2300.0, SodiumColor) { it.sodiumMg },
     NutrientSpec("potassium", "Potassium", "mg", 3400.0, PotassiumColor) { it.potassiumMg },
-    NutrientSpec("fiber", "Dietary Fiber", "g", 28.0, FiberColor) { it.fiberG },
+    NutrientSpec("fiber", "Fiber", "g", 28.0, FiberColor) { it.fiberG },
     NutrientSpec("caffeine", "Caffeine", "mg", 400.0, CaffeineColor) { it.caffeineMg }
 )
 
@@ -67,7 +72,6 @@ private val NUTRIENT_PERIODS = listOf(TrendPeriod.W1, TrendPeriod.M1, TrendPerio
 
 private fun fmt(x: Double): String = if (x >= 100) x.roundToInt().toString() else (Math.round(x * 10.0) / 10.0).toString()
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NutrientDetailScreen(nutrientKey: String, onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
     var selectedKey by remember(nutrientKey) { mutableStateOf(nutrientKey) }
@@ -98,18 +102,18 @@ fun NutrientDetailScreen(nutrientKey: String, onBack: () -> Unit = {}, modifier:
     ) {
         item { BackBar("Nutrients", onBack) }
         item {
-            // Switch between the tracked micronutrients without leaving the screen. FlowRow wraps to a
-            // second line so every nutrient chip stays visible instead of a scroll row clipping the last.
-            FlowRow(
+            // Switch between the tracked micronutrients. The four chips share one row (each takes an
+            // equal quarter) so they all fit on screen instead of wrapping to a second line.
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 NUTRIENTS.forEach { n ->
-                    FilterChip(
+                    NutrientChip(
+                        label = n.label,
                         selected = n.key == selectedKey,
-                        onClick = { selectedKey = n.key },
-                        label = { Text(n.label) }
+                        modifier = Modifier.weight(1f),
+                        onClick = { selectedKey = n.key }
                     )
                 }
             }
@@ -173,6 +177,34 @@ fun NutrientDetailScreen(nutrientKey: String, onBack: () -> Unit = {}, modifier:
                 }
             }
         }
+    }
+}
+
+// A compact selectable chip, smaller than a Material FilterChip, so four fit across one row. Selected
+// = filled accent + white label; unselected = outlined. Text ellipsises rather than wrapping.
+@Composable
+private fun NutrientChip(label: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(10.dp)
+    val bg = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val fg = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .border(1.dp, borderColor, shape)
+            .background(bg)
+            .clickable { onClick() }
+            .padding(vertical = 8.dp, horizontal = 6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            label,
+            color = fg,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
