@@ -214,6 +214,10 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       Recommendation: iOS via **Compose Multiplatform** (share domain/data/most-UI, ship native iOS);
       web via a **thin PWA over the Supabase backend** later (not CMP-wasm); no Flutter/RN rewrite.
       The one discipline to hold now: keep `domain`/`data`/`calc` free of `android.*` imports (they are).
+      **Timing (Dirac 2026-09-02): iOS is a LATER feature branch, NOT part of the public release** -- same
+      as French (I18N-1). Ship the Android public release first, then do the iOS/Compose-Multiplatform
+      port on its own branch. So keep holding the `android.*`-free discipline, but don't build toward iOS
+      before the public release.
 - [ ] **I18N-1: French localization (fr-CA).** Add a French language option in More. **Parked by Dirac
       2026-09-01** — captured with a plan, not started, because it is a large multi-step job that must be
       built in small increments on-device. **Timing (Dirac): do it as a feature branch once the full
