@@ -85,6 +85,8 @@ fun UnifiedSearchScreen(
     val query by viewModel.query.collectAsState()
     val custom by viewModel.custom.collectAsState()
     val common by viewModel.common.collectAsState()
+    val branded by viewModel.branded.collectAsState()
+    val searchingBranded by viewModel.searchingBranded.collectAsState()
     val cartCount by viewModel.cartCount.collectAsState()
     val builderCount by viewModel.builderCount.collectAsState()
     val recent by viewModel.recent.collectAsState()
@@ -156,7 +158,7 @@ fun UnifiedSearchScreen(
 
         Column(modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp)) {
             when (tab) {
-                0 -> AllTab(query, recent, custom, common, onOpenFood, viewModel, isPicker)
+                0 -> AllTab(query, recent, custom, common, branded, searchingBranded, onOpenFood, viewModel, isPicker)
                 1 -> FoodsTab(savedFoods, onOpenFood, viewModel, isPicker)
                 2 -> MealsTab(query, templates, viewModel)
                 3 -> RecipesTab(query, recipes, onOpenFood)
@@ -245,6 +247,8 @@ private fun AllTab(
     recent: List<com.dirac.mactrack.data.entity.MealEntry>,
     custom: List<com.dirac.mactrack.data.entity.FoodItem>,
     common: List<com.dirac.mactrack.data.cnf.CnfFood>,
+    branded: List<com.dirac.mactrack.data.off.OffProduct>,
+    searchingBranded: Boolean,
     onOpenFood: (String, String) -> Unit,
     viewModel: UnifiedSearchViewModel,
     isPicker: Boolean
@@ -308,6 +312,23 @@ private fun AllTab(
                         onOpen = { if (isPicker) viewModel.addIngredient("cnf", food.code.toString(), food.name) else onOpenFood("cnf", food.code.toString()) },
                         onAdd = { if (isPicker) viewModel.addIngredient("cnf", food.code.toString(), food.name) else viewModel.addToCart("cnf", food.code.toString()) }
                     )
+                }
+            }
+            // Branded (Open Food Facts, online). Not usable as meal/recipe ingredients yet, so hidden in
+            // picker mode (like the barcode scanner). A short "Searching online..." shows while it loads.
+            if (!isPicker && (branded.isNotEmpty() || searchingBranded)) {
+                item { SectionLabel("Branded") }
+                if (branded.isEmpty() && searchingBranded) {
+                    item { EmptyHint("Searching online…") }
+                } else {
+                    items(items = branded, key = { "b_" + it.code }) { p ->
+                        FoodRow(
+                            name = p.name,
+                            line = "${p.kcalPer100.roundToInt()} cal · ${p.proteinPer100.roundToInt()}P ${p.carbPer100.roundToInt()}C ${p.fatPer100.roundToInt()}F · per 100 g",
+                            onOpen = { onOpenFood("branded", p.code) },
+                            onAdd = { viewModel.addToCart("branded", p.code) }
+                        )
+                    }
                 }
             }
         }

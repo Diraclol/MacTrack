@@ -20,12 +20,16 @@ import com.dirac.mactrack.data.food.asFoodItem
 import com.dirac.mactrack.data.food.cnfFoodDetail
 import com.dirac.mactrack.data.food.foodItemDetail
 import com.dirac.mactrack.data.food.stagePortion
+import com.dirac.mactrack.data.off.OffProduct
+import com.dirac.mactrack.data.off.OpenFoodFactsRepository
 import com.dirac.mactrack.data.repository.FoodRepository
 import com.dirac.mactrack.data.repository.MealEntryRepository
 import com.dirac.mactrack.data.repository.MealTemplateRepository
 import com.dirac.mactrack.data.repository.RecipeRepository
 import com.dirac.mactrack.data.session.LogDateStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -46,7 +50,8 @@ class UnifiedSearchViewModel(
     private val mealTemplateRepository: MealTemplateRepository,
     private val recipeRepository: RecipeRepository,
     private val ingredientBuilder: IngredientBuilderRepository,
-    private val logDateStore: LogDateStore
+    private val logDateStore: LogDateStore,
+    private val openFoodFactsRepository: OpenFoodFactsRepository
 ) : ViewModel() {
 
     private val _query = MutableStateFlow("")
@@ -80,6 +85,14 @@ class UnifiedSearchViewModel(
     private val _common = MutableStateFlow<List<CnfFood>>(emptyList())
     val common: StateFlow<List<CnfFood>> = _common.asStateFlow()
 
+    // Open Food Facts NAME-search results (branded / day-to-day items) + whether a network search is in
+    // flight. Debounced and offline-safe: stays empty when offline or the query is too short.
+    private val _branded = MutableStateFlow<List<OffProduct>>(emptyList())
+    val branded: StateFlow<List<OffProduct>> = _branded.asStateFlow()
+    private val _searchingBranded = MutableStateFlow(false)
+    val searchingBranded: StateFlow<Boolean> = _searchingBranded.asStateFlow()
+    private var brandedJob: Job? = null
+
     val cartCount: StateFlow<Int> = cartRepository.items
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -99,6 +112,24 @@ class UnifiedSearchViewModel(
             val r = withContext(Dispatchers.IO) { cnfRepository.search(q) }
             if (_query.value == q) _common.value = r
         }
+        // Debounced Open Food Facts NAME search (network) for branded items. Cancel the pending call on
+        // each keystroke; only fire after a short pause and for queries of a few characters.
+        brandedJob?.cancel()
+        if (q.trim().length < 3) {
+            _branded.value = emptyList()
+            _searchingBranded.value = false
+            return
+        }
+        brandedJob = viewModelScope.launch {
+            delay(400)
+            _searchingBranded.value = true
+            try {
+                val results = openFoodFactsRepository.searchByName(q)
+                if (_query.value == q) _branded.value = results
+            } finally {
+                if (_query.value == q) _searchingBranded.value = false
+            }
+        }
     }
 
     // Toggle a saved food's heart. Custom foods only (favorite is a food_items column).
@@ -112,6 +143,7 @@ class UnifiedSearchViewModel(
                 when (source) {
                     "cnf" -> cnfRepository.getFood(id.toIntOrNull() ?: -1)?.let { cnfFoodDetail(it, cnfRepository.measures(it.code)) }
                     "custom" -> foodRepository.getFood(id)?.let { foodItemDetail(it) }
+                    "branded" -> openFoodFactsRepository.lookup(id)
                     else -> null
                 }
             } ?: return@launch
@@ -212,7 +244,7 @@ class UnifiedSearchViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                UnifiedSearchViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository, app.mealTemplateRepository, app.recipeRepository, app.ingredientBuilder, app.logDateStore)
+                UnifiedSearchViewModel(app.foodRepository, app.cnfRepository, app.cartRepository, app.mealEntryRepository, app.mealTemplateRepository, app.recipeRepository, app.ingredientBuilder, app.logDateStore, app.openFoodFactsRepository)
             }
         }
     }

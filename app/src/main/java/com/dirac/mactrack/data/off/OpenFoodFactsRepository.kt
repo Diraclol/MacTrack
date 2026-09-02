@@ -8,6 +8,18 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
+
+// A lightweight branded product from an Open Food Facts NAME search: enough to render a search row and
+// then open the full detail (by barcode) the same way a barcode scan does.
+data class OffProduct(
+    val code: String,
+    val name: String,
+    val kcalPer100: Double,
+    val proteinPer100: Double,
+    val carbPer100: Double,
+    val fatPer100: Double
+)
 
 // Looks up a barcode against Open Food Facts -- the "branded" food source. Online-only: on no
 // network, a non-200, or a missing product it returns null, and the caller falls back to the
@@ -19,6 +31,63 @@ class OpenFoodFactsRepository {
         if (json.optInt("status", 0) != 1) return@withContext null
         val product = json.optJSONObject("product") ?: return@withContext null
         toFoodDetail(barcode, product)
+    }
+
+    // Search Open Food Facts by NAME (so branded/day-to-day items appear when typed, not only by
+    // barcode). Returns [] on no network / error / a too-short query, so search stays offline-safe.
+    // Each hit opens via the same "branded" barcode path as a scan.
+    suspend fun searchByName(query: String, limit: Int = 20): List<OffProduct> = withContext(Dispatchers.IO) {
+        val q = query.trim()
+        if (q.length < 3) return@withContext emptyList()
+        val json = fetchSearch(q, limit) ?: return@withContext emptyList()
+        val arr = json.optJSONArray("products") ?: return@withContext emptyList()
+        val out = mutableListOf<OffProduct>()
+        for (i in 0 until arr.length()) {
+            val p = arr.optJSONObject(i) ?: continue
+            val code = p.optString("code").filter { it.isDigit() }
+            if (code.isEmpty()) continue
+            val base = p.optString("product_name").ifBlank { p.optString("product_name_en") }
+            if (base.isBlank()) continue
+            val brand = p.optString("brands").split(",").firstOrNull()?.trim().orEmpty()
+            val name = if (brand.isNotBlank()) "$base ($brand)" else base
+            val n = p.optJSONObject("nutriments")
+            out.add(
+                OffProduct(
+                    code = code,
+                    name = name,
+                    kcalPer100 = n?.optDouble("energy-kcal_100g", 0.0) ?: 0.0,
+                    proteinPer100 = n?.optDouble("proteins_100g", 0.0) ?: 0.0,
+                    carbPer100 = n?.optDouble("carbohydrates_100g", 0.0) ?: 0.0,
+                    fatPer100 = n?.optDouble("fat_100g", 0.0) ?: 0.0
+                )
+            )
+        }
+        out
+    }
+
+    private fun fetchSearch(query: String, limit: Int): JSONObject? {
+        var conn: HttpURLConnection? = null
+        return try {
+            val encoded = URLEncoder.encode(query, "UTF-8")
+            val url = URL(
+                "https://world.openfoodfacts.org/cgi/search.pl?search_terms=$encoded" +
+                    "&search_simple=1&action=process&json=1&page_size=$limit" +
+                    "&fields=code,product_name,product_name_en,brands,nutriments"
+            )
+            conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 8000
+                readTimeout = 10000
+                setRequestProperty("User-Agent", "MacTrack/0.1 (Android)")
+            }
+            if (conn.responseCode != 200) return null
+            val body = conn.inputStream.bufferedReader().use { it.readText() }
+            JSONObject(body)
+        } catch (e: Exception) {
+            null
+        } finally {
+            conn?.disconnect()
+        }
     }
 
     private fun fetch(barcode: String): JSONObject? {

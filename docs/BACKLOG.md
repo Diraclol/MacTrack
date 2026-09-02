@@ -152,14 +152,17 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       card is now tappable ("See more") -> `ui/feature/streak/FoodLogCalendarScreen` (+ VM): a scrollable
       12-month calendar where a filled blue day = at least one entry logged that day and a plain day =
       missed; Sunday-start grid, a streak/days-tracked/longest header, and a legend. Route `food_calendar`.
-- [ ] **UI-14: Online Open Food Facts NAME search.** CONFIRMED (Dirac: add it -- people search day-to-day
-      branded items). Today the food text search only queries the offline CNF whole-foods DB + custom
-      foods; Open Food Facts is reached ONLY by barcode. Add an OFF **product-name** search (v2 search
-      API) so branded items (Cheerios etc.) appear when typed, merged into the unified search results.
-      Network during search (the app is otherwise offline) -> debounce, handle offline gracefully, cache
-      results; map OFF products through the existing `branded` FoodDetail path. NOTE the current CNF query
-      is exact-substring (`name LIKE %term%`), so a typo ("cherrios") also returns nothing -> an optional
-      fuzzy/typo pass is a separate follow-up.
+- [x] **UI-14: Online Open Food Facts NAME search.** SHIPPED. Text search now queries Open Food Facts by
+      product name (`/cgi/search.pl`, `search_terms=`) alongside the offline CNF + custom results, so
+      branded items (Cheerios etc.) surface when typed. Results appear in a new **Branded** section after
+      Common, debounced ~400 ms (min 3 chars), offline-safe (no network -> section stays empty, CNF/custom
+      unaffected), "Searching online..." while loading. `OffProduct` carries per-100g macros; tapping opens
+      the existing `food_detail/branded/<code>` path (same as a scan), and quick-add resolves via
+      `openFoodFactsRepository.lookup(code)`. Hidden in ingredient-picker mode. Implemented in
+      `data/off/OpenFoodFactsRepository.kt` (`OffProduct` + `searchByName`/`fetchSearch`),
+      `UnifiedSearchViewModel.kt` (branded/searchingBranded flows + debounced job), `UnifiedSearchScreen.kt`
+      (Branded section). NOTE the CNF query is still exact-substring (`name LIKE %term%`), so a typo
+      ("cherrios") returns nothing -> an optional fuzzy/typo pass is a separate follow-up.
 - [ ] **UI-15: Favorite Serving Units (full, incl. volume).** CONFIRMED full set (Dirac). A More screen
       "Favorite Serving Units": pin up to 2 units to the FRONT of the serving-size selector. WEIGHT
       (g/oz/lb -- exact gram conversions) + VOLUME (ml/tsp/tbsp/fl oz/cup). **Constraint:** MacTrack has no
