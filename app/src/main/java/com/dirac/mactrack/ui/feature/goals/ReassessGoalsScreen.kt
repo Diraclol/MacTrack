@@ -35,14 +35,16 @@ import com.dirac.mactrack.domain.calc.GoalType
 import com.dirac.mactrack.domain.calc.MacroTargets
 import com.dirac.mactrack.domain.calc.ProteinLevel
 import com.dirac.mactrack.domain.calc.Sex
+import com.dirac.mactrack.domain.calc.basalMetabolicRate
 import com.dirac.mactrack.domain.calc.macroTargets
-import com.dirac.mactrack.domain.calc.mifflinStJeorBmr
 import com.dirac.mactrack.domain.calc.tdee
 import com.dirac.mactrack.ui.common.BackBar
 import com.dirac.mactrack.ui.feature.profile.ProfileViewModel
 import kotlin.math.roundToInt
 
 private fun pretty(name: String) = name.lowercase().replaceFirstChar { it.uppercase() }
+// Drop a trailing ".0" so "16.0" reads as "16" but "16.5" stays "16.5".
+private fun trimPct(x: Double): String = if (x % 1.0 == 0.0) x.toInt().toString() else x.toString()
 private inline fun <reified T : Enum<T>> parseEnum(value: String, default: T): T =
     runCatching { enumValueOf<T>(value) }.getOrDefault(default)
 
@@ -132,7 +134,9 @@ private fun AlgoReassess(
     var fat by remember(p) { mutableStateOf(parseEnum(p.fatLevel, FatLevel.MODERATE)) }
     var showAdvancedGoals by remember { mutableStateOf(goal.advanced) }
 
-    val bmr = mifflinStJeorBmr(parseEnum(p.sex, Sex.MALE), p.weightKg, p.heightCm, p.age)
+    // Katch-McArdle when body fat is on file (most accurate), else Mifflin-St Jeor.
+    val usingKatch = p.bodyFatPct != null && p.bodyFatPct > 0.0
+    val bmr = basalMetabolicRate(parseEnum(p.sex, Sex.MALE), p.weightKg, p.heightCm, p.age, p.bodyFatPct)
     val maintenance = tdee(bmr, activity)
     val target = maintenance + goal.defaultAdjustment
     val targets = macroTargets(target, p.weightKg * 2.20462, protein.gramsPerLb, fat.fraction)
@@ -153,6 +157,12 @@ private fun AlgoReassess(
             Text("Maintenance (TDEE): ${maintenance.roundToInt()} cal", style = MaterialTheme.typography.bodyMedium)
             Text("Target: ${targets.calories.roundToInt()} cal", style = MaterialTheme.typography.titleSmall)
             Text("Protein ${targets.proteinG.roundToInt()} g   Carbs ${targets.carbG.roundToInt()} g   Fat ${targets.fatG.roundToInt()} g", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                if (usingKatch) "Basis: Katch-McArdle (body fat ${trimPct(p.bodyFatPct!!)}%)"
+                else "Basis: Mifflin-St Jeor (add body fat in your profile for a more accurate estimate)",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 
