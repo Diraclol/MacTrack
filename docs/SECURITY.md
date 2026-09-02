@@ -39,21 +39,21 @@ This is the highest-risk area. The rule: **never trust the client for authorizat
 - A role stored on the client (a boolean, a prefs value, a field in the local DB) can be flipped by
   anyone with a rooted device or a repackaged APK. Gating a feature only in the UI is not security —
   it is a suggestion.
-- Enforce roles **server-side**: Firebase Auth **custom claims** for the role, and **Firestore/RTDB
-  security rules** that check the claim on every read/write. The client UI hides admin/Btester
-  features for convenience; the backend rules are what actually stop a regular user from writing
-  admin/Btester data.
+- Enforce roles **server-side**: a Supabase Auth (GoTrue) **role claim** in the user's `app_metadata`,
+  and **Postgres Row-Level Security (RLS) policies** that check the claim on every read/write. The
+  client UI hides admin/Btester features for convenience; the RLS policies are what actually stop a
+  regular user from writing admin/Btester data.
 - **Do not ship a hardcoded admin password.** A literal password in the source is in the APK and in
   git history forever (and this repo is meant to read as a solo/private project). Create the admin
-  account once in the Firebase console and grant it the `admin` claim there (console or a Cloud
-  Function); the password lives in Firebase, never in code. Same for the Btester role.
-- Prefer Google Sign-In or Firebase email/password. If email/password, enforce verification and a
-  sane password policy, and rely on Firebase's built-in rate limiting against credential stuffing.
+  account once in the Supabase dashboard and grant it the `admin` role claim there (dashboard or an
+  Edge Function); the password lives in Supabase Auth, never in code. Same for the Btester role.
+- Prefer Google Sign-In or Supabase email/password. If email/password, enforce verification and a
+  sane password policy, and rely on Supabase Auth's built-in rate limiting against credential stuffing.
 
 ### 2.2 Shared food database (Btesters add foods everyone sees) — poisoning / abuse
 Untrusted writes into shared, globally-visible data.
 
-- **Validate every field server-side** (a Cloud Function or strict Firestore rules): name length and
+- **Validate every field server-side** (a Postgres trigger/function or strict RLS policies): name length and
   charset, macros as finite non-negative numbers within sane bounds (reject negative/absurd
   calories), serving size > 0. Do not rely on client validation.
 - **Moderation + rate limits.** A malicious Btester can spam entries or inject offensive/garbage
@@ -78,8 +78,8 @@ Export is low-risk. Import parses a file the user (or someone) hands the app.
 `MacTrack.txt` already lists "putting API keys directly in the app" as a top mistake. Hold that line.
 
 - **The admin's shared Gemini key must never be embedded in the client** (APKs decompile trivially).
-  Put it behind a server-side proxy (a Cloud Function) that holds the key and enforces the caller's
-  role/quota; the app calls the proxy, not Gemini directly.
+  Put it behind a server-side proxy (a Supabase Edge Function) that holds the key and enforces the
+  caller's role/quota; the app calls the proxy, not Gemini directly.
 - **BYO-key users**: store their key in `EncryptedSharedPreferences` (Android Keystore-backed), never
   in plaintext prefs, never in logs, never committed. Let them clear it. Send it only over HTTPS to
   the model endpoint.
@@ -87,16 +87,16 @@ Export is low-risk. Import parses a file the user (or someone) hands the app.
   saved — this also limits the blast radius of a bad/prompt-injected AI response.
 
 ### 2.5 Transport and platform
-- HTTPS everywhere (OFF and Firebase already are). Keep cleartext disabled.
+- HTTPS everywhere (OFF and Supabase already are). Keep cleartext disabled.
 - Least privilege on permissions: `INTERNET` now; add `CAMERA` only when barcode scanning ships;
   never microphone. Request camera at runtime, at point of use.
 - Release hardening: R8/minify + resource shrinking, no debug builds shipped, consider Play
-  Integrity / App Check (Firebase App Check) so only genuine app instances can hit the backend.
+  Integrity / App Check (Play Integrity / Supabase App Check) so only genuine app instances can hit the backend.
 
 ## 3. Prioritized checklist (when the backend lands)
-1. Firebase Auth + custom claims for admin/Btester/regular; **no client-trusted role**.
-2. Firestore/RTDB security rules enforcing per-role read/write; deny by default.
-3. Firebase App Check so only your app can call the backend.
+1. Supabase Auth (GoTrue) + a role claim for admin/Btester/regular; **no client-trusted role**.
+2. Postgres Row-Level Security policies enforcing per-role read/write; deny by default.
+3. Play Integrity / App Check so only your app can call the backend.
 4. Server-side validation + rate limiting on shared-food writes; a moderation/rollback path.
 5. Gemini key behind a server proxy; BYO keys in EncryptedSharedPreferences.
 6. Import validation (schema, bounds, size, confirm overwrite) + CSV formula-injection escaping on export.
