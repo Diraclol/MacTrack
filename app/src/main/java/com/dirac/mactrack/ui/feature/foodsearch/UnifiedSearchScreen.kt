@@ -101,7 +101,6 @@ fun UnifiedSearchScreen(
 
     var tab by remember { mutableStateOf(0) }
     var showDiscardDialog by remember { mutableStateOf(false) }
-    var showBarcodeDialog by remember { mutableStateOf(false) }
     var showCreate by remember { mutableStateOf(false) }
 
     // back returns to the Create screen in picker mode; otherwise it guards a non-empty cart.
@@ -177,8 +176,8 @@ fun UnifiedSearchScreen(
                 // ingredients yet (no food_items row), so hide it to avoid a dead end.
                 val trailing: (@Composable () -> Unit)? = if (isPicker) null else {
                     {
-                        IconButton(onClick = { showBarcodeDialog = true }) {
-                            Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan or enter a barcode")
+                        IconButton(onClick = onScanBarcode) {
+                            Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan a barcode")
                         }
                     }
                 }
@@ -219,20 +218,6 @@ fun UnifiedSearchScreen(
             CreateMenuItem(Icons.Filled.MenuBook, "Create Recipe") { showCreate = false; onCreateRecipe() }
             Spacer(Modifier.height(24.dp))
         }
-    }
-
-    if (showBarcodeDialog) {
-        BarcodeDialog(
-            onDismiss = { showBarcodeDialog = false },
-            onLookUp = { code ->
-                showBarcodeDialog = false
-                onOpenFood("branded", code)
-            },
-            onScan = {
-                showBarcodeDialog = false
-                onScanBarcode()
-            }
-        )
     }
 
     if (showDiscardDialog) {
@@ -540,41 +525,4 @@ private fun CreateMenuItem(icon: androidx.compose.ui.graphics.vector.ImageVector
         Icon(icon, contentDescription = null, modifier = Modifier.padding(end = 20.dp))
         Text(label, style = MaterialTheme.typography.titleMedium)
     }
-}
-
-@Composable
-private fun BarcodeDialog(onDismiss: () -> Unit, onLookUp: (String) -> Unit, onScan: () -> Unit) {
-    var code by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Barcode") },
-        text = {
-            Column {
-                Text(
-                    "Scan a product with the camera, or type its barcode to look it up in Open Food Facts.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Button(onClick = onScan, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                    Icon(Icons.Filled.QrCodeScanner, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                    Text("Scan with camera")
-                }
-                OutlinedTextField(
-                    value = code,
-                    onValueChange = { code = it },
-                    label = { Text("Barcode number") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { if (code.isNotBlank()) onLookUp(code.trim()) }),
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { if (code.isNotBlank()) onLookUp(code.trim()) }, enabled = code.isNotBlank()) {
-                Text("Look up")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
 }

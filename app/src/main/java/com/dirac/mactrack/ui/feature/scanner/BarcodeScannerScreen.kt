@@ -8,12 +8,22 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.mlkit.vision.MlKitAnalyzer
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -96,6 +106,7 @@ fun BarcodeScannerScreen(
                     },
                     modifier = Modifier.fillMaxSize()
                 )
+                ScannerOverlay(modifier = Modifier.align(Alignment.Center))
                 LaunchedEffect(controller) {
                     val options = BarcodeScannerOptions.Builder()
                         .setBarcodeFormats(
@@ -151,7 +162,7 @@ fun BarcodeScannerScreen(
                         modifier = Modifier.padding(top = 16.dp)
                     ) { Text("Grant camera access") }
                     TextButton(onClick = onBack, modifier = Modifier.padding(top = 8.dp)) {
-                        Text("Enter the barcode by hand instead", color = Color.White)
+                        Text("Go back", color = Color.White)
                     }
                 }
             }
@@ -160,5 +171,34 @@ fun BarcodeScannerScreen(
         TextButton(onClick = onBack, modifier = Modifier.align(Alignment.TopStart).padding(8.dp)) {
             Text("Back", color = Color.White)
         }
+    }
+}
+
+// A viewfinder frame with a red line that sweeps up and down, so it reads as "scanning".
+@Composable
+private fun ScannerOverlay(modifier: Modifier = Modifier) {
+    val frameW = 260.dp
+    val frameH = 160.dp
+    val transition = rememberInfiniteTransition(label = "scan")
+    val pos by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(animation = tween(1500), repeatMode = RepeatMode.Reverse),
+        label = "line"
+    )
+    Box(
+        modifier = modifier
+            .width(frameW)
+            .height(frameH)
+            .border(2.dp, Color.White.copy(alpha = 0.9f), RoundedCornerShape(16.dp))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp)
+                .offset(y = (frameH - 2.dp) * pos)
+                .height(2.dp)
+                .background(Color.Red)
+        )
     }
 }

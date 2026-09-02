@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
@@ -25,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -59,7 +61,16 @@ private fun fmtAmount(a: Double): String =
     if (a % 1.0 == 0.0) a.toInt().toString() else a.toString()
 
 @Composable
-fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onAdded: () -> Unit = onLogged, onBack: () -> Unit = {}, modifier: Modifier = Modifier) {
+fun FoodDetailScreen(
+    source: String,
+    id: String,
+    onLogged: () -> Unit,
+    onAdded: () -> Unit = onLogged,
+    onBack: () -> Unit = {},
+    onScanAgain: () -> Unit = {},
+    onCreateFoodWithBarcode: (String) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     val viewModel: FoodDetailViewModel = viewModel(factory = FoodDetailViewModel.Factory)
     val detail by viewModel.detail.collectAsState()
     val loaded by viewModel.loaded.collectAsState()
@@ -70,12 +81,21 @@ fun FoodDetailScreen(source: String, id: String, onLogged: () -> Unit, onAdded: 
 
     val d = detail
     if (d == null || d.units.isEmpty()) {
-        val message = when {
-            !loaded -> "Loading…"
-            source == "branded" -> "Couldn't find that food. It may not be in Open Food Facts, or you're offline."
-            else -> "Couldn't find that food."
+        Box(modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+            when {
+                !loaded -> Text("Loading…")
+                // A scanned/looked-up barcode that Open Food Facts doesn't know: offer to scan again
+                // or create a food carrying this barcode.
+                source == "branded" -> AlertDialog(
+                    onDismissRequest = onBack,
+                    title = { Text("Barcode not recognized") },
+                    text = { Text("We couldn't find this barcode in Open Food Facts. Scan again, or create a food with this barcode.") },
+                    confirmButton = { TextButton(onClick = { onCreateFoodWithBarcode(id) }) { Text("Create food") } },
+                    dismissButton = { TextButton(onClick = onScanAgain) { Text("Scan again") } }
+                )
+                else -> Text("Couldn't find that food.")
+            }
         }
-        Box(modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) { Text(message) }
         return
     }
 

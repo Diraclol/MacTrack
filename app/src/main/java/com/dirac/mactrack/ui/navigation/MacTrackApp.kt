@@ -163,7 +163,8 @@ fun MacTrackApp() {
                 TodayScreen(
                     onOpenSearch = { navController.navigate("food_search") },
                     onOpenEntry = { entryId -> navController.navigate("food_detail/entry/$entryId") },
-                    onOpenNutrient = { key -> navController.navigate("nutrient_detail/$key") }
+                    onOpenNutrient = { key -> navController.navigate("nutrient_detail/$key") },
+                    onScanBarcode = { navController.navigate("scanner") }
                 )
             }
             composable(
@@ -201,7 +202,10 @@ fun MacTrackApp() {
                     onOpenRecipe = { id -> navController.navigate("edit_recipe/$id") }
                 )
             }
-            composable("create_food") {
+            composable(
+                "create_food?barcode={barcode}",
+                arguments = listOf(navArgument("barcode") { type = NavType.StringType; defaultValue = "" })
+            ) {
                 CreateFoodScreen(
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() }
@@ -310,7 +314,18 @@ fun MacTrackApp() {
                         }
                     },
                     onAdded = { navController.popBackStack() },
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    // Barcode not found in OFF: drop this detail screen and either rescan or create a food.
+                    onScanAgain = {
+                        navController.navigate("scanner") {
+                            popUpTo("food_detail/{source}/{id}") { inclusive = true }
+                        }
+                    },
+                    onCreateFoodWithBarcode = { code ->
+                        navController.navigate("create_food?barcode=$code") {
+                            popUpTo("food_detail/{source}/{id}") { inclusive = true }
+                        }
+                    }
                 )
             }
         }

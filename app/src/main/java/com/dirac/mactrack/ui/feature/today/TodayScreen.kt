@@ -130,6 +130,7 @@ fun TodayScreen(
     onOpenSearch: () -> Unit,
     onOpenEntry: (String) -> Unit,
     onOpenNutrient: (String) -> Unit = {},
+    onScanBarcode: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val viewModel: MealLogViewModel = viewModel(factory = MealLogViewModel.Factory)
@@ -291,8 +292,10 @@ fun TodayScreen(
             ) {
                 Icon(Icons.Filled.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Search for a food", modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan or enter a barcode", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+                IconButton(onClick = onScanBarcode) {
+                    Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan a barcode", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+}
         }
     }
 

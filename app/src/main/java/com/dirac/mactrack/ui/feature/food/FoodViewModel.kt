@@ -21,7 +21,9 @@ import java.util.UUID
 // creates a new food.
 class FoodViewModel(
     private val repository: FoodRepository,
-    private val editId: String?
+    private val editId: String?,
+    // Prefills the barcode field when creating a food (e.g. from a scanned code OFF didn't recognize).
+    val initialBarcode: String? = null
 ) : ViewModel() {
 
     val isEditing: Boolean = editId != null
@@ -95,8 +97,10 @@ class FoodViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
-                val editId: String? = createSavedStateHandle()["id"]
-                FoodViewModel(app.foodRepository, editId)
+                val handle = createSavedStateHandle()
+                val editId: String? = handle["id"]
+                val barcodeArg: String? = handle["barcode"]
+                FoodViewModel(app.foodRepository, editId, barcodeArg?.takeIf { it.isNotBlank() })
             }
         }
     }

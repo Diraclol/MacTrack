@@ -94,7 +94,9 @@ fun CreateFoodScreen(onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier
     var servingUnit by remember { mutableStateOf("serving") }
     var showMicros by remember { mutableStateOf(false) }
     var emoji by remember { mutableStateOf<String?>(null) }
-    var barcode by remember { mutableStateOf("") }
+    // Prefilled from a scanned-but-unrecognized barcode when creating (blank otherwise; edit mode
+    // overwrites it from the loaded food in the seed effect below).
+    var barcode by remember { mutableStateOf(viewModel.initialBarcode ?: "") }
     var showIconPicker by remember { mutableStateOf(false) }
 
     // When editing, seed the fields once from the loaded food.
