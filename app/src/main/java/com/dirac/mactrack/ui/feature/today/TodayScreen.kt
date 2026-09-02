@@ -96,14 +96,8 @@ import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
-
-// Soft daily reference targets for the micronutrient mini-bars (a scale, not a user goal).
-private const val SodiumTargetMg = 2300.0
-private const val PotassiumTargetMg = 3400.0
-private const val FiberTargetG = 28.0
-private const val CaffeineTargetMg = 400.0
-
-private fun oneDecimal(x: Double): String = String.format(Locale.US, "%.1f", x)
+import com.dirac.mactrack.ui.common.NutrientTargets
+import com.dirac.mactrack.ui.common.oneDecimal
 
 private fun servings(amount: Double): String =
     if (amount % 1.0 == 0.0) amount.toInt().toString() else amount.toString()
@@ -464,10 +458,10 @@ private fun NutrientBox(
     onOpenNutrient: (String) -> Unit
 ) {
     val data = mapOf(
-        "sodium" to NutrientDatum("sodium", "Sodium", "${sodiumMg.roundToInt()} mg", (sodiumMg / SodiumTargetMg).coerceIn(0.0, 1.0).toFloat(), SodiumColor),
-        "potassium" to NutrientDatum("potassium", "Potassium", "${potassiumMg.roundToInt()} mg", (potassiumMg / PotassiumTargetMg).coerceIn(0.0, 1.0).toFloat(), PotassiumColor),
-        "fiber" to NutrientDatum("fiber", "Fiber", "${oneDecimal(fiberG)} g", (fiberG / FiberTargetG).coerceIn(0.0, 1.0).toFloat(), FiberColor),
-        "caffeine" to NutrientDatum("caffeine", "Caffeine", "${caffeineMg.roundToInt()} mg", (caffeineMg / CaffeineTargetMg).coerceIn(0.0, 1.0).toFloat(), CaffeineColor)
+        "sodium" to NutrientDatum("sodium", "Sodium", "${sodiumMg.roundToInt()} mg", (sodiumMg / NutrientTargets.SodiumMg).coerceIn(0.0, 1.0).toFloat(), SodiumColor),
+        "potassium" to NutrientDatum("potassium", "Potassium", "${potassiumMg.roundToInt()} mg", (potassiumMg / NutrientTargets.PotassiumMg).coerceIn(0.0, 1.0).toFloat(), PotassiumColor),
+        "fiber" to NutrientDatum("fiber", "Fiber", "${oneDecimal(fiberG)} g", (fiberG / NutrientTargets.FiberG).coerceIn(0.0, 1.0).toFloat(), FiberColor),
+        "caffeine" to NutrientDatum("caffeine", "Caffeine", "${caffeineMg.roundToInt()} mg", (caffeineMg / NutrientTargets.CaffeineMg).coerceIn(0.0, 1.0).toFloat(), CaffeineColor)
     )
     // Sanitize the incoming order against known keys, then keep a local working copy for the
     // drag (swaps happen as the dragged card crosses a neighbour); persist on drag end.

@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.MealEntry
 import com.dirac.mactrack.ui.common.BackBar
+import com.dirac.mactrack.ui.common.NutrientTargets
 import com.dirac.mactrack.ui.feature.trends.TrendPeriod
 import com.dirac.mactrack.ui.theme.SodiumColor
 import com.dirac.mactrack.ui.theme.PotassiumColor
@@ -59,10 +60,10 @@ private data class NutrientSpec(
 )
 
 private val NUTRIENTS = listOf(
-    NutrientSpec("sodium", "Sodium", "mg", 2300.0, SodiumColor) { it.sodiumMg },
-    NutrientSpec("potassium", "Potassium", "mg", 3400.0, PotassiumColor) { it.potassiumMg },
-    NutrientSpec("fiber", "Fiber", "g", 28.0, FiberColor) { it.fiberG },
-    NutrientSpec("caffeine", "Caffeine", "mg", 400.0, CaffeineColor) { it.caffeineMg }
+    NutrientSpec("sodium", "Sodium", "mg", NutrientTargets.SodiumMg, SodiumColor) { it.sodiumMg },
+    NutrientSpec("potassium", "Potassium", "mg", NutrientTargets.PotassiumMg, PotassiumColor) { it.potassiumMg },
+    NutrientSpec("fiber", "Fiber", "g", NutrientTargets.FiberG, FiberColor) { it.fiberG },
+    NutrientSpec("caffeine", "Caffeine", "mg", NutrientTargets.CaffeineMg, CaffeineColor) { it.caffeineMg }
 )
 
 // Time-range pills for the chart, mirroring the Trends (Cals + Macros) screen (no "All": the ViewModel

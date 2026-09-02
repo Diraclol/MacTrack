@@ -50,14 +50,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dirac.mactrack.data.entity.WeightEntry
 import com.dirac.mactrack.ui.common.BackBar
+import com.dirac.mactrack.ui.common.oneDecimal
 import com.dirac.mactrack.ui.feature.more.WeightViewModel
 import java.time.LocalDate
 
 private enum class WeightRange(val label: String, val days: Long?) {
     M1("1M", 30), M3("3M", 90), Y1("1Y", 365), ALL("All", null)
 }
-
-private fun oneDecimal(x: Double): String = (Math.round(x * 10.0) / 10.0).toString()
 
 @Composable
 fun WeightScreen(onBack: () -> Unit = {}, modifier: Modifier = Modifier) {

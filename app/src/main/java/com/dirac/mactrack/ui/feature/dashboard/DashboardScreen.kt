@@ -53,12 +53,8 @@ import java.time.LocalDate
 import kotlin.math.roundToInt
 import java.time.format.TextStyle
 import java.util.Locale
-
-// Soft daily references for the nutrient bars (a scale, not a user goal) — same as the food log.
-private const val SodiumRefMg = 2300.0
-private const val PotassiumRefMg = 3400.0
-private const val FiberRefG = 28.0
-private const val CaffeineRefMg = 400.0
+import com.dirac.mactrack.ui.common.NutrientTargets
+import com.dirac.mactrack.ui.common.oneDecimal
 
 @Composable
 fun DashboardScreen(
@@ -161,10 +157,10 @@ private data class NutrientTileData(
 @Composable
 private fun NutrientCard(avg: NutrientAvg, onOpenNutrient: (String) -> Unit) {
     val tiles = listOf(
-        NutrientTileData("sodium", "Sodium", "${avg.sodiumMg.roundToInt()} mg", (avg.sodiumMg / SodiumRefMg).coerceIn(0.0, 1.0).toFloat(), SodiumColor),
-        NutrientTileData("potassium", "Potassium", "${avg.potassiumMg.roundToInt()} mg", (avg.potassiumMg / PotassiumRefMg).coerceIn(0.0, 1.0).toFloat(), PotassiumColor),
-        NutrientTileData("fiber", "Fiber", "${avg.fiberG.roundToInt()} g", (avg.fiberG / FiberRefG).coerceIn(0.0, 1.0).toFloat(), FiberColor),
-        NutrientTileData("caffeine", "Caffeine", "${avg.caffeineMg.roundToInt()} mg", (avg.caffeineMg / CaffeineRefMg).coerceIn(0.0, 1.0).toFloat(), CaffeineColor)
+        NutrientTileData("sodium", "Sodium", "${avg.sodiumMg.roundToInt()} mg", (avg.sodiumMg / NutrientTargets.SodiumMg).coerceIn(0.0, 1.0).toFloat(), SodiumColor),
+        NutrientTileData("potassium", "Potassium", "${avg.potassiumMg.roundToInt()} mg", (avg.potassiumMg / NutrientTargets.PotassiumMg).coerceIn(0.0, 1.0).toFloat(), PotassiumColor),
+        NutrientTileData("fiber", "Fiber", "${avg.fiberG.roundToInt()} g", (avg.fiberG / NutrientTargets.FiberG).coerceIn(0.0, 1.0).toFloat(), FiberColor),
+        NutrientTileData("caffeine", "Caffeine", "${avg.caffeineMg.roundToInt()} mg", (avg.caffeineMg / NutrientTargets.CaffeineMg).coerceIn(0.0, 1.0).toFloat(), CaffeineColor)
     )
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -277,8 +273,6 @@ private fun FoodStreakCard(loggedDates: Set<String>, onClick: () -> Unit) {
         }
     }
 }
-
-private fun oneDecimal(x: Double): String = (Math.round(x * 10.0) / 10.0).toString()
 
 // Optional dashboard card (toggled in More -> Display): current weight + a compact trend line.
 @Composable
