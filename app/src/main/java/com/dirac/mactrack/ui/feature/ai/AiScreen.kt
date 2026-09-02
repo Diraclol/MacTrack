@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -289,7 +290,12 @@ private fun MessageBubble(m: UiMessage) {
                 }
                 val textStyle = MaterialTheme.typography.bodyMedium
                 when {
-                    m.text.isBlank() && m.imageDataUrl == null -> Text("…", color = fg, style = textStyle)
+                    // Waiting on the first token (the model is processing the prompt): show a spinner.
+                    m.text.isBlank() && m.imageDataUrl == null -> CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = fg
+                    )
                     m.text.isBlank() -> Unit
                     isUser || m.error -> Text(m.text, color = fg, style = textStyle)
                     // Assistant replies may contain Markdown (bold, bullet lists); render it cleanly.
