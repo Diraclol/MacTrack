@@ -85,7 +85,18 @@ class FoodDetailViewModel(
                         val foodsById = ings.mapNotNull { foodRepository.getFood(it.foodId) }.associateBy { it.id }
                         recipeDetail(r, ings, foodsById)
                     }
-                    "branded" -> openFoodFactsRepository.lookup(id)
+                    "branded" -> {
+                        // Offline-first: a saved food carrying this barcode wins over an online lookup,
+                        // and is logged with correct provenance (custom, not branded).
+                        val saved = foodRepository.findByBarcode(id)
+                        if (saved != null) {
+                            loadedSourceType = "custom"
+                            loadedSourceId = saved.id
+                            foodItemDetail(saved)
+                        } else {
+                            openFoodFactsRepository.lookup(id)
+                        }
+                    }
                     "entry" -> {
                         val e = mealEntryRepository.getEntry(id)
                         loadedEntry = e

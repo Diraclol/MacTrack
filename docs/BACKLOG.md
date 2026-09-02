@@ -126,7 +126,10 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       **Follow-up SHIPPED (polish):** a flashlight/torch toggle (bottom-right, `enableTorch`) and a
       gallery-import icon (bottom-left, PickVisualMedia -> `InputImage.fromFilePath` -> same ML Kit
       scanner) so a barcode can be read from an existing photo without the camera.
-      **Still to do (offline):** a scan -> saved-food offline match (`food_items.barcode` before OFF).
+      **Offline saved-food match SHIPPED:** loading a `branded` code now checks `food_items.barcode`
+      first (`FoodItemDao.findByBarcode`) and, on a hit, opens that saved food with `custom` provenance
+      instead of hitting Open Food Facts -- so a scanned code you've saved works offline and logs correctly.
+      Read-only query, no migration (the `barcode` column shipped in SCHEMA-3).
 - [x] **UI-19: Scan button in the food editor's barcode field.** SHIPPED. The Barcode field in
       Create/Edit Food has a trailing scan icon (`QrCodeScanner`) that opens the camera; the scanned code
       is handed back into the field via a new `scanner_for_result` route + the destination's

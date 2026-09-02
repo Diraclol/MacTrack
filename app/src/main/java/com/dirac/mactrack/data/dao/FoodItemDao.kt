@@ -22,6 +22,9 @@ interface FoodItemDao {
     @Query("SELECT * FROM food_items WHERE id = :id")
     suspend fun getById(id: String): FoodItem?
 
+    @Query("SELECT * FROM food_items WHERE barcode = :barcode LIMIT 1")
+    suspend fun findByBarcode(barcode: String): FoodItem?
+
     @Query("SELECT * FROM food_items WHERE favorite = 1 ORDER BY name")
     fun getFavorites(): Flow<List<FoodItem>>
 
