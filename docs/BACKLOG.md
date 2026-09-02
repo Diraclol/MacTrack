@@ -176,10 +176,10 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       MacTrackApp wiring. NOTE: because `stagePortion` normalises any gram-bearing unit to grams, logging a
       volume favourite stores the gram-equivalent (same as oz today); the serving chip still shows e.g.
       "cup (240 g)". A follow-up could preserve the volume label in history.
-- [ ] **UI-16: Number-pad coloured macro pills.** Render the macro summary (e.g. 18P / 0C / 4F / 109 cal)
-      as coloured pills (like the food-log rows) on the logging surface. **PENDING:** confirm which surface
-      -- the compact bottom-sheet log editor in Dirac's screenshot differs from the current full-screen
-      FoodDetail (which uses macro rings); locate/point-to it before building.
+- [x] **UI-16: Number-pad coloured macro pills.** SHIPPED. Dirac confirmed the surface: the food-log
+      **edit-sheet number pad** (TodayScreen ModalBottomSheet). The live macro summary above the pad now
+      renders P/C/F and calories as `MacroPill`s (the same outlined pills used on the food-log hour rows /
+      FoodCard) instead of plain coloured text; calories gets the flame icon.
 - [ ] **UI-17: Nutrient-detail pill polish.** The chip rows on the nutrient detail screen (nutrient
       switcher + period pills, UI-8/period-pills) "look weird" (Dirac). **PENDING a screenshot** to fix
       precisely -- likely the two stacked FilterChip scroll-rows read cluttered; consider consolidating or

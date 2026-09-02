@@ -340,16 +340,16 @@ fun TodayScreen(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text("${(live?.protein ?: 0.0).roundToInt()}P", style = MaterialTheme.typography.bodyMedium, color = ProteinColor)
-                    Text("${(live?.carb ?: 0.0).roundToInt()}C", style = MaterialTheme.typography.bodyMedium, color = CarbColor)
-                    Text("${(live?.fat ?: 0.0).roundToInt()}F", style = MaterialTheme.typography.bodyMedium, color = FatColor)
+                    MacroPill("${(live?.protein ?: 0.0).roundToInt()}P", ProteinColor)
+                    MacroPill("${(live?.carb ?: 0.0).roundToInt()}C", CarbColor)
+                    MacroPill("${(live?.fat ?: 0.0).roundToInt()}F", FatColor)
                 }
-                Text(
-                    "${(live?.kcal ?: 0.0).roundToInt()} cal",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                MacroPill(
+                    "${(live?.kcal ?: 0.0).roundToInt()}",
+                    CalorieColor,
+                    Icons.Filled.LocalFireDepartment
                 )
             }
             NumberPad(
