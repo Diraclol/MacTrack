@@ -273,8 +273,8 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
       + `ic_launcher_background.xml` + `@color/mactrack_blue`; the mark also serves the `<monochrome>`
       themed-icon layer) and a reusable in-app mark (`drawable/ic_mactrack_logo.xml`), used on the new
       **About** screen (More → About). **SECURITY NOTE:** every supplied file (SVGs *and* PNGs) carried an
-      embedded embedded "metadata" block whose payload decodes to "the tool provided this file…" —
-      i.e. AI-provenance metadata. To honour the no-pre-public cleanup rule, **nothing was copied in verbatim**:
+      embedded embedded "metadata" block — AI-tool provenance metadata marking the file as
+      third-party. To honour the no-pre-public cleanup rule, **nothing was copied in verbatim**:
       the icons are re-authored from the six polygon coordinates as clean VectorDrawables (zero metadata),
       and no raster from the zip is in the repo. **Splash SHIPPED:** a branded launch screen (blue +
       centered white monogram) via the androidx `core-splashscreen` dep (Dirac's call), `Theme.MacTrack.Starting`
@@ -288,6 +288,30 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
       release time for a full release. (Dirac: "wire it when the product is done".)
 - [ ] **REL-4: Knowledge base / wiki** — seed from the existing docs (ENGINEERING_SUMMARY, BACKLOG,
       SECURITY, BACKEND_RESEARCH, PWA_IOS_SPIKE) as the backbone.
+- [ ] **REL-5: Pre-public "pre-public cleanup."** Right before the repo goes public, sweep out every trace
+      that the app was built with AI/the tool assistance. **This is a LATER task (do it as the last step
+      before flipping the repo public), not now.** Current inventory (verified 2026-09-01):
+      - **Commit history: CLEAN.** All commits are authored `Diraclol <junguy256@gmail.com>`; no commit
+        message mentions AI/an external tool/co-written/"produced with". Nothing to rewrite. (Re-verify
+        at wipe time in case anything slipped in.)
+      - **`NOTES.md` and `.local/`: not published.** `NOTES.md` is gitignored and `.local/` is
+        untracked, so neither ships. BUT tracked files *reference* the `NOTES.md` filename — those
+        references both dangle (the file won't be there) and reveal the tell. Fix each:
+        `MoreStatsViewModel.kt:20` (comment "per NOTES.md"), `docs/BACKEND_RESEARCH.md` ("the NOTES.md …
+        rule"), `docs/ENGINEERING_SUMMARY.md` (two `../NOTES.md` links). **Decision to make:** either
+        drop the references, or rename the working-rules content to a neutral committed doc (e.g.
+        `CONTRIBUTING.md` / `docs/CONVENTIONS.md`) and point links there.
+      - **Docs tone pass.** Re-read `docs/*.md` so they read as solo authorship — no "the assistant",
+        "pair-programmed", etc. (none found today; recheck). Also genericise any remaining literal
+        "third-party"/provenance phrasing that names a tool.
+      - **Asset metadata.** In-repo icons are clean hand-authored VectorDrawables (no metadata). Any
+        RASTER uploaded later (Play Store 512 icon, iOS icon set from the 1024 master) must have its embedded
+        content-credentials stripped first — those came with the "third-party" manifest embedded.
+      - **Out-of-repo, keep out:** `~/.local/…` memory and the `Downloads/MacTrack Monogram Logo.zip`
+        are outside the repo; just never commit them.
+      Whole thing is a find-replace sweep + one doc-rename decision — low effort, high stakes; do it in a
+      small worktree and diff before publishing. Note the app's own **Gemini AI feature** is a legitimate
+      product feature and stays — the wipe targets *build-time AI-assistance evidence*, not the product.
 
 ## Parked
 
