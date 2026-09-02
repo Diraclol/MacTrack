@@ -18,10 +18,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -69,6 +75,7 @@ fun FoodDetailScreen(
     onBack: () -> Unit = {},
     onScanAgain: () -> Unit = {},
     onCreateFoodWithBarcode: (String) -> Unit = {},
+    onEditFood: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val viewModel: FoodDetailViewModel = viewModel(factory = FoodDetailViewModel.Factory)
@@ -99,6 +106,7 @@ fun FoodDetailScreen(
         return
     }
 
+    var menuOpen by remember { mutableStateOf(false) }
     var amount by remember(d) { mutableStateOf(fmtAmount(d.defaultAmount)) }
     var unitLabel by remember(d) { mutableStateOf(d.defaultUnitLabel) }
     var padOpen by remember(d) { mutableStateOf(true) }
@@ -138,7 +146,38 @@ fun FoodDetailScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            BackBar("${foodEmoji(d.name)}  ${d.name}", onBack, modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp))
+            BackBar(
+                "${foodEmoji(d.name)}  ${d.name}",
+                onBack,
+                modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp),
+                actions = {
+                    // A food can be duplicated into an editable custom copy (near-match labels, or to
+                    // tweak an AI-logged item). Recipes are excluded here -- duplicating a recipe into
+                    // the recipe editor is a separate action. Your own custom food also gets a plain Edit.
+                    if (source != "recipe") {
+                        Box {
+                            IconButton(onClick = { menuOpen = true }) {
+                                Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                            }
+                            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("Duplicate & edit") },
+                                    onClick = {
+                                        menuOpen = false
+                                        viewModel.duplicateAsFood { newId -> onEditFood(newId) }
+                                    }
+                                )
+                                if (source == "custom") {
+                                    DropdownMenuItem(
+                                        text = { Text("Edit") },
+                                        onClick = { menuOpen = false; onEditFood(id) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            )
 
             // scrollable content
             Column(

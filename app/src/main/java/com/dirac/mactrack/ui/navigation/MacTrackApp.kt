@@ -325,7 +325,8 @@ fun MacTrackApp() {
                         navController.navigate("create_food?barcode=$code") {
                             popUpTo("food_detail/{source}/{id}") { inclusive = true }
                         }
-                    }
+                    },
+                    onEditFood = { foodId -> navController.navigate("edit_food/$foodId") }
                 )
             }
         }

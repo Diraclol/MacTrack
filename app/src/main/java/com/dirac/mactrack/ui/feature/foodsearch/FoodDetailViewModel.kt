@@ -10,6 +10,7 @@ import com.dirac.mactrack.MacTrackApplication
 import com.dirac.mactrack.data.cart.CartItem
 import com.dirac.mactrack.data.cart.CartRepository
 import com.dirac.mactrack.data.cnf.CnfRepository
+import com.dirac.mactrack.data.entity.FoodItem
 import com.dirac.mactrack.data.entity.Goal
 import com.dirac.mactrack.data.entity.MealEntry
 import com.dirac.mactrack.data.food.FoodDetail
@@ -35,6 +36,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import java.util.UUID
 
 class FoodDetailViewModel(
     private val foodRepository: FoodRepository,
@@ -148,6 +150,38 @@ class FoodDetailViewModel(
                 )
             )
             onDone()
+        }
+    }
+
+    // Duplicate the currently shown food into a NEW editable custom food, and hand its id to the
+    // caller so it can open the food editor. Any non-recipe source works (Common/CNF, branded, a logged
+    // entry incl. an AI estimate, or an existing custom food). The copy captures one default serving of
+    // the food (grams when known). A scanned (branded) food carries its barcode onto the copy, so a
+    // corrected label can still match future scans.
+    fun duplicateAsFood(onReady: (String) -> Unit) {
+        val d = _detail.value ?: return
+        val u = d.units.find { it.label == d.defaultUnitLabel } ?: d.units.firstOrNull() ?: return
+        val amt = if (d.defaultAmount > 0.0) d.defaultAmount else 1.0
+        val per = u.per * amt
+        val grams = u.grams
+        val size = if (grams != null && grams > 0.0) grams * amt else amt
+        val unitLabel = if (grams != null && grams > 0.0) "g" else u.label
+        val newId = UUID.randomUUID().toString()
+        val barcode = if (loadedSourceType == "branded") loadedSourceId else null
+        viewModelScope.launch {
+            foodRepository.addFood(
+                FoodItem(
+                    id = newId,
+                    name = "${d.name} copy",
+                    calories = per.kcal, proteinG = per.protein, carbG = per.carb, fatG = per.fat,
+                    fiberG = per.fiber, sugarG = per.sugar, satFatG = per.satFat,
+                    sodiumMg = per.sodium, potassiumMg = per.potassium, cholesterolMg = per.cholesterol,
+                    caffeineMg = per.caffeine,
+                    servingSize = size, servingUnit = unitLabel,
+                    barcode = barcode
+                )
+            )
+            onReady(newId)
         }
     }
 
