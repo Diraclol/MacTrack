@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 // A composite icon for a meal or recipe: the icons of its foods bunched together in a small rounded
-// tile (up to four, in a 2x2 grid), MacroFactor-style. Falls back to a single glyph when there are no
+// tile (up to four, in a 2x2 grid). Falls back to a single glyph when there are no
 // ingredient icons (or exactly one).
 @Composable
 fun ClusterIcon(

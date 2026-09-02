@@ -15,7 +15,6 @@ Index of the project's documentation. New here? Read **MACTRACK_STATE** for wher
 
 | Doc | What it is |
 |---|---|
-| [MACROFACTOR_REFERENCE.md](MACROFACTOR_REFERENCE.md) | The visual and interaction reference the UI targets, captured as notes. |
 | [AI4_PLAN.md](AI4_PLAN.md) | Design + staged build for turning an ingredient list into a saved recipe or meal. |
 
 ## Backend & platform (future work)

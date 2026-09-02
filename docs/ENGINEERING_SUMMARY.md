@@ -171,4 +171,3 @@ No instrumented UI tests                          → known gap; UI-10 in BACKLO
 | [BACKLOG.md](BACKLOG.md) | Deferred work, bucketed by what blocks it. The task queue. |
 | [MACTRACK_STATE.md](MACTRACK_STATE.md) | Project status: what is built, what is in flight, and what is next. |
 | [SECURITY.md](SECURITY.md) | Threat model + current posture; the plan for accounts/roles/AI. |
-| [MACROFACTOR_REFERENCE.md](MACROFACTOR_REFERENCE.md) | The visual/interaction target the UI is chasing. |

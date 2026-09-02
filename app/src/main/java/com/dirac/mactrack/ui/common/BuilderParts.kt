@@ -46,7 +46,7 @@ import com.dirac.mactrack.ui.theme.CalorieColor
 import kotlin.math.roundToInt
 
 // Shared building blocks for the Create Meal / Create Recipe screens, so both match the same
-// MacroFactor-style layout: a top bar with a Save action, grouped label/value rows, a section card
+// Grouped-card layout: a top bar with a Save action, grouped label/value rows, a section card
 // header with a round "+", an empty state, a macro-summary pill row, a per-serving/total toggle, and
 // tappable ingredient rows showing each food's amount and macro contribution.
 

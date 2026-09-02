@@ -125,6 +125,11 @@ Open the project in Android Studio and run the `app` configuration, or from the 
 ./gradlew :app:installDebug      # install on a connected device/emulator
 ```
 
+## Acknowledgements
+
+The UI takes design inspiration from MacroFactor. MacroFactor is a trademark of its respective owner;
+MacTrack is an independent, unaffiliated project and is not endorsed by MacroFactor.
+
 ## Licence
 
 Released under the [MIT License](LICENSE) — free to use, modify, and distribute with attribution.
