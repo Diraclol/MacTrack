@@ -277,13 +277,16 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
       asset and Open Food Facts, and read the user's own context (profile, goals, today's remaining
       calories/macros) to answer "what should I eat to hit my protein." Gated on structured-output /
       tool-call support on the chosen endpoint; bigger than AI-2 (a string) — it's plumbing.
-- [ ] **AI-4: Ingredient list -> macros -> save as recipe/meal.** CONFIRMED (Dirac). When the user gives
-      the AI a list of ingredients, resolve each (**branded -> use branded macros; else look it up in the
-      CNF database; else Open Food Facts**), do the reasonable per-ingredient calculation, sum, and let the
-      user log/save the result. If they asked for it as a **recipe** or a **meal**, create a new saved
-      `Recipe` or `MealTemplate` accordingly (not just a one-off log). Depends on real CNF/OFF access for
-      the model (AI-3) and on wiring the AI's structured result into the existing Recipe/Meal create path.
-      Big; overlaps UI-14 (OFF name lookup).
+- [~] **AI-4: Ingredient list -> macros -> save as recipe/meal.** IN PROGRESS. Architecture chosen
+      (see [AI4_PLAN.md](AI4_PLAN.md)): the model returns structured JSON, the app resolves each
+      ingredient deterministically (**saved food -> CNF -> Open Food Facts**) and saves a new `Recipe`
+      or `MealTemplate` -- avoids the untestable function-calling path. **Deterministic core DONE +
+      pushed** (all in `data/ai/recipe/`, reviewed): Stage 1 domain model +
+      `servingsFor` (unit-tested), Stage 2 `IngredientResolver`, Stage 3 `RecipeRequestParser` +
+      `RecipeMealBuilder`. **Stage 4 (wire into `AiViewModel`) is left for Dirac** -- it changes the AI
+      chat UX (a design decision) and can't be verified without the live model + a device; exact spec +
+      open product questions (recipe-vs-meal default, makesServings, skip-vs-refuse unresolved,
+      auto-save vs confirm) are in AI4_PLAN.md.
 
 ---
 

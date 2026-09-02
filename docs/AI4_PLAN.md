@@ -49,22 +49,38 @@ plain, unit-testable Kotlin.
 
 ## Staged build (each stage is its own commit; CI compiles + runs unit tests)
 
-- **Stage 1 (this commit): domain model + serving math.** `ParsedIngredient`, `RecipeBuildRequest`,
-  `ResolvedIngredient`, `BuildTarget`, and a pure `servingsFor(quantity, unit, servingSize,
-  servingUnit)` that converts a requested amount into servings of a food (mass/volume via the same
-  factors as the Favorite Serving Units feature; honest `null` when units can't be reconciled).
-  Unit-tested. Inert (nothing calls it yet).
-- **Stage 2: `IngredientResolver`.** `suspend resolve(ParsedIngredient) -> ResolvedIngredient`,
-  priority saved -> CNF -> OFF, upserting a FoodItem for CNF/OFF hits (idempotent ids), computing
-  `servings` via `servingsFor`.
-- **Stage 3: `RecipeMealBuilder` + the AI JSON contract/parser.** Turn a `RecipeBuildRequest` +
-  resolved ingredients into a saved Recipe or MealTemplate; a robust parser to pull the JSON out of
-  a model reply (like `MacroParser`, but for this structure). Unit-tested.
-- **Stage 4 (NEEDS DIRAC / live-API testing): wire into `AiViewModel`.** Detect the "make a
-  recipe/meal from these" intent, send the JSON-extraction prompt, parse, run resolver + builder,
-  and post a result bubble ("Saved recipe 'X' — 1200 cal, 90 P / 100 C / 40 F; 2 ingredients
-  couldn't be matched: ..."). This is the only stage whose behaviour can't be verified without the
-  live model + a device, so it is left for Dirac to finish and test.
+- **[DONE] Stage 1 — domain model + serving math.** `ParsedIngredient`, `RecipeBuildRequest`,
+  `ResolvedIngredient`, `BuildTarget` (`RecipeBuildModels.kt`) and a pure `servingsFor(...)`
+  (`ServingMath.kt`) that converts a requested amount into servings of a food (mass/volume via the
+  same factors as UI-15; honest `null` when units can't be reconciled). Unit-tested
+  (`ServingMathTest`).
+- **[DONE] Stage 2 — `IngredientResolver`.** `suspend resolve(ParsedIngredient) ->
+  ResolvedIngredient`, priority saved -> CNF -> OFF, upserting a FoodItem for CNF/OFF hits
+  (`cnf_<code>` / `off_<code>`, idempotent), computing `servings` via `servingsFor`, persisting only
+  when the unit converts. Reviewed; device-tested.
+- **[DONE] Stage 3 — `RecipeRequestParser` + `RecipeMealBuilder`.** Parser lifts the JSON object out
+  of the model reply and validates it; builder resolves every ingredient, sums macros, and saves a
+  new Recipe or MealTemplate, skipping+reporting anything unresolved (saves nothing if none resolve).
+  Reviewed; device-tested.
+
+- **[TODO — DIRAC] Stage 4 — wire into `AiViewModel`.** This is deliberately left for you: it changes
+  the AI chat's behaviour (a design-sensitive surface) and its result can't be verified without the
+  live model + a device, and it depends on the open questions below. Concrete spec:
+  1. **Construction:** give `AiViewModel` an `IngredientResolver` + `RecipeMealBuilder` (add
+     `foodRepository`, `cnfRepository`, `openFoodFactsRepository`, `recipeRepository`,
+     `mealTemplateRepository` — all already `lazy val`s on `MacTrackApplication` — through
+     `AiViewModel.Factory`, and build the two collaborators there).
+  2. **Prompt:** extend `SYSTEM_PROMPT` so that WHEN (and only when) the user asks to save an
+     ingredient list as a recipe or meal, the model replies with ONLY the JSON object
+     `{ "target": "recipe"|"meal", "name": "...", "ingredients": [ {"name","quantity","unit"} ] }`,
+     quantities in grams where reasonable, `unit` = "serving" for countable items it can't gram.
+  3. **Dispatch:** in `send()`, after the reply completes, `RecipeRequestParser.parse(reply)`. If
+     non-null, call `RecipeMealBuilder.build(request)` and replace/append an assistant bubble with a
+     summary: "Saved {recipe|meal} 'X' — {kcal} cal, {P}/{C}/{F} g. Couldn't match: {names}." If
+     null, treat the reply as an ordinary chat message (today's behaviour).
+  4. **`UiMessage`/history:** the build JSON turn is machine-facing; consider hiding the raw JSON from
+     the chat (show only the friendly summary).
+  Everything Stage 4 calls is already on `main` and compile-clean.
 
 ## Open questions for Dirac (please weigh in)
 
