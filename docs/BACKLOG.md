@@ -353,8 +353,8 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
 - [~] **REL-1: README** — DRAFTED (`README.md` at repo root, pre-public cleanup-free per REL-5). In Dirac's
       format: name, use cases, written in, formatted for, tools + Android dependencies, Gemini-API-key
       dependency, data sources, privacy note, one-paragraph architecture blurb, build commands, SECURITY.md
-      pointer. **Licence: MIT** (`LICENSE` at repo root, best fit for a resume/portfolio project) — the
-      copyright line says "Dirac"; swap in your legal name before going public. Screenshot **gallery
+      pointer. **Licence: MIT** (`LICENSE` at repo root, best fit for a resume/portfolio project;
+      copyright Daniel Nguyen). Screenshot **gallery
       wired** (repo-root README references `docs/screenshots/*.png`); **awaiting Dirac to drop the PNG
       files** in `docs/screenshots/` with the names in `docs/screenshots/README.md`. Re-read before the
       repo goes public (part of REL-5).
