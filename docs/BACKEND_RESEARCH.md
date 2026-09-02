@@ -115,3 +115,35 @@ were willing to learn TypeScript — not where it is today.
 *Unconfirmed by the research (don't treat as settled): the exact current `supabase-kt` version; whether
 Convex formally guarantees no free-tier pause; whether the experimental PowerSync–Convex connector
 supports Android at all.*
+
+---
+
+## Self-host on the home lab vs Supabase Cloud (researched 2026-09)
+
+Dirac runs a home lab and asked whether to self-host the Supabase Docker stack there instead of using
+the cloud (prompted by the free tier pausing after 7 days idle).
+
+**Decision: Cloud Free + a daily keep-alive ping for the beta; self-host later, co-located with the AI
+box.** The deciding factors:
+
+- **Home uptime becomes every user's login/sync uptime.** A power blip, ISP outage, or router reboot
+  logs everyone out until it's back. The app is offline-first, so *local* use keeps working — only sync
+  and fresh login block — but that's still worse than the cloud's zero-ops uptime.
+- **Mobile reachability is the real work.** A phone on cellular can't hit `192.168.x.x`; you must expose
+  the lab publicly over HTTPS (auth tokens require TLS). The safe path is a **Cloudflare Tunnel**
+  (outbound-only, no port-forward, hides the home IP, free edge TLS), exposing **only** the API gateway
+  and **never** Postgres:5432, with Studio kept LAN/Tailscale-only and all demo secrets rotated.
+- **RLS + Auth are identical self-hosted.** Row-Level Security is native Postgres and self-hosted GoTrue
+  issues the same JWTs — so the admin/beta-tester/regular roles behave the same either way. Self-hosting
+  later loses nothing on the security model (the reason we picked Supabase).
+- **The free-tier pause is cheap to defeat.** A daily cron/Action hitting the REST API keeps the project
+  awake (widely done; not officially blessed, so treat as "very likely fine"). Paused projects don't
+  count against the 2-active-project free cap.
+- **Cost.** Self-host = $0 on the invoice but paid in ops time + outage risk. Cloud Free = $0 with the
+  pause (solved). Cloud Pro ($25/mo) mainly buys away the pause + managed backups — nice-to-haves, not
+  needs at ≤5 users.
+
+**The natural Phase 2:** when the home lab box is stood up for the AI service, co-locate self-hosted
+Supabase on it — then it's *shared* ops, not *extra* ops, and self-host's $0 + full RLS/auth parity
+becomes genuinely attractive. Self-hosted stack note: the current Docker compose uses **Envoy** (gateway)
+and **Supavisor** (pooler); older tutorials saying **Kong** are dated — follow the official docker guide.

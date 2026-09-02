@@ -119,7 +119,12 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       camera.any required=false`; APK grows ~2.4 MB for the bundled model. NOTE: 17.3.0 specifically is
       the version with 16 KB native-lib alignment that AGP 9 enforces — earlier versions fail the build.
       Deps added to the version catalog (camerax, cameraMlkit, mlkitBarcode, lifecycleRuntimeCompose).
-      Confirm the live preview + a real barcode on the Pixel.
+      Confirmed working on the Pixel (scanned a real snack). **Follow-up SHIPPED:** the barcode icons on
+      both the food log and food search now open the camera directly (manual-entry dialog removed); an
+      unrecognized code shows a dialog to Scan again or Create food (prefilled with the barcode, via a
+      `create_food?barcode=` arg); the scanner has a framed viewfinder + sweeping red line overlay.
+      **Still to do (look polish + offline):** gallery import, flashlight toggle, and a scan -> saved-food
+      offline match (`food_items.barcode` before OFF).
 - [~] **UI-10: Automated tests.** JVM unit tests added (JUnit4, no new deps): the calc engine
       (pre-existing), plus `IngredientBuilderRepository`, `Nutrients` arithmetic, and the FoodModels
       mappers (`asFoodItem` / `foodItemDetail` / `mealEntryDetail` / `recipeDetail` / `stagePortion`).
@@ -193,6 +198,32 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
       tier). BYO-key means this generalizes: every MacTrack user brings their own project + quota.
 
 ---
+
+## Profile & accounts front-door (some local, some gated on the backend)
+
+- [ ] **PROF-1: Profile name.** A name on the local profile/account. Schema-gated: `user_profile.name`
+      (nullable) via a `Migration(8,9)` + DB v9 + a device build so KSP regenerates `9.json` (commit it).
+      Shown on Profile (editable) and asked for in onboarding. Local — no backend needed.
+- [ ] **PROF-2: Photo profile icon.** Let the avatar be a photo from the camera roll (PickVisualMedia,
+      like the AI image attach), not just an emoji. Persist into app-internal storage (copy the picked
+      file, store the path) and render it in the avatar spots (dashboard header, profile); fall back to
+      the emoji when none. No schema change if the path lives in prefs (ThemeRepository) like the emoji.
+- [ ] **PROF-3: Onboarding account choice.** First onboarding screen asks "Create an account" vs
+      "Continue without an account". "Continue without" is the current flow. Real sign-up is ACCT-1
+      (needs the backend) — until then show it as coming-soon. Leans on the Cloud-Free-then-self-host
+      plan in [BACKEND_RESEARCH.md](BACKEND_RESEARCH.md).
+
+## Release prep (pre-public — repo stays PRIVATE until Dirac says otherwise)
+
+- [ ] **REL-1: README** in Dirac's format: name, use cases, dependencies/tools used, written in,
+      formatted for, Android dependencies, Gemini-API-key dependency, screenshots (Dirac provides).
+      Recommended additions: a `LICENSE`, a short privacy note (BYO-key, local-first, no tracking), a
+      `SECURITY.md` pointer, and a one-paragraph architecture blurb. Build in a small worktree.
+- [ ] **REL-2: Logo** — needed before the repo goes public.
+- [ ] **REL-3: CircleCI** — CI to auto-run `:app:testDebugUnitTest` and build a release APK; wire at
+      release time for a full release. (Dirac: "wire it when the product is done".)
+- [ ] **REL-4: Knowledge base / wiki** — seed from the existing docs (ENGINEERING_SUMMARY, BACKLOG,
+      SECURITY, BACKEND_RESEARCH, PWA_IOS_SPIKE) as the backbone.
 
 ## Parked
 
