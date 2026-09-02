@@ -5,7 +5,19 @@ keep your data on your own device. Offline by default, single user, no account, 
 
 Package: `com.dirac.mactrack` · Status: active development (pre-1.0).
 
-> Screenshots: _to be added._
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" width="220" alt="Dashboard">
+  <img src="docs/screenshots/food-log.png" width="220" alt="Food log">
+  <img src="docs/screenshots/food-detail.png" width="220" alt="Food detail">
+  <img src="docs/screenshots/search.png" width="220" alt="Food search">
+</p>
+
+<p align="center"><em>Dashboard &middot; Food log &middot; Food detail &middot; Search</em></p>
+
+<!-- Drop the PNGs in docs/screenshots/ with the filenames referenced above (and splash.png). -->
+
 
 ## What it does
 
