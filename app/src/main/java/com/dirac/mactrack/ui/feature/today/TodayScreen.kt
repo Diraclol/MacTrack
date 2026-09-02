@@ -158,37 +158,45 @@ fun TodayScreen(
             onToday = { viewModel.goToToday() }
         )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp)
-                .pointerInput(Unit) {
-                    var acc = 0f
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            // Swipe left = next view, right = previous; wrap around 3 modes.
-                            if (kotlin.math.abs(acc) > 40f) {
-                                statMode = if (acc < 0f) (statMode + 1) % 3 else (statMode + 2) % 3
-                            }
-                            acc = 0f
-                        },
-                        onDragCancel = { acc = 0f }
-                    ) { _, dragAmount -> acc += dragAmount }
-                },
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // One grey filled box wrapping calories + all macros (matching the nutrient cards' fill).
+        // Swiping the box still cycles the view: remaining -> eaten/goal -> rings.
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
         ) {
-            if (statMode == 2) {
-                TotalRing(Modifier.weight(1f), "Cal", totalCal, goal?.calorieGoal ?: 0.0, CalorieColor)
-                TotalRing(Modifier.weight(1f), "P", totalP, goal?.proteinGoalG ?: 0.0, ProteinColor)
-                TotalRing(Modifier.weight(1f), "F", totalF, goal?.fatGoalG ?: 0.0, FatColor)
-                TotalRing(Modifier.weight(1f), "C", totalC, goal?.carbGoalG ?: 0.0, CarbColor)
-            } else {
-                val totalMode = statMode == 1
-                TotalStat(Modifier.weight(1f), "Cal", totalCal, goal?.calorieGoal ?: 0.0, CalorieColor, totalMode)
-                TotalStat(Modifier.weight(1f), "P", totalP, goal?.proteinGoalG ?: 0.0, ProteinColor, totalMode)
-                TotalStat(Modifier.weight(1f), "F", totalF, goal?.fatGoalG ?: 0.0, FatColor, totalMode)
-                TotalStat(Modifier.weight(1f), "C", totalC, goal?.carbGoalG ?: 0.0, CarbColor, totalMode)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                    .pointerInput(Unit) {
+                        var acc = 0f
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                // Swipe left = next view, right = previous; wrap around 3 modes.
+                                if (kotlin.math.abs(acc) > 40f) {
+                                    statMode = if (acc < 0f) (statMode + 1) % 3 else (statMode + 2) % 3
+                                }
+                                acc = 0f
+                            },
+                            onDragCancel = { acc = 0f }
+                        ) { _, dragAmount -> acc += dragAmount }
+                    },
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (statMode == 2) {
+                    TotalRing(Modifier.weight(1f), "Cal", totalCal, goal?.calorieGoal ?: 0.0, CalorieColor)
+                    TotalRing(Modifier.weight(1f), "P", totalP, goal?.proteinGoalG ?: 0.0, ProteinColor)
+                    TotalRing(Modifier.weight(1f), "F", totalF, goal?.fatGoalG ?: 0.0, FatColor)
+                    TotalRing(Modifier.weight(1f), "C", totalC, goal?.carbGoalG ?: 0.0, CarbColor)
+                } else {
+                    val totalMode = statMode == 1
+                    TotalStat(Modifier.weight(1f), "Cal", totalCal, goal?.calorieGoal ?: 0.0, CalorieColor, totalMode)
+                    TotalStat(Modifier.weight(1f), "P", totalP, goal?.proteinGoalG ?: 0.0, ProteinColor, totalMode)
+                    TotalStat(Modifier.weight(1f), "F", totalF, goal?.fatGoalG ?: 0.0, FatColor, totalMode)
+                    TotalStat(Modifier.weight(1f), "C", totalC, goal?.carbGoalG ?: 0.0, CarbColor, totalMode)
+                }
             }
         }
 
