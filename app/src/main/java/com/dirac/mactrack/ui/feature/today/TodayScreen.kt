@@ -467,7 +467,7 @@ private fun NutrientBox(
     val data = mapOf(
         "sodium" to NutrientDatum("sodium", "Sodium", "${sodiumMg.roundToInt()} mg", (sodiumMg / SodiumTargetMg).coerceIn(0.0, 1.0).toFloat(), SodiumColor),
         "potassium" to NutrientDatum("potassium", "Potassium", "${potassiumMg.roundToInt()} mg", (potassiumMg / PotassiumTargetMg).coerceIn(0.0, 1.0).toFloat(), PotassiumColor),
-        "fiber" to NutrientDatum("fiber", "Dietary Fiber", "${oneDecimal(fiberG)} g", (fiberG / FiberTargetG).coerceIn(0.0, 1.0).toFloat(), FiberColor),
+        "fiber" to NutrientDatum("fiber", "Fiber", "${oneDecimal(fiberG)} g", (fiberG / FiberTargetG).coerceIn(0.0, 1.0).toFloat(), FiberColor),
         "caffeine" to NutrientDatum("caffeine", "Caffeine", "${caffeineMg.roundToInt()} mg", (caffeineMg / CaffeineTargetMg).coerceIn(0.0, 1.0).toFloat(), CaffeineColor)
     )
     // Sanitize the incoming order against known keys, then keep a local working copy for the
