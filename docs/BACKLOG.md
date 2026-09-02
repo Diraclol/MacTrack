@@ -350,10 +350,11 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
 
 ## Release prep (pre-public — repo stays PRIVATE until Dirac says otherwise)
 
-- [ ] **REL-1: README** in Dirac's format: name, use cases, dependencies/tools used, written in,
-      formatted for, Android dependencies, Gemini-API-key dependency, screenshots (Dirac provides).
-      Recommended additions: a `LICENSE`, a short privacy note (BYO-key, local-first, no tracking), a
-      `SECURITY.md` pointer, and a one-paragraph architecture blurb. Build in a small worktree.
+- [~] **REL-1: README** — DRAFTED (`README.md` at repo root, pre-public cleanup-free per REL-5). In Dirac's
+      format: name, use cases, written in, formatted for, tools + Android dependencies, Gemini-API-key
+      dependency, data sources, privacy note, one-paragraph architecture blurb, build commands, SECURITY.md
+      pointer. **Awaiting Dirac:** screenshots (placeholder in place) and a licence choice (a `LICENSE`
+      file + filling the "Licence" section). Re-read before the repo goes public (part of REL-5).
 - [~] **REL-2: Logo** — IN PROGRESS. Final monogram (faceted M/T ligature, brand blue #0861AB) delivered
       by Dirac as `MacTrack Monogram Logo.zip`. **SHIPPED:** the app **launcher icon** (adaptive, white
       mark on brand-blue, authored as hand-written VectorDrawables — `drawable/ic_launcher_foreground.xml`
