@@ -54,6 +54,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,6 +67,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -149,6 +154,17 @@ fun TodayScreen(
     // Totals view, cycled by swiping the row: 0 = "remaining", 1 = "eaten / goal", 2 = rings.
     var statMode by remember { mutableStateOf(0) }
 
+    // Root-space vertical center of each hour header, so a long-press-dragged food row can resolve
+    // which hour block it was dropped into (see FoodCard's drag). Keyed by hour.
+    val headerCenterY = remember { mutableStateMapOf<Int, Float>() }
+    // Given a dragged row's center Y (root coords), the hour block it falls in: the block whose header
+    // sits just above it; above every header falls to the earliest block.
+    val resolveHourAt: (Float) -> Int? = resolve@{ y ->
+        if (headerCenterY.isEmpty()) return@resolve null
+        val ator = headerCenterY.entries.filter { it.value <= y }
+        (ator.maxByOrNull { it.value } ?: headerCenterY.entries.minByOrNull { it.value })?.key
+    }
+
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         DayNavigator(
             selected = selectedDate,
@@ -228,7 +244,9 @@ fun TodayScreen(
                 val hourF = hourEntries.sumOf { it.fatG }
                 item {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onGloballyPositioned { headerCenterY[hour] = it.positionInRoot().y + it.size.height / 2f },
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -251,7 +269,9 @@ fun TodayScreen(
                     FoodCard(
                         entry = entry,
                         onClick = { editing = entry },
-                        onDelete = { viewModel.deleteEntry(entry) }
+                        onDelete = { viewModel.deleteEntry(entry) },
+                        onMove = { targetHour -> viewModel.moveEntryToHour(entry, targetHour) },
+                        resolveHourAt = resolveHourAt
                     )
                 }
             }
@@ -633,15 +653,33 @@ private fun DayCell(d: LocalDate, isSel: Boolean, isToday: Boolean, modifier: Mo
 
 // Swipe a row left to REVEAL a red delete panel and rest there; tap the trash to confirm the delete.
 // Tapping the row while it's open just closes it; tapping while closed opens the entry. No auto-delete.
+// Long-press and hold, then drag up/down to move the row into another hour block (resolveHourAt maps
+// where you drop it to an hour; onMove snaps the entry to the top of that hour).
 @Composable
-private fun FoodCard(entry: MealEntry, onClick: () -> Unit, onDelete: () -> Unit) {
+private fun FoodCard(
+    entry: MealEntry,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    onMove: (Int) -> Unit,
+    resolveHourAt: (Float) -> Int?
+) {
     val revealPx = with(LocalDensity.current) { 76.dp.toPx() }
     val offsetX = remember(entry.id) { Animatable(0f) }
+    val dragY = remember(entry.id) { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    var dragging by remember(entry.id) { mutableStateOf(false) }
+    // Resting position of the row in root coords, captured so the drop point can be resolved to an hour.
+    var rowTopY by remember(entry.id) { mutableFloatStateOf(0f) }
+    var rowH by remember(entry.id) { mutableIntStateOf(0) }
     val dragState = rememberDraggableState { delta ->
         scope.launch { offsetX.snapTo((offsetX.value + delta).coerceIn(-revealPx, 0f)) }
     }
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { rowTopY = it.positionInRoot().y; rowH = it.size.height }
+            .zIndex(if (dragging) 1f else 0f)
+    ) {
         // Red delete panel behind the row; its trash button is the confirm action.
         Box(
             modifier = Modifier
@@ -661,7 +699,28 @@ private fun FoodCard(entry: MealEntry, onClick: () -> Unit, onDelete: () -> Unit
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .offset { IntOffset(offsetX.value.roundToInt(), dragY.value.roundToInt()) }
+                // Long-press to pick the row up, then drag up/down to another hour block.
+                .pointerInput(entry.id) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { dragging = true },
+                        onDrag = { change, amount ->
+                            change.consume()
+                            scope.launch { dragY.snapTo(dragY.value + amount.y) }
+                        },
+                        onDragEnd = {
+                            val centerY = rowTopY + rowH / 2f + dragY.value
+                            val target = resolveHourAt(centerY)
+                            dragging = false
+                            scope.launch { dragY.animateTo(0f) }
+                            if (target != null) onMove(target)
+                        },
+                        onDragCancel = {
+                            dragging = false
+                            scope.launch { dragY.animateTo(0f) }
+                        }
+                    )
+                }
                 .draggable(
                     orientation = Orientation.Horizontal,
                     state = dragState,

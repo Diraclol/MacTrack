@@ -95,6 +95,19 @@ class MealLogViewModel(
         viewModelScope.launch { mealEntryRepository.deleteEntry(entry) }
     }
 
+    // Move a logged entry to a different hour block by dragging. We keep no minute precision (the log
+    // groups by hour), so the entry snaps to the top of the target hour (minutes = 0). Same row id =
+    // update in place; no-op if it's already in that hour.
+    fun moveEntryToHour(entry: MealEntry, hour: Int) {
+        val newMinutes = hour.coerceIn(0, 23) * 60
+        if (entry.timeMinutes == newMinutes) return
+        viewModelScope.launch {
+            mealEntryRepository.logEntry(
+                entry.copy(timeMinutes = newMinutes, updatedAt = System.currentTimeMillis())
+            )
+        }
+    }
+
     // Rescale an already-logged entry to a new amount (same id = update in place).
     fun updateEntryQuantity(entry: MealEntry, newQuantity: Double) {
         if (entry.quantity <= 0.0 || newQuantity <= 0.0) return
