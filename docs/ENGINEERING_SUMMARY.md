@@ -74,8 +74,8 @@ adb logcat                          # device logs
 
 | Path | Responsibility |
 |------|----------------|
-| [MacTrackApplication.kt](app/src/main/java/com/dirac/mactrack/MacTrackApplication.kt) | Manual DI container; builds the Room DB + registers migrations |
-| [MainActivity.kt](app/src/main/java/com/dirac/mactrack/MainActivity.kt) | Single activity; sets Compose content + theme |
+| [MacTrackApplication.kt](../app/src/main/java/com/dirac/mactrack/MacTrackApplication.kt) | Manual DI container; builds the Room DB + registers migrations |
+| [MainActivity.kt](../app/src/main/java/com/dirac/mactrack/MainActivity.kt) | Single activity; sets Compose content + theme |
 | `ui/navigation/` | `MacTrackApp.kt` — the one `NavHost`, floating bottom nav, all route wiring |
 | `ui/feature/` | One package per screen: `today`, `dashboard`, `foodsearch`, `food`, `library`, `meals`, `recipes`, `goals`, `profile`, `more`, `onboarding` — each a Composable + its ViewModel |
 | `ui/common/` | Shared UI + helpers — `BackBar`, the stateless `NumberPad`, `EmptyHint`/`CreateMenuItem`, `NutrientTargets`, and the `oneDecimal` formatter |

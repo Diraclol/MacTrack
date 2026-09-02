@@ -9,5 +9,8 @@
 local.properties
 .idea/
 
-# Local notes, not part of the project
-NOTES.md
+# Secrets and signing material — never commit
+*.jks
+*.keystore
+google-services.json
+.env
