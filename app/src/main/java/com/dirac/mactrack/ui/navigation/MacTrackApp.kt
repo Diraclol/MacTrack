@@ -54,6 +54,7 @@ import com.dirac.mactrack.ui.feature.trends.TrendsScreen
 import com.dirac.mactrack.ui.feature.nutrient.NutrientDetailScreen
 import com.dirac.mactrack.ui.feature.ai.AiScreen
 import com.dirac.mactrack.ui.feature.ai.AiSettingsScreen
+import com.dirac.mactrack.ui.feature.scanner.BarcodeScannerScreen
 
 @Composable
 fun MacTrackApp() {
@@ -275,7 +276,19 @@ fun MacTrackApp() {
                     onDonePicking = { navController.popBackStack() },
                     onCreateFood = { navController.navigate("create_food") },
                     onCreateMeal = { navController.navigate("create_meal") },
-                    onCreateRecipe = { navController.navigate("create_recipe") }
+                    onCreateRecipe = { navController.navigate("create_recipe") },
+                    onScanBarcode = { navController.navigate("scanner") }
+                )
+            }
+            composable("scanner") {
+                BarcodeScannerScreen(
+                    onBack = { navController.popBackStack() },
+                    onResult = { code ->
+                        // Reuse the manual barcode path: look the code up in Open Food Facts.
+                        navController.navigate("food_detail/branded/$code") {
+                            popUpTo("scanner") { inclusive = true }
+                        }
+                    }
                 )
             }
             composable(

@@ -73,4 +73,14 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     implementation(libs.androidx.compose.material.icons.extended)
+
+    // Barcode scanning: CameraX preview/analysis + ML Kit on-device (bundled, offline, no API key)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.mlkit.vision)
+    implementation(libs.mlkit.barcode.scanning)
+    // Provides androidx.lifecycle.compose.LocalLifecycleOwner for the scanner screen
+    implementation(libs.androidx.lifecycle.runtime.compose)
 }

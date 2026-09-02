@@ -78,6 +78,7 @@ fun UnifiedSearchScreen(
     onCreateFood: () -> Unit = {},
     onCreateMeal: () -> Unit = {},
     onCreateRecipe: () -> Unit = {},
+    onScanBarcode: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val viewModel: UnifiedSearchViewModel = viewModel(factory = UnifiedSearchViewModel.Factory)
@@ -226,6 +227,10 @@ fun UnifiedSearchScreen(
             onLookUp = { code ->
                 showBarcodeDialog = false
                 onOpenFood("branded", code)
+            },
+            onScan = {
+                showBarcodeDialog = false
+                onScanBarcode()
             }
         )
     }
@@ -538,7 +543,7 @@ private fun CreateMenuItem(icon: androidx.compose.ui.graphics.vector.ImageVector
 }
 
 @Composable
-private fun BarcodeDialog(onDismiss: () -> Unit, onLookUp: (String) -> Unit) {
+private fun BarcodeDialog(onDismiss: () -> Unit, onLookUp: (String) -> Unit, onScan: () -> Unit) {
     var code by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -546,10 +551,14 @@ private fun BarcodeDialog(onDismiss: () -> Unit, onLookUp: (String) -> Unit) {
         text = {
             Column {
                 Text(
-                    "Enter a product barcode to look it up in Open Food Facts. Camera scanning is coming soon.",
+                    "Scan a product with the camera, or type its barcode to look it up in Open Food Facts.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Button(onClick = onScan, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                    Icon(Icons.Filled.QrCodeScanner, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Text("Scan with camera")
+                }
                 OutlinedTextField(
                     value = code,
                     onValueChange = { code = it },
