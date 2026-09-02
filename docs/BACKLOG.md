@@ -148,6 +148,36 @@ and dropped at Dirac's call: not needed. The redesigned Create Recipe screen int
       that clones the `Recipe` + its `RecipeIngredient`s into a new recipe and opens the recipe editor
       (`edit_recipe/{id}`) -- the overflow menu is intentionally hidden for `source == "recipe"` until
       then. Also optional: carry the source food's chosen emoji onto the copy (today it name-derives).
+- [x] **UI-13: Food-logging month calendar.** SHIPPED (pending device build). The dashboard Food Logging
+      card is now tappable ("See more") -> `ui/feature/streak/FoodLogCalendarScreen` (+ VM): a scrollable
+      12-month calendar where a filled blue day = at least one entry logged that day and a plain day =
+      missed; Sunday-start grid, a streak/days-tracked/longest header, and a legend. Route `food_calendar`.
+- [ ] **UI-14: Online Open Food Facts NAME search.** CONFIRMED (Dirac: add it -- people search day-to-day
+      branded items). Today the food text search only queries the offline CNF whole-foods DB + custom
+      foods; Open Food Facts is reached ONLY by barcode. Add an OFF **product-name** search (v2 search
+      API) so branded items (Cheerios etc.) appear when typed, merged into the unified search results.
+      Network during search (the app is otherwise offline) -> debounce, handle offline gracefully, cache
+      results; map OFF products through the existing `branded` FoodDetail path. NOTE the current CNF query
+      is exact-substring (`name LIKE %term%`), so a typo ("cherrios") also returns nothing -> an optional
+      fuzzy/typo pass is a separate follow-up.
+- [ ] **UI-15: Favorite Serving Units (full, incl. volume).** CONFIRMED full set (Dirac). A More screen
+      "Favorite Serving Units": pin up to 2 units to the FRONT of the serving-size selector. WEIGHT
+      (g/oz/lb -- exact gram conversions) + VOLUME (ml/tsp/tbsp/fl oz/cup). **Constraint:** MacTrack has no
+      per-food density, so volume->grams uses a standard ~1 g/ml assumption (tsp 5 ml, tbsp 15 ml, fl oz
+      ~29.57 ml, cup 240 ml) -- volume conversions are **estimates**; label them so. Requires: exposing
+      these generic units on every food's unit list (alongside g/oz + CNF measures), a pref storing the
+      <=2 favorites, and reordering the selector so favorites lead. Sizeable.
+- [ ] **UI-16: Number-pad coloured macro pills.** Render the macro summary (e.g. 18P / 0C / 4F / 109 cal)
+      as coloured pills (like the food-log rows) on the logging surface. **PENDING:** confirm which surface
+      -- the compact bottom-sheet log editor in Dirac's screenshot differs from the current full-screen
+      FoodDetail (which uses macro rings); locate/point-to it before building.
+- [ ] **UI-17: Nutrient-detail pill polish.** The chip rows on the nutrient detail screen (nutrient
+      switcher + period pills, UI-8/period-pills) "look weird" (Dirac). **PENDING a screenshot** to fix
+      precisely -- likely the two stacked FilterChip scroll-rows read cluttered; consider consolidating or
+      spacing them.
+- [ ] **UI-18: Cals + Macros outline on the food log (TENTATIVE).** Dirac "might" want an outline/border
+      on the food-log totals box for visibility (like the nutrient boxes). One-line border change; do on
+      confirm.
 - [x] **RESEARCH-1: PWA / iOS feasibility spike.** DONE — see [PWA_IOS_SPIKE.md](PWA_IOS_SPIKE.md).
       Recommendation: iOS via **Compose Multiplatform** (share domain/data/most-UI, ship native iOS);
       web via a **thin PWA over the Supabase backend** later (not CMP-wasm); no Flutter/RN rewrite.
@@ -238,6 +268,13 @@ local-first Room app, and a document model vs the relational shared food DB). Ra
       asset and Open Food Facts, and read the user's own context (profile, goals, today's remaining
       calories/macros) to answer "what should I eat to hit my protein." Gated on structured-output /
       tool-call support on the chosen endpoint; bigger than AI-2 (a string) — it's plumbing.
+- [ ] **AI-4: Ingredient list -> macros -> save as recipe/meal.** CONFIRMED (Dirac). When the user gives
+      the AI a list of ingredients, resolve each (**branded -> use branded macros; else look it up in the
+      CNF database; else Open Food Facts**), do the reasonable per-ingredient calculation, sum, and let the
+      user log/save the result. If they asked for it as a **recipe** or a **meal**, create a new saved
+      `Recipe` or `MealTemplate` accordingly (not just a one-off log). Depends on real CNF/OFF access for
+      the model (AI-3) and on wiring the AI's structured result into the existing Recipe/Meal create path.
+      Big; overlaps UI-14 (OFF name lookup).
 
 ---
 
