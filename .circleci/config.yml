@@ -1,0 +1,59 @@
+version: 2.1
+
+# CircleCI build for MacTrack. Mirrors the GitHub Actions CI (.github/workflows/ci.yml): run the
+# unit tests, then build the debug APK, on every push.
+#
+# Uses the official CircleCI Android orb's machine executor with the always-current `default` image,
+# which ships the Android SDK (recent API levels incl. 36), a modern JDK (>= 17, which AGP 9 requires)
+# and pre-accepted SDK licences -- the same "SDK preinstalled" model the GitHub Ubuntu runner relies on.
+# Toolchain (gradle/wrapper + libs.versions.toml): Gradle 9.4.1, AGP 9.2.1, Kotlin 2.2.10,
+# compileSdk/targetSdk 36, minSdk 26.
+
+orbs:
+  android: circleci/android@3.2.0
+
+jobs:
+  build-and-test:
+    executor:
+      name: android/android_machine
+      # `default` resolves to CircleCI's current Android machine image. Pin to a dated tag from
+      # https://circleci.com/developer/machine/image/android if you want reproducible builds.
+      tag: "default"
+      # medium (7.5 GB) is plenty for this build (gradle.properties caps the daemon at -Xmx2048m and
+      # there is no emulator). Bump to `large` if builds feel slow or hit memory limits.
+      resource_class: medium
+    steps:
+      - checkout
+      - run:
+          name: Make gradlew executable
+          # gradlew is tracked non-executable (mode 100644) in the repo, so add +x after checkout --
+          # same as the GitHub Actions workflow does.
+          command: chmod +x ./gradlew
+      - run:
+          name: Accept SDK licences (lets AGP fetch compileSdk 36 if the image lacks it)
+          command: yes | sdkmanager --licenses || true
+      - restore_cache:
+          keys:
+            - gradle-v1-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "app/build.gradle.kts" }}
+            - gradle-v1-
+      - run:
+          name: Unit tests
+          command: ./gradlew testDebugUnitTest --stacktrace
+      - run:
+          name: Build debug APK
+          command: ./gradlew assembleDebug --stacktrace
+      - save_cache:
+          paths:
+            - ~/.gradle/caches
+            - ~/.gradle/wrapper
+          key: gradle-v1-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}-{{ checksum "app/build.gradle.kts" }}
+      - store_test_results:
+          path: app/build/test-results
+      - store_artifacts:
+          path: app/build/outputs/apk/debug
+          destination: apk
+
+workflows:
+  build:
+    jobs:
+      - build-and-test
