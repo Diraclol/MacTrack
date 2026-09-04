@@ -2,6 +2,7 @@ package com.dirac.mactrack.ui.feature.more
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -40,6 +41,8 @@ class BackupViewModel(private val manager: BackupManager) : ViewModel() {
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
+                    val size = fileSize(uri, resolver)
+                    if (size > MAX_IMPORT_BYTES) error("File too large (max 25 MB).")
                     val text = resolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } ?: error("no stream")
                     manager.importJson(text)
                 }
@@ -51,7 +54,20 @@ class BackupViewModel(private val manager: BackupManager) : ViewModel() {
         }
     }
 
+    // Best-effort size of the content URI in bytes; -1 (unknown) is allowed through.
+    private fun fileSize(uri: Uri, resolver: ContentResolver): Long = try {
+        resolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { c ->
+            val idx = c.getColumnIndex(OpenableColumns.SIZE)
+            if (c.moveToFirst() && idx >= 0 && !c.isNull(idx)) c.getLong(idx) else -1L
+        } ?: -1L
+    } catch (e: Exception) {
+        -1L
+    }
+
     companion object {
+        // Cap import files at 25 MB before reading them whole (SECURITY.md 2.3).
+        private const val MAX_IMPORT_BYTES = 25L * 1024 * 1024
+
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as MacTrackApplication
