@@ -44,7 +44,7 @@ This is the highest-risk area. The rule: **never trust the client for authorizat
   client UI hides admin/Btester features for convenience; the RLS policies are what actually stop a
   regular user from writing admin/Btester data.
 - **Do not ship a hardcoded admin password.** A literal password in the source is in the APK and in
-  git history forever (and this repo is meant to read as a solo/private project). Create the admin
+  git history forever (and this repo is public). Create the admin
   account once in the Supabase dashboard and grant it the `admin` role claim there (dashboard or an
   Edge Function); the password lives in Supabase Auth, never in code. Same for the Btester role.
 - Prefer Google Sign-In or Supabase email/password. If email/password, enforce verification and a
